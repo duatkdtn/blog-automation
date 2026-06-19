@@ -30,3 +30,11 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           EMAIL_RECIPIENT: "duatkdtn@gmail.com"
         run: python keyword_email.py
+
+      - name: today_keywords.json 저장소에 커밋
+        run: |
+          git config user.email "duatkdtn@gmail.com"
+          git config user.name "duatkdtn"
+          git add today_keywords.json
+          git diff --staged --quiet || git commit -m "오늘의 키워드 스케줄 업데이트"
+          git push
