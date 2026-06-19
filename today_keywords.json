@@ -1,0 +1,47 @@
+{
+  "date": "2026-06-19",
+  "schedule": [
+    {
+      "time": "00:00",
+      "keyword": "도요타 RAV4 2026",
+      "title": "2026 도요타 올 뉴 RAV4 연비·성능 총정리",
+      "type": "숏테일",
+      "published": false
+    },
+    {
+      "time": "04:00",
+      "keyword": "힙 불교 트렌드",
+      "title": "2030세대 사로잡은 힙 불교 열풍 정체는?",
+      "type": "숏테일",
+      "published": false
+    },
+    {
+      "time": "08:00",
+      "keyword": "스페이스X 비상장 주식 투자",
+      "title": "스페이스X 투자 방법·위험성 한눈에 정리",
+      "type": "숏테일",
+      "published": false
+    },
+    {
+      "time": "12:00",
+      "keyword": "역노화 방법 50대 60대",
+      "title": "50~60대 역노화 솔루션 실천법 5가지",
+      "type": "롱테일",
+      "published": false
+    },
+    {
+      "time": "16:00",
+      "keyword": "해외 입양인 한국 방문 지원 제도",
+      "title": "해외 입양인 한국 방문·지원 제도 완벽 가이드",
+      "type": "롱테일",
+      "published": false
+    },
+    {
+      "time": "20:00",
+      "keyword": "골프장 AI 로봇 잔디 관리",
+      "title": "골프장 AI 로봇 도입 현황과 미래 전망 정리",
+      "type": "롱테일",
+      "published": false
+    }
+  ]
+}
