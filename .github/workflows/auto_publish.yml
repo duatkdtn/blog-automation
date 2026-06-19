@@ -1,0 +1,46 @@
+name: 자동 블로그 발행 (4시간 간격)
+
+on:
+  schedule:
+    # KST 기준: 0시, 4시, 8시, 12시, 16시, 20시
+    # UTC 기준: 15시, 19시, 23시, 3시, 7시, 11시 (전날/당일)
+    - cron: '0 15 * * *'   # KST 00:00
+    - cron: '0 19 * * *'   # KST 04:00
+    - cron: '0 23 * * *'   # KST 08:00
+    - cron: '0 3 * * *'    # KST 12:00
+    - cron: '0 7 * * *'    # KST 16:00
+    - cron: '0 11 * * *'   # KST 20:00
+  workflow_dispatch:  # 수동 실행 버튼
+
+jobs:
+  auto-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: |
+          pip install anthropic requests google-auth google-auth-oauthlib \
+          google-api-python-client cloudinary pillow google-genai
+
+      - name: 자동 발행 실행
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
+          BLOG_ID: ${{ secrets.BLOG_ID }}
+        run: python auto_publish.py
