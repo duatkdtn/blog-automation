@@ -18,6 +18,25 @@ import anthropic
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# GitHub Actions 환경에서 config.py 임시 생성
+def setup_env():
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
+    if not os.path.exists(config_path):
+        env_map = {
+            "CLAUDE_API_KEY": os.environ.get("CLAUDE_API_KEY", ""),
+            "CLAUDE_MODEL": os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6"),
+            "NAVER_CLIENT_ID": os.environ.get("NAVER_CLIENT_ID", ""),
+            "NAVER_CLIENT_SECRET": os.environ.get("NAVER_CLIENT_SECRET", ""),
+            "GMAIL_ADDRESS": os.environ.get("GMAIL_ADDRESS", ""),
+            "GMAIL_APP_PASSWORD": os.environ.get("GMAIL_APP_PASSWORD", ""),
+            "EMAIL_RECIPIENT": os.environ.get("EMAIL_RECIPIENT", "duatkdtn@gmail.com"),
+        }
+        with open(config_path, "w", encoding="utf-8") as f:
+            for key, val in env_map.items():
+                f.write(f'{key} = "{val}"\n')
+
+setup_env()
+
 try:
     from config import (
         CLAUDE_API_KEY, CLAUDE_MODEL,

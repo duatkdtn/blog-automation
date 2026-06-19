@@ -7,11 +7,45 @@
 import json
 import os
 import sys
+import base64
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# GitHub Actions 환경에서 token.pickle 복원
+def restore_token():
+    token_b64 = os.environ.get("GOOGLE_TOKEN")
+    if token_b64:
+        token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+        with open(token_path, "wb") as f:
+            f.write(base64.b64decode(token_b64))
+        print("✅ Google 토큰 복원 완료")
+
+# config.py가 없을 때 환경변수로 대체
+def setup_env():
+    env_vars = {
+        "CLAUDE_API_KEY": os.environ.get("CLAUDE_API_KEY"),
+        "CLAUDE_MODEL": os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6"),
+        "BLOG_ID": os.environ.get("BLOG_ID"),
+        "GEMINI_API_KEY": os.environ.get("GEMINI_API_KEY"),
+        "CLOUDINARY_CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+        "CLOUDINARY_API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+        "CLOUDINARY_API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
+        "NAVER_CLIENT_ID": os.environ.get("NAVER_CLIENT_ID"),
+        "NAVER_CLIENT_SECRET": os.environ.get("NAVER_CLIENT_SECRET"),
+    }
+    # config.py가 없으면 임시 생성
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
+    if not os.path.exists(config_path):
+        with open(config_path, "w", encoding="utf-8") as f:
+            for key, val in env_vars.items():
+                if val:
+                    f.write(f'{key} = "{val}"\n')
+        print("✅ config.py 임시 생성 완료")
+
 def main():
+    restore_token()
+    setup_env()
     # 현재 시간 확인 (한국시간 기준 - GitHub Actions는 UTC이므로 +9)
     now_utc = datetime.utcnow()
     # UTC → KST (+9시간)
