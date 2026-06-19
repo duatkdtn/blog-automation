@@ -1,0 +1,32 @@
+name: 일일 키워드 이메일 발송
+
+on:
+  schedule:
+    - cron: '0 20 * * *'  # 매일 UTC 20:00 = 한국시간 05:00
+  workflow_dispatch:  # 수동 실행 버튼
+
+jobs:
+  send-keywords:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: pip install anthropic requests
+
+      - name: 키워드 이메일 발송
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT: "duatkdtn@gmail.com"
+        run: python keyword_email.py
