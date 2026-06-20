@@ -218,47 +218,39 @@ def save_today_keywords(best6):
 
 
 def build_email_html(keywords, best6, today_str):
-    """이메일 HTML 생성 - 전체 10개 + 베스트 6 발행 스케줄"""
+    """이메일 HTML 생성 - 전체 10개 (베스트 6에 발행시간 표시)"""
 
     type_emoji = {"숏테일": "🔥", "롱테일": "📈", "행동형": "💡", "정보형": "📚"}
     type_color = {"숏테일": "#ff4757", "롱테일": "#2ed573", "행동형": "#ffa502", "정보형": "#1e90ff"}
 
-    best6_keywords = [kw.get("keyword") for kw in best6]
+    # 베스트 6 키워드 → 발행시간 매핑
+    best6_time = {}
+    for i, kw in enumerate(best6):
+        best6_time[kw.get("keyword")] = PUBLISH_TIMES[i]
 
-    # 전체 키워드 목록
+    # 전체 키워드 목록 (베스트에 시간 표시)
     all_rows = ""
     for i, kw in enumerate(keywords, 1):
         kw_type = kw.get("type", "")
         emoji = type_emoji.get(kw_type, "📌")
         color = type_color.get(kw_type, "#666")
-        is_best = kw.get("keyword") in best6_keywords
+        kw_name = kw.get("keyword", "")
+        is_best = kw_name in best6_time
         bg = "#fff9e6" if is_best else "white"
-        star = " ⭐" if is_best else ""
+
+        # 발행 시간 뱃지 (베스트만)
+        time_badge = ""
+        if is_best:
+            time_badge = f'<span style="background:#764ba2; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-left:6px;">⏰ {best6_time[kw_name]} 발행</span>'
 
         all_rows += f"""
         <tr style="border-bottom:1px solid #eee; background:{bg};">
-            <td style="padding:10px 12px; font-weight:bold; color:#333; width:25px;">{i}</td>
+            <td style="padding:10px 12px; font-weight:bold; color:#333; width:25px; vertical-align:top;">{i}</td>
             <td style="padding:10px 12px;">
-                <span style="background:{color}; color:white; padding:2px 7px; border-radius:10px; font-size:11px;">{emoji} {kw_type}</span>{star}<br>
-                <strong style="font-size:15px; color:#222;">{kw.get('keyword', '')}</strong><br>
+                <span style="background:{color}; color:white; padding:2px 7px; border-radius:10px; font-size:11px;">{emoji} {kw_type}</span>{time_badge}<br>
+                <strong style="font-size:15px; color:#222;">{kw_name}</strong><br>
                 <span style="color:#555; font-size:13px;">📝 {kw.get('title', '')}</span><br>
                 <span style="color:#999; font-size:11px;">💬 {kw.get('reason', '')}</span>
-            </td>
-        </tr>
-        """
-
-    # 베스트 6 발행 스케줄
-    schedule_rows = ""
-    for i, kw in enumerate(best6):
-        kw_type = kw.get("type", "")
-        color = type_color.get(kw_type, "#666")
-        schedule_rows += f"""
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:10px 15px; font-size:18px; font-weight:bold; color:#764ba2; width:60px;">{PUBLISH_TIMES[i]}</td>
-            <td style="padding:10px 12px;">
-                <span style="background:{color}; color:white; padding:2px 7px; border-radius:10px; font-size:11px;">{kw_type}</span><br>
-                <strong style="font-size:15px; color:#222;">{kw.get('keyword', '')}</strong><br>
-                <span style="color:#555; font-size:13px;">📝 {kw.get('title', '')}</span>
             </td>
         </tr>
         """
@@ -276,17 +268,9 @@ def build_email_html(keywords, best6, today_str):
         <p style="color:rgba(255,255,255,0.85); margin:8px 0 0; font-size:14px;">{today_str}</p>
     </div>
 
-    <!-- 자동 발행 스케줄 -->
-    <div style="background:white; padding:20px; margin-top:2px;">
-        <h2 style="color:#764ba2; font-size:17px; margin:0 0 15px;">🚀 오늘 자동 발행 예정 (베스트 6)</h2>
-        <table style="width:100%; border-collapse:collapse;">
-            {schedule_rows}
-        </table>
-    </div>
-
     <!-- 전체 키워드 10개 -->
-    <div style="background:white; padding:20px; margin-top:8px;">
-        <h2 style="color:#333; font-size:17px; margin:0 0 15px;">📋 전체 추천 키워드 10개 <span style="font-size:12px; color:#999;">(⭐ = 자동발행 선택)</span></h2>
+    <div style="background:white; padding:20px; margin-top:2px;">
+        <h2 style="color:#333; font-size:17px; margin:0 0 15px;">📋 전체 추천 키워드 10개 <span style="font-size:12px; color:#764ba2;">⏰ = 자동 발행 시간</span></h2>
         <table style="width:100%; border-collapse:collapse;">
             {all_rows}
         </table>
