@@ -1,45 +1,45 @@
 {
-  "date": "2026-06-19",
+  "date": "2026-06-20",
   "schedule": [
     {
       "time": "00:00",
-      "keyword": "삼겹살 비계 건강",
-      "title": "삼겹살 비계 잘라먹으면 진짜 건강에 좋을까?",
+      "keyword": "옥희 별세",
+      "title": "가수 옥희 별세, 신장암 투병 73년 생애",
       "type": "숏테일",
       "published": false
     },
     {
       "time": "04:00",
-      "keyword": "경북함 호위함",
-      "title": "최신예 호위함 경북함, 대한민국 해군 전력은?",
+      "keyword": "호르무즈 해협 봉쇄",
+      "title": "호르무즈 봉쇄 위협, 우리 생활 물가에 미치는 영향",
       "type": "숏테일",
       "published": false
     },
     {
       "time": "08:00",
-      "keyword": "전국 폭우 날씨",
-      "title": "오늘 전국 폭우 천둥번개, 지역별 강수량 총정리",
+      "keyword": "파이코인 시세",
+      "title": "파이코인 0.13달러 지지선, 지금 팔아야 할까?",
       "type": "숏테일",
       "published": false
     },
     {
       "time": "12:00",
-      "keyword": "삼겹살 비계 효능 부위별 영양성분",
-      "title": "삼겹살 비계 버려야 할까? 부위별 영양 성분 비교",
+      "keyword": "신장암 초기증상 및 생존율",
+      "title": "신장암 초기증상 7가지와 5년 생존율 총정리",
       "type": "롱테일",
       "published": false
     },
     {
       "time": "16:00",
-      "keyword": "CJ올리브영 신생브랜드 입점 방법",
-      "title": "올리브영 신상 전용관 생긴다, 신생 브랜드 입점 조건은?",
+      "keyword": "분산 GPU 클라우드 비용 절감 방법",
+      "title": "분산 GPU로 AI 개발 비용 절반 줄이는 방법",
       "type": "롱테일",
       "published": false
     },
     {
       "time": "20:00",
-      "keyword": "AI 리포터 딥브레인AI 아이온 활용법",
-      "title": "딥브레인AI 아이온, AI 리포터 실제로 어떻게 쓰나?",
+      "keyword": "XRP 리플 투자 전망",
+      "title": "XRP 리플 1.13달러 지지선 붕괴 시 투자 전망",
       "type": "롱테일",
       "published": false
     }
