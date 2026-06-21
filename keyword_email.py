@@ -17,8 +17,15 @@ import re
 import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import anthropic
+
+# 한국시간 (KST = UTC+9)
+KST = timezone(timedelta(hours=9))
+
+def now_kst():
+    """현재 한국 시간 반환"""
+    return datetime.now(KST)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -98,7 +105,7 @@ def get_naver_datalab_trends():
     # 주요 카테고리별 트렌드 조회
     categories = ["건강", "재테크", "생활정보", "음식", "여행"]
     trends = []
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now_kst().strftime("%Y-%m-%d")
 
     for cat in categories:
         try:
@@ -210,7 +217,7 @@ def get_naver_blog_top_titles(keyword):
 def generate_keywords_with_claude(news_titles, google_trends, daum_issues, datalab_trends):
     """Claude로 키워드 10개 생성 + 베스트 6 선정"""
 
-    today = datetime.now().strftime("%Y년 %m월 %d일")
+    today = now_kst().strftime("%Y년 %m월 %d일")
 
     news_context = "\n".join(news_titles) if news_titles else "없음"
     google_context = "\n".join(google_trends) if google_trends else "없음"
@@ -423,7 +430,7 @@ def enrich_keywords_with_titles(keywords, best6):
 
 def save_today_keywords(keywords, best6):
     """자동발행 스크립트가 읽어갈 JSON 저장"""
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now_kst().strftime("%Y-%m-%d")
     data = {
         "date": today,
         "schedule": []
@@ -571,8 +578,8 @@ def send_email(subject, html_content):
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def main():
-    today_str = datetime.now().strftime("%Y년 %m월 %d일 (%A)")
-    today_short = datetime.now().strftime("%m/%d")
+    today_str = now_kst().strftime("%Y년 %m월 %d일 (%A)")
+    today_short = now_kst().strftime("%m/%d")
 
     print(f"\n{'='*50}")
     print(f"📊 일일 키워드 추천 시작 - {today_str}")
