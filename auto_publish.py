@@ -150,6 +150,25 @@ def main():
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print("💾 발행 상태 저장 완료")
+
+        # 네이버 백링크용 글 생성
+        print(f"\n📝 네이버 백링크용 글 생성 시작...")
+        try:
+            from naver_post_generator import generate_naver_post
+            related_keywords = target.get("related_keywords", [])
+            naver_result = generate_naver_post(
+                keyword=keyword,
+                title=final_title,
+                content=content,
+                image_urls=all_images if all_images else [],
+                blogspot_url=post_url,
+                related_keywords=related_keywords
+            )
+            print(f"✅ 네이버용 파일 생성 완료!")
+            print(f"   📄 {naver_result['html_path']}")
+            print(f"   📝 {naver_result['txt_path']}")
+        except Exception as e:
+            print(f"⚠️ 네이버 글 생성 실패 (블로그스팟 발행은 성공): {e}")
     else:
         print(f"\n❌ 발행 실패")
 
