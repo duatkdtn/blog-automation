@@ -97,27 +97,47 @@ def main():
     # blog_automation.py에서 함수 import
     try:
         from blog_automation import (
-            generate_blog_content,
+            generate_blog_post,
             generate_images_with_vertex,
             generate_thumbnail_with_vertex,
-            create_blog_post,
-            get_blogger_service
+            generate_seo_metadata,
+            inject_seo_metadata,
+            insert_images_into_content,
+            publish_to_blogger,
+            get_google_credentials
         )
     except ImportError as e:
         print(f"❌ blog_automation.py import 실패: {e}")
         return
 
-    # 글 생성 및 발행
+    # 1. 글 생성
     print(f"\n🤖 글 생성 중...")
-    content = generate_blog_content(keyword, title)
+    blog_title, content = generate_blog_post(keyword)
 
+    # 제목은 today_keywords.json의 추천 제목 사용 (없으면 Claude 생성 제목)
+    final_title = title if title else blog_title
+
+    # 2. SEO 메타데이터 생성
+    description, keywords_meta = generate_seo_metadata(keyword, final_title, content)
+    content = inject_seo_metadata(content, final_title, description, keywords_meta, keyword)
+
+    # 3. 이미지 생성
     print(f"\n🎨 이미지 생성 중...")
     images = generate_images_with_vertex(keyword, count=3)
-    thumbnail = generate_thumbnail_with_vertex(keyword, title)
+    thumbnail = generate_thumbnail_with_vertex(keyword, final_title)
 
+    # 4. 이미지 삽입
+    if thumbnail:
+        all_images = [thumbnail] + images
+    else:
+        all_images = images
+    if all_images:
+        content = insert_images_into_content(content, all_images, keyword)
+
+    # 5. 블로그스팟 발행
     print(f"\n📤 블로그스팟 발행 중...")
-    service = get_blogger_service()
-    post_url = create_blog_post(service, title, content, images, thumbnail, keyword)
+    result = publish_to_blogger(final_title, content)
+    post_url = result.get("url") if result else None
 
     if post_url:
         print(f"\n✅ 발행 완료! → {post_url}")

@@ -1,0 +1,228 @@
+================================================
+  블로그 자동화 프로젝트 전체 작업 정리
+  작성일: 2026년 06월 20일
+================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 프로젝트 목표
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1단계 (현재): 블로그스팟 완전 자동화
+2단계 (추후): 네이버 블로그 반자동 (글 생성 후 복붙)
+3단계 (추후): GUI 프로그램으로 패키징 → .exe 판매
+               (라이선스 키 시스템 포함)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. 자동화 구조 (현재 작동 중)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[매일 오전 5시] GitHub Actions 자동 실행
+  └→ keyword_email.py 실행
+       ├→ 네이버 뉴스 API로 오늘 이슈 수집
+       ├→ Claude API로 키워드 10개 생성 + 베스트 6 선정
+       ├→ today_keywords.json 저장 (발행 스케줄 포함)
+       └→ 이메일 발송 (duatkdtn@gmail.com)
+            └→ 키워드 10개 목록 + 베스트 6 발행 시간 표시
+
+[4시간마다: 0시/4시/8시/12시/16시/20시] GitHub Actions 자동 실행
+  └→ auto_publish.py 실행
+       ├→ today_keywords.json에서 현재 시간 키워드 확인
+       ├→ blog_automation.py로 블로그 글 생성
+       │    ├→ Claude API: 블로그 본문 작성 (1000~3000자)
+       │    ├→ Gemini API: 이미지 3장 + 썸네일 1장 생성
+       │    └→ Cloudinary: 생성된 이미지 호스팅
+       └→ Google Blogger API로 블로그스팟에 자동 발행
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. 가입한 서비스 및 비용
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[무료 서비스]
+- GitHub          : 코드 저장소 + Actions 자동 실행 (무료)
+- Gmail           : 이메일 발송용 (무료)
+- Naver API       : 뉴스/검색 데이터 수집 (무료)
+- Pixabay API     : 이미지 검색 (미사용, 무료)
+- Pexels API      : 이미지 검색 (미사용, 무료)
+- Cloudinary      : 이미지 호스팅 (무료 플랜 사용 중)
+- Blogger (Google): 블로그스팟 발행 (무료)
+
+[유료 서비스]
+- Claude API (Anthropic)
+    용도: 키워드 생성 + 블로그 글 작성
+    모델: claude-sonnet-4-6
+    비용: 글 1개당 약 15~45원 / 하루 6개 기준 월 약 2,000~5,000원
+
+- Gemini API (Google AI Studio)
+    용도: 블로그 이미지 생성 (본문 3장 + 썸네일 1장)
+    모델: gemini-2.5-flash-image
+    결제: 유료 선결제 완료
+    비용: 이미지 1장당 소액 (정확한 단가는 Google AI Studio 콘솔 확인)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. API 키 목록
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  이 파일은 외부에 유출되지 않도록 주의하세요!
+
+Claude API 키 (Anthropic)
+  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
+
+Google OAuth 클라이언트 ID
+  720980499316-8rebunkf8cqgmpvmgedgti4gsbls4mdb.apps.googleusercontent.com
+
+Google OAuth 클라이언트 시크릿
+  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
+
+Blogger 블로그 ID
+  7703234808905245526
+
+Pixabay API 키 (미사용)
+  56368573-25ec598733b5b2a433b7394b9
+
+Google Custom Search API 키 (미사용)
+  AIzaSyAhC3cHA7KIla1xkaLD6jmQ7jxLeLjzZI0
+
+Google Custom Search Engine ID (미사용)
+  33b828c27660540f9
+
+Naver Client ID
+  GmBf8vCYZJ_AiqDDmsiU
+
+Naver Client Secret
+  qA560H5Ktj
+
+Pexels API 키 (미사용)
+  qkBEi17PW5tPVFPxtKSb8i9nFUovA0T75iameWdd4gN5wvYnddetX7T3
+
+Gemini API 키 (Google AI Studio)
+  AIzaSyDpB06UqQDvGw2BdqRekeDN_EFOCBT4BqE
+
+Google Cloud 프로젝트 ID
+  project-9e54c201-2eff-4f2d-851
+
+Cloudinary Cloud Name
+  dz5rcmavq
+
+Cloudinary API Key
+  939216174936292
+
+Cloudinary API Secret
+  uB_FtG_0QZvM7Ro45y4n24bOUas
+
+Gmail 주소
+  duatkdtn@gmail.com
+
+Gmail 앱 비밀번호 (블로그마스터)
+  nrbnbvshezltrzci
+
+이메일 수신 주소
+  duatkdtn@gmail.com
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. GitHub 저장소 정보
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+저장소 주소: https://github.com/duatkdtn/blog-automation
+GitHub 아이디: duatkdtn
+이메일: duatkdtn01@gmail.com
+
+GitHub Secrets (Actions에 등록된 환경변수):
+  - CLAUDE_API_KEY
+  - NAVER_CLIENT_ID
+  - NAVER_CLIENT_SECRET
+  - GMAIL_ADDRESS
+  - GMAIL_APP_PASSWORD
+  - BLOG_ID
+  - GEMINI_API_KEY
+  - CLOUDINARY_CLOUD_NAME
+  - CLOUDINARY_API_KEY
+  - CLOUDINARY_API_SECRET
+  - GOOGLE_TOKEN (token.pickle을 base64로 변환한 값)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. 주요 파일 목록
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+C:\Users\HOME\Documents\Claude\Projects\블로그자동화\
+  ├─ config.py                 : API 키 설정 (GitHub에 올라가지 않음)
+  ├─ blog_automation.py        : 블로그 글 생성 + 발행 핵심 코드
+  ├─ keyword_email.py          : 키워드 추천 + 이메일 발송
+  ├─ auto_publish.py           : 4시간마다 자동 발행
+  ├─ token.pickle              : Google OAuth 인증 토큰
+  ├─ today_keywords.json       : 오늘의 발행 스케줄 (매일 갱신)
+  ├─ GUI_계획.md               : 추후 GUI 프로그램 개발 계획
+  ├─ .gitignore                : GitHub에 올리지 않을 파일 목록
+  └─ .github/workflows/
+       ├─ keyword_email.yml    : 매일 오전 5시 키워드 이메일 발송
+       └─ auto_publish.yml     : 4시간마다 블로그 자동 발행
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. 진행한 작업 순서
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.  Python 설치 (Windows)
+2.  Claude API 키 발급 (Anthropic)
+3.  Google Blogger API 설정 (OAuth 인증)
+4.  blog_automation.py 기본 코드 작성
+5.  Pexels API 키 발급 + 이미지 검색 기능 추가
+6.  Google Cloud 결제 계정 활성화
+7.  Gemini API (AI Studio) 유료 선결제 + 이미지 생성 기능 추가
+8.  Cloudinary 가입 + 이미지 호스팅 연동
+9.  Naver API 키 발급 + 뉴스 수집 기능 추가
+10. keyword_email.py 작성 (키워드 10개 + 베스트 6 선정)
+11. Gmail 앱 비밀번호 발급 (앱 이름: 블로그마스터)
+12. GitHub 저장소 생성 (blog-automation)
+13. GitHub Secrets 등록 (API 키 11개)
+14. GitHub Actions 워크플로우 작성
+    - keyword_email.yml (매일 오전 5시)
+    - auto_publish.yml (4시간마다)
+15. auto_publish.py 작성
+16. token.pickle → base64 변환 → GOOGLE_TOKEN secret 등록
+17. .gitignore 설정 (config.py, token.pickle 등 제외)
+18. Actions 오류 수정
+    - Claude API 키 만료 → 새 키로 교체
+    - today_keywords.json gitignore 문제 수정
+    - Actions 권한 (permissions: contents: write) 추가
+19. 이메일 디자인 개선
+    - 자동발행 섹션 제거
+    - 키워드 목록에 발행 시간 통합 표시
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. 베스트 6 선정 기준
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+키워드 유형:
+  - 숏테일 (3개): 24시간 내 트렌드, 단기 검색량 폭발형
+  - 롱테일 (4개): 정보형/교육형, 장기 검색 키워드
+  - 행동형 (2개): ~하는 방법, ~추천 등 행동 유도형
+  - 정보형 (1개): ~이란, ~뜻, ~차이 등 지식 검색형
+
+베스트 6 선정 기준:
+  - 검색량 잠재력 높음
+  - 경쟁도 낮음 (틈새 키워드 우선)
+  - 광고 단가 높음 (건강, 재테크, 보험 등)
+  - 카테고리 다양성: 숏테일2 + 롱테일2 + 행동형1 + 정보형1
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. 남은 작업 (추후 진행 예정)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- 네이버 블로그 반자동 발행 기능
+- 워드프레스 자동 발행 기능
+- GUI 프로그램 개발 (tkinter 또는 PyQt)
+  └→ API 키 입력 화면
+  └→ 키워드 확인 및 수정 화면
+  └→ 발행 이력 확인 화면
+- .exe 패키징 (PyInstaller)
+- 라이선스 키 인증 시스템
+
+================================================

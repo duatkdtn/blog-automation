@@ -388,6 +388,61 @@ def generate_blog_post(keyword):
     return title, content
 
 
+def generate_seo_metadata(keyword, title, content):
+    """Claude로 SEO 메타데이터 생성 (description + keywords)"""
+    print(f"\n🔍 SEO 메타데이터 생성 중...")
+
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+
+    # 본문 앞 500자만 참고
+    content_preview = content[:500] if content else ""
+
+    prompt = f"""다음 블로그 글의 SEO 메타데이터를 생성해주세요.
+
+키워드: {keyword}
+제목: {title}
+본문 미리보기: {content_preview}
+
+아래 형식으로 정확히 출력하세요:
+
+메타설명: [구글 검색결과에 표시될 설명. 검색자가 클릭하고 싶게 만드는 문장. 150자 이내. 핵심 정보 + 클릭유도 포함]
+메타키워드: [관련 키워드 8~10개, 쉼표로 구분. 메인키워드+연관키워드+롱테일키워드 포함]"""
+
+    message = client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=500,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    result = message.content[0].text.strip()
+    description = ""
+    keywords_meta = ""
+
+    for line in result.split("\n"):
+        line = line.strip()
+        if line.startswith("메타설명:"):
+            description = line.replace("메타설명:", "").strip()
+        elif line.startswith("메타키워드:"):
+            keywords_meta = line.replace("메타키워드:", "").strip()
+
+    print(f"   ✅ 메타설명: {description[:50]}...")
+    print(f"   ✅ 메타키워드: {keywords_meta[:50]}...")
+    return description, keywords_meta
+
+
+def inject_seo_metadata(content, title, description, keywords_meta, keyword):
+    """블로그 본문 HTML에 SEO 메타태그 삽입"""
+    meta_tags = f"""<meta name="description" content="{description}" />
+<meta name="keywords" content="{keywords_meta}" />
+<meta property="og:title" content="{title}" />
+<meta property="og:description" content="{description}" />
+<meta property="og:type" content="article" />
+<meta name="robots" content="index, follow" />
+<!-- SEO: {keyword} -->
+"""
+    return meta_tags + content
+
+
 def insert_images_into_content(content, image_urls, keyword):
     """본문 h2 섹션마다 이미지 삽입"""
     if not image_urls:
