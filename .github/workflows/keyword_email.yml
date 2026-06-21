@@ -2,7 +2,7 @@ name: 일일 키워드 이메일 발송
 
 on:
   schedule:
-    - cron: '0 20 * * *'  # 매일 UTC 20:00 = 한국시간 05:00
+    - cron: '0 19 * * *'  # 매일 UTC 19:00 = 한국시간 04:00 (지연 감안해서 05시 수신)
   workflow_dispatch:  # 수동 실행 버튼
 
 permissions:
