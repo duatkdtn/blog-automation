@@ -350,11 +350,16 @@ def generate_blog_post(keyword):
 - 예: "비슷한 주제로 [관련키워드]도 정리해뒀으니 함께 참고해보세요!"
 - 댓글/공유 유도: "궁금한 점은 댓글로 남겨주세요 :)"
 
+[6. AI 생성 표시] - 글 맨 마지막에 반드시 포함
+<p style="background:#f1f3f5;border:1px solid #dee2e6;padding:8px 14px;border-radius:6px;color:#adb5bd;font-size:0.78em;margin-top:30px;line-height:1.5">🤖 본 콘텐츠는 AI(인공지능)의 도움을 받아 작성되었습니다. 「AI 생성 콘텐츠 표시에 관한 지침」에 따라 이를 고지하며, 정보의 정확성은 공식 채널을 통해 확인하시기 바랍니다.</p>
+
 === 주의사항 ===
 - 절대 ```html 같은 코드블록 표시 사용하지 말 것
 - 순수 HTML 태그만 사용
 - 표는 반드시 1개 이상 포함
-- 제목 줄 이후 바로 HTML 본문 작성"""
+- 제목 줄 이후 바로 HTML 본문 작성
+- 가격, 날짜, 법령, 정책, 수치 등 시간이 지나면 바뀔 수 있는 정보가 포함된 경우, 해당 내용 바로 아래에 다음과 같은 형식의 안내 문구를 자연스럽게 삽입할 것:
+  <p style="background:#f8f9fa;border-left:3px solid #adb5bd;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.9em;margin:10px 0">※ 본 정보는 작성 시점({today}) 기준이며, 시장 상황·정책 변경 등에 따라 실제 내용과 다를 수 있습니다. 최신 정보는 공식 채널을 통해 반드시 확인하시기 바랍니다.</p>"""
 
     message = client.messages.create(
         model=CLAUDE_MODEL,
