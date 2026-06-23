@@ -236,12 +236,23 @@ def generate_keywords_with_claude(google_trends, naver_news):
 """
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-    response = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=3000,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.content[0].text
+    import time as _time
+    for attempt in range(5):
+        try:
+            response = client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=3000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text
+        except Exception as e:
+            if "529" in str(e) or "overloaded" in str(e).lower():
+                wait = 30 * (attempt + 1)
+                print(f"⚠️ Claude API 과부하 - {wait}초 후 재시도 ({attempt+1}/5)...")
+                _time.sleep(wait)
+            else:
+                raise
+    raise Exception("Claude API 5회 재시도 실패")
 
 
 def generate_blogspot_title(keyword, kw_type, related_keywords, google_autocomplete):
@@ -271,12 +282,23 @@ def generate_blogspot_title(keyword, kw_type, related_keywords, google_autocompl
 제목만 출력하세요. 설명 없이 제목 텍스트만."""
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-    response = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=100,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.content[0].text.strip().strip('"').strip("'").strip()
+    import time as _time
+    for attempt in range(5):
+        try:
+            response = client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=100,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text.strip().strip('"').strip("'").strip()
+        except Exception as e:
+            if "529" in str(e) or "overloaded" in str(e).lower():
+                wait = 30 * (attempt + 1)
+                print(f"⚠️ Claude API 과부하 - {wait}초 후 재시도 ({attempt+1}/5)...")
+                _time.sleep(wait)
+            else:
+                raise
+    return keyword  # 실패 시 키워드 그대로 반환
 
 
 def generate_naver_title(keyword, related_keywords, naver_top_titles):
@@ -305,12 +327,23 @@ def generate_naver_title(keyword, related_keywords, naver_top_titles):
 제목만 출력하세요. 설명 없이 제목 텍스트만."""
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-    response = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=100,
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.content[0].text.strip().strip('"').strip("'").strip()
+    import time as _time
+    for attempt in range(5):
+        try:
+            response = client.messages.create(
+                model=CLAUDE_MODEL,
+                max_tokens=100,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.content[0].text.strip().strip('"').strip("'").strip()
+        except Exception as e:
+            if "529" in str(e) or "overloaded" in str(e).lower():
+                wait = 30 * (attempt + 1)
+                print(f"⚠️ Claude API 과부하 - {wait}초 후 재시도 ({attempt+1}/5)...")
+                _time.sleep(wait)
+            else:
+                raise
+    return keyword  # 실패 시 키워드 그대로 반환
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
