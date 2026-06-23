@@ -1,5 +1,5 @@
 # ================================================
-# 블로그마스터 GUI v1.0
+# 비니 (Bini) GUI v1.0
 # ================================================
 
 import tkinter as tk
@@ -72,7 +72,7 @@ class ToggleButton(tk.Canvas):
 class BlogMasterApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("블로그마스터 v1.0")
+        self.root.title("비니 v1.0")
         self.root.geometry("900x650")
         self.root.configure(bg=BG_DARK)
         self.root.resizable(True, True)
@@ -141,7 +141,7 @@ class BlogMasterApp:
         logo_frame.pack(fill="x")
         tk.Label(logo_frame, text="✦", font=("Arial", 20),
                  bg=BG_SIDEBAR, fg=ACCENT).pack()
-        tk.Label(logo_frame, text="BlogMaster", font=("Arial", 9, "bold"),
+        tk.Label(logo_frame, text="Bini", font=("Arial", 9, "bold"),
                  bg=BG_SIDEBAR, fg=TEXT_WHITE).pack()
 
         # 구분선
@@ -158,12 +158,10 @@ class BlogMasterApp:
         menus = [
             ("section_main", None, "메인"),
             ("dashboard", "⊞", "대시보드"),
-            ("publish", "✎", "글 발행"),
             ("section_tools", None, "도구"),
             ("keyword", "◎", "키워드 분석"),
-            ("history", "≡", "발행 이력"),
-            ("section_sys", None, "시스템"),
-            ("settings", "⚙", "설정"),
+            ("publish", "✎", "글 발행"),
+            ("email", "📧", "이메일 발송"),
         ]
 
         for item in menus:
@@ -171,8 +169,9 @@ class BlogMasterApp:
                 section_label(item[2])
                 continue
             page, icon, label = item
-            btn_frame = tk.Frame(self.sidebar, bg=BG_SIDEBAR, cursor="hand2")
-            btn_frame.pack(fill="x", padx=8, pady=2)
+            btn_frame = tk.Frame(self.sidebar, bg=BG_SIDEBAR, cursor="hand2",
+                                 highlightthickness=1, highlightbackground="#3a3a5a")
+            btn_frame.pack(fill="x", padx=8, pady=3)
 
             inner = tk.Frame(btn_frame, bg=BG_SIDEBAR, padx=6, pady=8, cursor="hand2")
             inner.pack(fill="x")
@@ -185,14 +184,18 @@ class BlogMasterApp:
             text_lbl.pack()
 
             def on_click(p=page): self.show_page(p)
-            def on_enter(e, f=btn_frame, i=inner, il=icon_lbl, tl=text_lbl):
-                if getattr(self, 'current_page', None) != page:
-                    f.config(bg="#1a1a2e"); i.config(bg="#1a1a2e")
-                    il.config(bg="#1a1a2e"); tl.config(bg="#1a1a2e")
+            def on_enter(e, f=btn_frame, i=inner, il=icon_lbl, tl=text_lbl, p=page):
+                if getattr(self, 'current_page', None) != p:
+                    f.config(bg="#3a3a6a", highlightbackground=ACCENT)
+                    i.config(bg="#3a3a6a")
+                    il.config(bg="#3a3a6a", fg=TEXT_WHITE)
+                    tl.config(bg="#3a3a6a", fg=TEXT_WHITE)
             def on_leave(e, f=btn_frame, p2=page, i=inner, il=icon_lbl, tl=text_lbl):
                 if self.current_page != p2:
-                    f.config(bg=BG_SIDEBAR); i.config(bg=BG_SIDEBAR)
-                    il.config(bg=BG_SIDEBAR); tl.config(bg=BG_SIDEBAR)
+                    f.config(bg=BG_SIDEBAR, highlightbackground="#3a3a5a")
+                    i.config(bg=BG_SIDEBAR)
+                    il.config(bg=BG_SIDEBAR, fg=TEXT_GRAY)
+                    tl.config(bg=BG_SIDEBAR, fg=TEXT_GRAY)
 
             for w in [btn_frame, inner, icon_lbl, text_lbl]:
                 w.bind("<Button-1>", lambda e, p=page: on_click(p))
@@ -201,10 +204,47 @@ class BlogMasterApp:
 
             self.menu_buttons[page] = (btn_frame, inner, icon_lbl, text_lbl)
 
-        # 하단 상태
+        # 하단 고정 - 발행이력 + 설정 + 상태
         bottom = tk.Frame(self.sidebar, bg=BG_SIDEBAR)
         bottom.pack(side="bottom", fill="x", pady=8)
-        tk.Frame(bottom, bg="#222235", height=1).pack(fill="x", padx=12, pady=(0, 6))
+        tk.Frame(bottom, bg="#222235", height=1).pack(fill="x", padx=12, pady=(0, 8))
+
+        # 발행 이력 버튼
+        hist_frame = tk.Frame(bottom, bg=BG_SIDEBAR, cursor="hand2",
+                              highlightthickness=1, highlightbackground="#3a3a5a")
+        hist_frame.pack(fill="x", padx=8, pady=(0, 4))
+        hist_inner = tk.Frame(hist_frame, bg=BG_SIDEBAR, padx=6, pady=8)
+        hist_inner.pack(fill="x")
+        hist_icon = tk.Label(hist_inner, text="≡", font=("Arial", 16), bg=BG_SIDEBAR, fg=TEXT_GRAY)
+        hist_icon.pack()
+        hist_lbl = tk.Label(hist_inner, text="발행 이력", font=("Malgun Gothic", 8), bg=BG_SIDEBAR, fg=TEXT_GRAY)
+        hist_lbl.pack()
+        for w in [hist_frame, hist_inner, hist_icon, hist_lbl]:
+            w.bind("<Button-1>", lambda e: self.show_page("history"))
+            w.bind("<Enter>", lambda e: [x.config(bg="#3a3a6a") for x in [hist_frame, hist_inner, hist_icon, hist_lbl]] or
+                   hist_icon.config(fg=TEXT_WHITE) or hist_lbl.config(fg=TEXT_WHITE))
+            w.bind("<Leave>", lambda e: [x.config(bg=BG_SIDEBAR) for x in [hist_frame, hist_inner, hist_icon, hist_lbl]] or
+                   hist_icon.config(fg=TEXT_GRAY) or hist_lbl.config(fg=TEXT_GRAY))
+        self.menu_buttons["history"] = (hist_frame, hist_inner, hist_icon, hist_lbl)
+
+        # 설정 버튼
+        set_frame = tk.Frame(bottom, bg=BG_SIDEBAR, cursor="hand2",
+                             highlightthickness=1, highlightbackground="#3a3a5a")
+        set_frame.pack(fill="x", padx=8, pady=(0, 6))
+        set_inner = tk.Frame(set_frame, bg=BG_SIDEBAR, padx=6, pady=8)
+        set_inner.pack(fill="x")
+        set_icon = tk.Label(set_inner, text="⚙", font=("Arial", 16), bg=BG_SIDEBAR, fg=TEXT_GRAY)
+        set_icon.pack()
+        set_lbl = tk.Label(set_inner, text="설정", font=("Malgun Gothic", 8), bg=BG_SIDEBAR, fg=TEXT_GRAY)
+        set_lbl.pack()
+        for w in [set_frame, set_inner, set_icon, set_lbl]:
+            w.bind("<Button-1>", lambda e: self.show_page("settings"))
+            w.bind("<Enter>", lambda e: [x.config(bg="#3a3a6a") for x in [set_frame, set_inner, set_icon, set_lbl]] or
+                   set_icon.config(fg=TEXT_WHITE) or set_lbl.config(fg=TEXT_WHITE))
+            w.bind("<Leave>", lambda e: [x.config(bg=BG_SIDEBAR) for x in [set_frame, set_inner, set_icon, set_lbl]] or
+                   set_icon.config(fg=TEXT_GRAY) or set_lbl.config(fg=TEXT_GRAY))
+        self.menu_buttons["settings"] = (set_frame, set_inner, set_icon, set_lbl)
+
         self.status_dot = tk.Label(bottom, text="● ON",
                                    font=("Arial", 8, "bold"),
                                    bg=BG_SIDEBAR, fg=SUCCESS)
@@ -240,6 +280,9 @@ class BlogMasterApp:
             self.build_publish()
         elif page == "keyword":
             self.build_keyword()
+        elif page == "email":
+            self.run_keyword_email()
+            self.show_page("dashboard")
         elif page == "history":
             self.build_history()
         elif page == "settings":
@@ -267,37 +310,351 @@ class BlogMasterApp:
         tk.Label(title_row, text=f"{now} (KST)",
                  font=("Malgun Gothic", 10), bg=BG_DARK, fg=TEXT_GRAY).pack(side="right", padx=10)
 
-        # 2열 레이아웃
-        columns = tk.Frame(frame, bg=BG_DARK)
-        columns.pack(fill="both", expand=True)
-        columns.columnconfigure(0, weight=1)
-        columns.columnconfigure(1, weight=1)
-        columns.rowconfigure(0, weight=1)
-        columns.rowconfigure(1, weight=0)
+        # 4등분 그리드 레이아웃
+        grid = tk.Frame(frame, bg=BG_DARK)
+        grid.pack(fill="both", expand=True)
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
+        grid.rowconfigure(0, weight=1)
+        grid.rowconfigure(1, weight=1)
 
-        # 왼쪽 열 - 플랫폼 설정
-        left = tk.Frame(columns, bg=BG_CARD, padx=15, pady=15)
-        left.grid(row=0, column=0, sticky="nsew", padx=(0, 8), pady=(0, 8))
-        tk.Label(left, text="🔀  플랫폼 설정", font=("Malgun Gothic", 12, "bold"),
+        # ── 1. 플랫폼 설정 (좌상단) ──────────────────────────
+        c1 = tk.Frame(grid, bg=BG_CARD, padx=15, pady=15)
+        c1.grid(row=0, column=0, sticky="nsew", padx=(0, 4), pady=(0, 4))
+        tk.Label(c1, text="🔀  플랫폼 설정", font=("Malgun Gothic", 12, "bold"),
                  bg=BG_CARD, fg=TEXT_WHITE).pack(anchor="w", pady=(0, 8))
-        tk.Frame(left, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
-        self.build_toggles(left)
+        tk.Frame(c1, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
+        self.build_toggles(c1)
 
-        # 오른쪽 열 - 오늘의 발행 스케줄
-        right = tk.Frame(columns, bg=BG_CARD, padx=15, pady=15)
-        right.grid(row=0, column=1, sticky="nsew", padx=(8, 0), pady=(0, 8))
-        tk.Label(right, text="🔑  오늘의 발행 스케줄", font=("Malgun Gothic", 12, "bold"),
+        # ── 2. 오늘의 발행 스케줄 (우상단) ──────────────────────
+        c2 = tk.Frame(grid, bg=BG_CARD, padx=15, pady=15)
+        c2.grid(row=0, column=1, sticky="nsew", padx=(4, 0), pady=(0, 4))
+        tk.Label(c2, text="🔑  오늘의 발행 스케줄", font=("Malgun Gothic", 12, "bold"),
                  bg=BG_CARD, fg=TEXT_WHITE).pack(anchor="w", pady=(0, 8))
-        tk.Frame(right, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
-        self.build_today_schedule(right)
+        tk.Frame(c2, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
+        self.build_today_schedule(c2)
 
-        # 하단 - 빠른 실행 (전체 너비)
-        bottom = tk.Frame(columns, bg=BG_CARD, padx=15, pady=15)
-        bottom.grid(row=1, column=0, columnspan=2, sticky="ew")
-        tk.Label(bottom, text="⚡  빠른 실행", font=("Malgun Gothic", 12, "bold"),
-                 bg=BG_CARD, fg=TEXT_WHITE).pack(anchor="w", pady=(0, 8))
-        tk.Frame(bottom, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
-        self.build_quick_actions(bottom)
+        # ── 3. 실시간 급상승 검색어 (좌하단) ─────────────────────
+        c3 = tk.Frame(grid, bg=BG_CARD, padx=15, pady=15)
+        c3.grid(row=1, column=0, sticky="nsew", padx=(0, 4), pady=(4, 0))
+
+        rt_title_row = tk.Frame(c3, bg=BG_CARD)
+        rt_title_row.pack(fill="x", pady=(0, 8))
+        tk.Label(rt_title_row, text="🔥  실시간 급상승 검색어",
+                 font=("Malgun Gothic", 12, "bold"), bg=BG_CARD, fg=TEXT_WHITE).pack(side="left")
+        tk.Label(rt_title_row, text="※ 네이트 실시간",
+                 font=("Malgun Gothic", 8), bg=BG_CARD, fg=TEXT_GRAY).pack(side="left", padx=(10, 0))
+        # 새로고침 버튼
+        def _rt_refresh():
+            for w in self.rt_list_frame.winfo_children():
+                w.destroy()
+            tk.Label(self.rt_list_frame, text="불러오는 중...",
+                     font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+            threading.Thread(target=self._fetch_realtime_keywords, daemon=True).start()
+        refresh_btn = tk.Label(rt_title_row, text="↻", font=("Malgun Gothic", 11), bg=BG_CARD,
+                 fg=TEXT_GRAY, cursor="hand2")
+        refresh_btn.pack(side="right", padx=4)
+        refresh_btn.bind("<Button-1>", lambda e: _rt_refresh())
+        tk.Frame(c3, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
+
+        # 다음 / 네이트 탭
+        self.rt_source = tk.StringVar(value="nate")
+        rt_tab_row = tk.Frame(c3, bg=BG_CARD)
+        rt_tab_row.pack(fill="x", pady=(0, 8))
+        self.rt_tab_btns = {}
+        for label, val in [("네이트", "nate"), ("다음", "daum")]:
+            btn = tk.Label(rt_tab_row, text=label, font=("Malgun Gothic", 10),
+                           bg=ACCENT if val == "nate" else ACCENT_ACTIVE,
+                           fg=TEXT_WHITE if val == "nate" else ACCENT,
+                           padx=12, pady=4, cursor="hand2")
+            btn.pack(side="left", padx=(0, 4))
+            btn.bind("<Button-1>", lambda e, v=val: self._switch_rt_tab(v))
+            self.rt_tab_btns[val] = btn
+
+        # 고정 높이 컨테이너 (레이아웃 안정)
+        rt_container = tk.Frame(c3, bg=BG_CARD, height=250)
+        rt_container.pack(fill="x")
+        rt_container.pack_propagate(False)
+        self.rt_list_frame = tk.Frame(rt_container, bg=BG_CARD)
+        self.rt_list_frame.pack(fill="both", expand=True)
+        tk.Label(self.rt_list_frame, text="불러오는 중... (10~20초 소요)",
+                 font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+        self.root.after(500, self.load_realtime_keywords)
+
+        # ── 4. 연령대별 월간 인기 검색어 (우하단) ────────────────
+        c4 = tk.Frame(grid, bg=BG_CARD, padx=15, pady=15)
+        c4.grid(row=1, column=1, sticky="nsew", padx=(4, 0), pady=(4, 0))
+
+        trend_title_row = tk.Frame(c4, bg=BG_CARD)
+        trend_title_row.pack(fill="x", pady=(0, 8))
+        tk.Label(trend_title_row, text="📈  연령대별 월간 인기 검색어",
+                 font=("Malgun Gothic", 12, "bold"), bg=BG_CARD, fg=TEXT_WHITE).pack(side="left")
+        tk.Label(trend_title_row, text="※ 네이버 월간 검색량 기준",
+                 font=("Malgun Gothic", 8), bg=BG_CARD, fg=TEXT_GRAY).pack(side="left", padx=(10, 0))
+        tk.Frame(c4, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 10))
+
+        self.trend_age = tk.StringVar(value="20")
+        tab_row = tk.Frame(c4, bg=BG_CARD)
+        tab_row.pack(fill="x", pady=(0, 10))
+        age_tabs = [("20대", "20"), ("30대", "30"), ("40대", "40"), ("50대", "50"), ("60대", "60")]
+        self.trend_tab_btns = {}
+        for label, val in age_tabs:
+            btn = tk.Label(tab_row, text=label, font=("Malgun Gothic", 10),
+                           bg=ACCENT_ACTIVE, fg=ACCENT, padx=12, pady=4, cursor="hand2")
+            btn.pack(side="left", padx=(0, 4))
+            btn.bind("<Button-1>", lambda e, v=val: self._switch_trend_tab(v))
+            self.trend_tab_btns[val] = btn
+
+        self.trend_list_frame = tk.Frame(c4, bg=BG_CARD)
+        self.trend_list_frame.pack(fill="x")
+        tk.Label(self.trend_list_frame, text="로딩 중...",
+                 font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+        self.root.after(300, self.load_trend_keywords)
+
+
+    def load_trend_keywords(self):
+        """인기 검색어 로드 (백그라운드) + 매시간 자동 갱신"""
+        threading.Thread(target=self._fetch_trend_keywords, daemon=True).start()
+        # 1시간(3600초)마다 자동 갱신
+        self.root.after(3600 * 1000, self.load_trend_keywords)
+
+    def _fetch_trend_keywords(self):
+        """네이버 검색광고 API로 연령대별 인기 키워드 수집"""
+        import urllib.request, json as _json, hmac, hashlib, base64, time
+        age = self.trend_age.get()
+        keywords = []
+
+        try:
+            import hmac as _hmac, hashlib as _hs, base64 as _b64, time as _t
+            import requests as _req
+            from config import NAVER_AD_ACCESS_LICENSE, NAVER_AD_SECRET_KEY, NAVER_AD_CUSTOMER_ID
+
+            age_seeds = {
+                "20": ["자격증", "취업", "대학교", "아르바이트", "공무원"],
+                "30": ["재테크", "주식", "부동산", "육아", "직장"],
+                "40": ["건강검진", "보험", "교육", "재테크", "건강"],
+                "50": ["노후준비", "건강보험", "연금", "건강", "여행"],
+                "60": ["노인복지", "건강보험", "연금", "병원", "여행"],
+            }
+            seeds = age_seeds.get(age, ["건강보험"])
+            seed = ",".join(seeds)
+
+            ts = str(round(_t.time() * 1000))
+            uri = "/keywordstool"
+            sign = f"{ts}.GET.{uri}"
+            sig = _b64.b64encode(
+                _hmac.new(NAVER_AD_SECRET_KEY.encode(), sign.encode(), _hs.sha256).digest()
+            ).decode()
+
+            headers = {
+                "X-Timestamp": ts,
+                "X-API-KEY": NAVER_AD_ACCESS_LICENSE,
+                "X-CUSTOMER": str(NAVER_AD_CUSTOMER_ID),
+                "X-Signature": sig,
+            }
+            r = _req.get(f"https://api.naver.com{uri}",
+                         headers=headers, params={"hintKeywords": seed, "showDetail": "1"}, timeout=8)
+            data = r.json()
+            items = data.get("keywordList", [])
+
+            def get_vol(x):
+                pc = x.get("monthlyPcQcCnt", 0)
+                mob = x.get("monthlyMobileQcCnt", 0)
+                try: pc = int(str(pc).replace("<", "").strip())
+                except: pc = 0
+                try: mob = int(str(mob).replace("<", "").strip())
+                except: mob = 0
+                return pc + mob
+
+            items.sort(key=get_vol, reverse=True)
+            keywords = [item["relKeyword"] for item in items[:10] if item.get("relKeyword")]
+        except Exception as e:
+            print(f"검색광고 API 실패: {e}")
+
+        if not keywords:
+            # 마지막 fallback: 네이버 메인 파싱
+            try:
+                import re
+                url = "https://www.naver.com"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=5) as res:
+                    html = res.read().decode("utf-8", errors="ignore")
+                matches = re.findall(r'data-clk="[^"]*"[^>]*>([^<]{2,10})</a>', html)
+                keywords = [k.strip() for k in matches if k.strip() and len(k.strip()) >= 2][:10]
+            except Exception as e:
+                print(f"네이버 fallback 실패: {e}")
+
+        if not keywords:
+            keywords = ["데이터를 불러올 수 없어요. 잠시 후 새로고침 해주세요."]
+
+        self.root.after(0, lambda: self._render_trend_keywords(keywords))
+
+    def _render_trend_keywords(self, keywords):
+        """검색어 목록 화면에 표시"""
+        for w in self.trend_list_frame.winfo_children():
+            w.destroy()
+
+        # 탭 스타일 업데이트
+        age = self.trend_age.get()
+        for val, btn in self.trend_tab_btns.items():
+            if val == age:
+                btn.config(bg=ACCENT, fg=TEXT_WHITE)
+            else:
+                btn.config(bg=ACCENT_ACTIVE, fg=ACCENT)
+
+        if not keywords:
+            tk.Label(self.trend_list_frame, text="검색어 없음",
+                     font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).pack(anchor="w")
+            return
+
+        # 2열 그리드로 표시 (한 화면에 10개)
+        cols = 2
+        rows_count = (len(keywords) + cols - 1) // cols  # 올림 나눗셈
+        for i, kw in enumerate(keywords):
+            r = i % rows_count
+            c = i // rows_count
+            bg = BG_ITEM if r % 2 == 0 else BG_CARD
+            lbl = tk.Label(self.trend_list_frame,
+                           text=f"  {i+1}.  {kw}",
+                           font=("Malgun Gothic", 10),
+                           bg=bg, fg=TEXT_WHITE,
+                           anchor="w", cursor="hand2",
+                           pady=7, padx=6)
+            lbl.grid(row=r, column=c, sticky="ew", padx=2, pady=1)
+            lbl.bind("<Button-1>", lambda e, k=kw: self._use_trend_keyword(k))
+
+        for c in range(cols):
+            self.trend_list_frame.columnconfigure(c, weight=1)
+
+        now = datetime.now(KST).strftime("%H:%M")
+        tk.Label(self.trend_list_frame, text=f"마지막 업데이트: {now}  |  클릭하면 키워드 분석으로 이동",
+                 font=("Malgun Gothic", 8), bg=BG_CARD, fg=TEXT_GRAY).grid(
+                 row=rows_count, column=0, columnspan=cols, sticky="e", pady=(6, 0))
+
+    def _switch_trend_tab(self, age):
+        self.trend_age.set(age)
+        for w in self.trend_list_frame.winfo_children():
+            w.destroy()
+        tk.Label(self.trend_list_frame, text="로딩 중...",
+                 font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+        # 탭 스타일 즉시 업데이트
+        for val, btn in self.trend_tab_btns.items():
+            btn.config(bg=ACCENT if val == age else ACCENT_ACTIVE,
+                       fg=TEXT_WHITE if val == age else ACCENT)
+        self.load_trend_keywords()
+
+    def load_realtime_keywords(self):
+        """실시간 급상승 검색어 로드 (백그라운드) - 30분마다 자동갱신"""
+        threading.Thread(target=self._fetch_realtime_keywords, daemon=True).start()
+        self.root.after(1800 * 1000, self.load_realtime_keywords)
+
+    def _fetch_realtime_keywords(self):
+        """네이트 실시간 검색어 Selenium으로 가져오기"""
+        keywords = []
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options
+            from selenium.webdriver.common.by import By
+            import time as _t, re as _re
+
+            opts = Options()
+            opts.add_argument('--headless')
+            opts.add_argument('--no-sandbox')
+            opts.add_argument('--disable-dev-shm-usage')
+            opts.add_argument('--disable-gpu')
+            opts.add_argument('--log-level=3')
+            opts.add_argument('--blink-settings=imagesEnabled=false')  # 이미지 로드 차단 → 속도↑
+
+            driver = webdriver.Chrome(options=opts)
+            try:
+                source = self.rt_source.get()
+                NOISE = _re.compile(r'(상승|하락|신규|동일|\s*\d+위\s*)')
+                NATE_MENU = {'네이트','네이트앱','네이트온','메일','뉴스','온달','TV','만화','운세','게임','쇼핑','스포츠','연예','랭킹뉴스'}
+
+                if source == "daum":
+                    driver.get('https://www.daum.net/')
+                    _t.sleep(2)
+                    els = driver.find_elements(By.CSS_SELECTOR, '[class*="trendrank"] a')
+                    seen = []
+                    for el in els:
+                        lines = el.text.strip().split('\n')
+                        # 줄 중 숫자가 아닌 첫 번째 줄이 키워드
+                        for line in lines:
+                            text = NOISE.sub('', line).strip()
+                            text = _re.sub(r'^\d+\s*', '', text).strip()
+                            if text and 2 <= len(text) <= 30 and text not in seen:
+                                seen.append(text)
+                                break
+                    keywords = seen[:10]
+                else:  # nate
+                    driver.get('https://www.nate.com/')
+                    _t.sleep(2)
+                    els = driver.find_elements(By.CSS_SELECTOR, 'ol li a')
+                    seen = []
+                    for el in els:
+                        raw = el.text.strip().split('\n')[0].strip()
+                        text = NOISE.sub('', raw).strip()
+                        if text and 2 <= len(text) <= 30 and text not in seen and text not in NATE_MENU:
+                            seen.append(text)
+                    keywords = seen[:10]
+            finally:
+                driver.quit()
+        except Exception as e:
+            print(f"실시간 검색어 실패: {e}")
+
+        self.root.after(0, lambda: self._render_realtime_keywords(keywords[:10]))
+
+    def _render_realtime_keywords(self, keywords):
+        for w in self.rt_list_frame.winfo_children():
+            w.destroy()
+
+        if not keywords:
+            tk.Label(self.rt_list_frame, text="데이터를 가져올 수 없어요. (↻ 클릭해서 재시도)",
+                     font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0, sticky="w")
+            return
+
+        cols = 2
+        rows_count = (len(keywords) + cols - 1) // cols
+        for i, kw in enumerate(keywords):
+            r = i % rows_count
+            c = i // rows_count
+            bg = BG_ITEM if r % 2 == 0 else BG_CARD
+            lbl = tk.Label(self.rt_list_frame,
+                           text=f"  {i+1}.  {kw}",
+                           font=("Malgun Gothic", 10),
+                           bg=bg, fg=TEXT_WHITE,
+                           anchor="w", cursor="hand2",
+                           pady=6, padx=6)
+            lbl.grid(row=r, column=c, sticky="ew", padx=2, pady=1)
+            lbl.bind("<Button-1>", lambda e, k=kw: self._use_trend_keyword(k))
+        for c in range(cols):
+            self.rt_list_frame.columnconfigure(c, weight=1)
+
+        now = datetime.now(KST).strftime("%H:%M")
+        tk.Label(self.rt_list_frame, text=f"마지막 업데이트: {now}",
+                 font=("Malgun Gothic", 8), bg=BG_CARD, fg=TEXT_GRAY).grid(
+                 row=rows_count, column=0, columnspan=cols, sticky="e", pady=(4, 0))
+
+    def _switch_rt_tab(self, source):
+        self.rt_source.set(source)
+        for val, btn in self.rt_tab_btns.items():
+            btn.config(bg=ACCENT if val == source else ACCENT_ACTIVE,
+                       fg=TEXT_WHITE if val == source else ACCENT)
+        for w in self.rt_list_frame.winfo_children():
+            w.destroy()
+        tk.Label(self.rt_list_frame, text="불러오는 중...",
+                 font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+        threading.Thread(target=self._fetch_realtime_keywords, daemon=True).start()
+
+    def _use_trend_keyword(self, keyword):
+        """클릭한 검색어를 키워드 분석 탭으로 이동해서 바로 분석"""
+        self.show_page("keyword")
+        self.root.after(100, lambda: (
+            self.kw_entry.delete(0, tk.END),
+            self.kw_entry.insert(0, keyword),
+            self.kw_entry.config(fg=TEXT_WHITE),
+            self.run_keyword_analysis()
+        ))
 
     def build_card(self, parent, title, content_builder):
         card = tk.Frame(parent, bg=BG_CARD, padx=20, pady=15)
@@ -372,10 +729,7 @@ class BlogMasterApp:
     def build_quick_actions(self, parent):
         btn_frame = tk.Frame(parent, bg=BG_CARD)
         btn_frame.pack(fill="x")
-
-        self.make_button(btn_frame, "▶  지금 바로 발행", self.run_publish_now, ACCENT).pack(side="left", padx=(0, 10))
-        self.make_button(btn_frame, "📧  키워드 이메일 발송", self.run_keyword_email, "#2196F3").pack(side="left", padx=(0, 10))
-        self.make_button(btn_frame, "🔄  상태 새로고침", self.refresh_dashboard, "#555577").pack(side="left")
+        self.make_button(btn_frame, "📧  키워드 이메일 발송", self.run_keyword_email, "#2196F3").pack(side="left")
 
     # ================================================
     # 글 발행 페이지
@@ -407,6 +761,20 @@ class BlogMasterApp:
         self.keyword_entry.pack(side="left", ipady=6, padx=(0, 10))
 
         self.make_button(input_row, "발행 시작", self.run_manual_publish, ACCENT).pack(side="left")
+
+        # 진행 단계 표시
+        step_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=14)
+        step_card.pack(fill="x", pady=(0, 4))
+
+        self.steps = ["글 생성", "SEO", "이미지", "발행", "완료"]
+        self._anim_offset = 0
+        self._anim_running = False
+        self.current_step = -1
+
+        self.step_canvas = tk.Canvas(step_card, height=60, bg=BG_CARD, highlightthickness=0)
+        self.step_canvas.pack(fill="x", expand=True)
+        self.step_canvas.bind("<Configure>", lambda e: self._draw_step_bar())
+        self.root.after(100, self._draw_step_bar)
 
         # 로그 출력창
         log_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=15)
@@ -960,6 +1328,76 @@ class BlogMasterApp:
             tk.Frame(card, bg="#2e2e48", height=1).pack(fill="x", pady=(0, 12))
         return card
 
+    def _draw_step_bar(self):
+        """단일 Canvas에 전체 스텝바 그리기"""
+        if not hasattr(self, 'step_canvas'):
+            return
+        c = self.step_canvas
+        c.delete("all")
+        w = c.winfo_width()
+        if w < 10:
+            return
+        n = len(self.steps)
+        # 각 dot의 x 위치
+        xs = [int(w * (i + 0.5) / n) for i in range(n)]
+        dot_y, line_y, label_y = 20, 20, 40
+
+        # 연결선 그리기
+        for i in range(n - 1):
+            x1, x2 = xs[i] + 14, xs[i+1] - 14
+            if i < self.current_step:
+                # 완료 - 초록 실선
+                c.create_line(x1, line_y, x2, line_y, fill=SUCCESS, width=2)
+            elif i == self.current_step:
+                # 진행 중 - 흐르는 점선
+                seg, gap = 10, 6
+                offset = self._anim_offset % (seg + gap)
+                x = x1 - offset
+                while x < x2:
+                    xa = max(x1, x)
+                    xb = min(x2, x + seg)
+                    if xb > xa:
+                        c.create_line(xa, line_y, xb, line_y, fill=ACCENT, width=2)
+                    x += seg + gap
+            else:
+                # 대기 - 회색 점선
+                x = x1
+                while x < x2:
+                    c.create_line(x, line_y, min(x+4, x2), line_y, fill="#333355", width=2)
+                    x += 8
+
+        # 점과 라벨 그리기
+        for i, (step, x) in enumerate(zip(self.steps, xs)):
+            if i < self.current_step:
+                color = SUCCESS
+                dot_char = "✔"
+            elif i == self.current_step:
+                color = ACCENT
+                dot_char = "●"
+            else:
+                color = TEXT_GRAY
+                dot_char = "●"
+            c.create_text(x, dot_y, text=dot_char, fill=color, font=("Malgun Gothic", 14))
+            c.create_text(x, label_y, text=step, fill=color, font=("Malgun Gothic", 9))
+
+    def _animate_step_bar(self):
+        """애니메이션 루프"""
+        if not self._anim_running:
+            return
+        self._anim_offset += 2
+        self._draw_step_bar()
+        self.root.after(60, self._animate_step_bar)
+
+    def set_step(self, step_index):
+        self.current_step = step_index
+        self._draw_step_bar()
+
+    def reset_steps(self):
+        self._anim_running = False
+        self.current_step = -1
+        self._anim_offset = 0
+        self._draw_step_bar()
+
     def log(self, message):
         if hasattr(self, 'log_text'):
             self.log_text.insert(tk.END, f"[{datetime.now(KST).strftime('%H:%M:%S')}] {message}\n")
@@ -1002,20 +1440,26 @@ class BlogMasterApp:
 
     def _run_manual_publish(self, keyword):
         self.log(f"📝 '{keyword}' 발행 시작...")
+        self.reset_steps()
+        self._anim_running = True
+        self.root.after(100, self._animate_step_bar)
         try:
             from blog_automation import (
                 generate_blog_post, generate_images_with_vertex,
                 generate_thumbnail_with_vertex, generate_seo_metadata,
                 inject_seo_metadata, insert_images_into_content, publish_to_blogger
             )
+            self.set_step(0)
             self.log("글 생성 중...")
             title, content = generate_blog_post(keyword)
             self.log(f"제목: {title}")
 
+            self.set_step(1)
             self.log("SEO 메타데이터 생성 중...")
             desc, keywords_meta = generate_seo_metadata(keyword, title, content)
             content = inject_seo_metadata(content, title, desc, keywords_meta, keyword)
 
+            self.set_step(2)
             self.log("이미지 생성 중...")
             images = generate_images_with_vertex(keyword, count=3)
             thumbnail = generate_thumbnail_with_vertex(keyword, title)
@@ -1024,11 +1468,14 @@ class BlogMasterApp:
             if all_images:
                 content = insert_images_into_content(content, all_images, keyword)
 
+            self.set_step(3)
             self.log("블로그스팟 발행 중...")
             result = publish_to_blogger(title, content)
             post_url = result.get("url") if result else None
 
             if post_url:
+                self._anim_running = False
+                self.set_step(4)
                 self.log(f"✅ 발행 완료! → {post_url}")
 
                 if self.toggle_naver.get():
