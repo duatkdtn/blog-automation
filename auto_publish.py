@@ -73,21 +73,24 @@ def main():
         print(f"⚠️ 오늘({today}) 키워드가 아닙니다. (저장된 날짜: {data.get('date')})")
         return
 
-    # 현재 시간에 맞는 키워드 찾기
+    # 현재 시간에 맞는 키워드 찾기 (현재 시간 이전 미발행 슬롯 포함)
     schedule = data.get("schedule", [])
     target = None
 
+    current_hour_int = int(current_time.split(":")[0])
+
     for item in schedule:
-        # 시간 매칭 (예: "04:00" → 04시 00~59분 사이면 실행)
-        item_hour = item["time"].split(":")[0]
-        current_hour = current_time.split(":")[0]
-        if item_hour == current_hour and not item.get("published", False):
+        item_hour_int = int(item["time"].split(":")[0])
+        # 현재 시간 이하인 슬롯 중 미발행 항목 찾기 (가장 오래된 것부터)
+        if item_hour_int <= current_hour_int and not item.get("published", False):
             target = item
             break
 
     if not target:
         print(f"⏰ {current_time} - 발행 예정 키워드 없음 (이미 발행됐거나 해당 없음)")
         return
+
+    print(f"🕐 예정 시간 {target['time']} 슬롯 발행 시작 (현재 KST {current_time})")
 
     keyword = target["keyword"]
     title = target["title"]
