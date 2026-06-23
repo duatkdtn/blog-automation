@@ -362,7 +362,7 @@ class BlogMasterApp:
         rt_tab_row = tk.Frame(c3, bg=BG_CARD)
         rt_tab_row.pack(fill="x", pady=(0, 8))
         self.rt_tab_btns = {}
-        for label, val in [("네이트", "nate"), ("다음", "daum")]:
+        for label, val in [("네이트", "nate"), ("다음", "daum"), ("구글트렌드", "google")]:
             btn = tk.Label(rt_tab_row, text=label, font=("Malgun Gothic", 10),
                            bg=ACCENT if val == "nate" else ACCENT_ACTIVE,
                            fg=TEXT_WHITE if val == "nate" else ACCENT,
@@ -549,9 +549,29 @@ class BlogMasterApp:
         self.root.after(1800 * 1000, self.load_realtime_keywords)
 
     def _fetch_realtime_keywords(self):
-        """네이트 실시간 검색어 Selenium으로 가져오기"""
+        """실시간 검색어 가져오기"""
         keywords = []
+        source = self.rt_source.get()
         try:
+            # 구글 트렌드는 RSS로 바로 가져옴 (Selenium 불필요)
+            if source == "google":
+                import urllib.request, xml.etree.ElementTree as ET
+                url = "https://trends.google.com/trending/rss?geo=KR"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    tree = ET.parse(r)
+                seen = []
+                for item in tree.findall(".//item"):
+                    title = item.findtext("title", "").strip()
+                    if title and title not in seen:
+                        seen.append(title)
+                    if len(seen) >= 20:
+                        break
+                keywords = seen[:20]
+                self.root.after(0, lambda: self._render_realtime_keywords(keywords))
+                return
+
+            # 네이트/다음은 Selenium 사용
             from selenium import webdriver
             from selenium.webdriver.chrome.options import Options
             from selenium.webdriver.common.by import By
@@ -563,11 +583,10 @@ class BlogMasterApp:
             opts.add_argument('--disable-dev-shm-usage')
             opts.add_argument('--disable-gpu')
             opts.add_argument('--log-level=3')
-            opts.add_argument('--blink-settings=imagesEnabled=false')  # 이미지 로드 차단 → 속도↑
+            opts.add_argument('--blink-settings=imagesEnabled=false')
 
             driver = webdriver.Chrome(options=opts)
             try:
-                source = self.rt_source.get()
                 NOISE = _re.compile(r'(상승|하락|신규|동일|\s*\d+위\s*)')
                 NATE_MENU = {'네이트','네이트앱','네이트온','메일','뉴스','온달','TV','만화','운세','게임','쇼핑','스포츠','연예','랭킹뉴스'}
 
@@ -602,7 +621,7 @@ class BlogMasterApp:
         except Exception as e:
             print(f"실시간 검색어 실패: {e}")
 
-        self.root.after(0, lambda: self._render_realtime_keywords(keywords[:10]))
+        self.root.after(0, lambda: self._render_realtime_keywords(keywords[:20]))
 
     def _render_realtime_keywords(self, keywords):
         for w in self.rt_list_frame.winfo_children():
