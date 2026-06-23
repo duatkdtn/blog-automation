@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import base64
+import requests
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +43,39 @@ def setup_env():
                 if val:
                     f.write(f'{key} = "{val}"\n')
         print("✅ config.py 임시 생성 완료")
+
+def request_google_indexing(post_url):
+    """구글 서치콘솔 Indexing API로 색인 요청"""
+    try:
+        from google.oauth2 import service_account
+        import googleapiclient.discovery
+
+        # token.pickle로 인증 (기존 OAuth 토큰 재사용)
+        import pickle
+        token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+        if not os.path.exists(token_path):
+            print("⚠️ token.pickle 없음 - 색인 요청 건너뜀")
+            return False
+
+        with open(token_path, "rb") as f:
+            creds = pickle.load(f)
+
+        # Indexing API 호출
+        service = googleapiclient.discovery.build(
+            "indexing", "v3", credentials=creds,
+            cache_discovery=False
+        )
+        body = {
+            "url": post_url,
+            "type": "URL_UPDATED"
+        }
+        response = service.urlNotifications().publish(body=body).execute()
+        print(f"✅ 구글 색인 요청 완료! → {post_url}")
+        return True
+    except Exception as e:
+        print(f"⚠️ 색인 요청 실패 (발행은 성공): {e}")
+        return False
+
 
 def main():
     restore_token()
@@ -153,6 +187,10 @@ def main():
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print("💾 발행 상태 저장 완료")
+
+        # 6. 구글 색인 요청
+        print(f"\n🔍 구글 색인 요청 중...")
+        request_google_indexing(post_url)
 
         # 네이버 백링크용 글 생성
         print(f"\n📝 네이버 백링크용 글 생성 시작...")
