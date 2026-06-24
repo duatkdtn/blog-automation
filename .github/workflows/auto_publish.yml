@@ -12,6 +12,9 @@ on:
     - cron: '0 11 * * *'   # KST 20:00
   workflow_dispatch:  # 수동 실행 버튼
 
+permissions:
+  contents: write
+
 jobs:
   auto-publish:
     runs-on: ubuntu-latest
@@ -50,3 +53,11 @@ jobs:
           GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
           BLOG_ID: ${{ secrets.BLOG_ID }}
         run: python auto_publish.py
+
+      - name: 발행 상태 저장소에 커밋
+        run: |
+          git config user.email "duatkdtn@gmail.com"
+          git config user.name "duatkdtn"
+          git add today_keywords.json
+          git diff --staged --quiet || git commit -m "발행 완료 상태 업데이트"
+          git push
