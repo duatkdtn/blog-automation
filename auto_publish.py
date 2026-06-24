@@ -134,7 +134,6 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 <div style="background:#f0f7ff;border-left:4px solid #4A90E2;padding:15px;margin-bottom:20px;border-radius:4px">
   <h2 style="margin:0 0 8px 0;color:#333">📝 네이버 블로그 발행용</h2>
   <p style="margin:0;color:#666">발행 시각: {published_at} | 키워드: {keyword}</p>
-  <p style="margin:5px 0 0 0"><a href="{blogspot_url}" style="color:#4A90E2">🔗 블로그스팟 원문 보기</a></p>
 </div>
 
 <div style="background:#fff3cd;border:1px solid #ffc107;padding:12px;border-radius:4px;margin-bottom:20px">
@@ -151,6 +150,7 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 
 <div style="border-top:2px solid #ddd;margin-top:40px;padding-top:20px;text-align:center">
   <a href="{blogspot_url}" style="display:inline-block;background:#2c3e50;color:white;padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none;font-size:15px">👉 {anchor_text}</a>
+  <p style="margin:12px 0 0 0;font-size:13px;color:#888">원문: <a href="{blogspot_url}" style="color:#4A90E2">{blogspot_url}</a></p>
 </div>
 
 <hr style="border:2px solid #333;margin:30px 0">

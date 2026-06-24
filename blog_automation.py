@@ -174,15 +174,6 @@ def add_text_to_thumbnail(img_bytes, title):
             font = ImageFont.load_default()
             small_font = font
 
-        # 상단 좌측 카테고리 뱃지 (노란색 포인트)
-        badge_text = "정보"
-        badge_padding = 12
-        bbox_b = draw.textbbox((0, 0), badge_text, font=small_font)
-        bw = bbox_b[2] - bbox_b[0] + badge_padding * 2
-        bh = bbox_b[3] - bbox_b[1] + badge_padding
-        draw.rounded_rectangle([20, 20, 20 + bw, 20 + bh], radius=6, fill=(255, 200, 0, 230))
-        draw.text((20 + badge_padding, 20 + badge_padding // 2), badge_text, font=small_font, fill=(0, 0, 0, 255))
-
         # 제목 텍스트 (최대 16자 줄바꿈)
         lines = textwrap.wrap(title, width=16)[:3]  # 최대 3줄
         total_h = len(lines) * (font_size + 12)
@@ -694,8 +685,8 @@ def add_internal_links(content, keyword, blog_id):
 
         internal_section = f'''
 <div style="background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:20px;margin:30px 0">
-<p style="font-weight:bold;color:#1a5276;margin:0 0 12px">📚 함께 읽으면 좋은 글</p>
-<ul style="padding-left:20px;margin:0">
+<p style="font-weight:bold;color:#1a5276;margin:0 0 12px;font-size:17px">📚 함께 읽으면 좋은 글</p>
+<ul style="padding-left:20px;margin:0;font-size:16px;line-height:1.8">
 {links_html}</ul></div>'''
 
         # 면책문구 바로 앞에 삽입
