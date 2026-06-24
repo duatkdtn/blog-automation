@@ -103,9 +103,9 @@ def generate_images_with_vertex(keyword, count=3):
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     prompts = [
-        f"Korean people in a realistic scene related to '{keyword}'. Indoor Korean setting, natural daylight, warm and friendly atmosphere. Clean background with no signage, no banners, no text, no writing anywhere. High quality photo.",
-        f"A Korean person doing something related to '{keyword}'. Modern Korean cafe or home interior background. Natural candid moment. No signs, no banners, no text, no writing visible anywhere in the image.",
-        f"Real life Korean lifestyle scene about '{keyword}'. Korean people, Korean style clothing and surroundings. No text, no signs, no banners, no writing of any kind in the entire image.",
+        f"Realistic photo of Korean people in a scene related to '{keyword}'. Indoor Korean setting, natural daylight, warm atmosphere. IMPORTANT: zero text, zero letters, zero words, zero numbers, zero signs, zero banners, zero watermarks anywhere in the entire image. Pure photographic scene only.",
+        f"A Korean person in a moment related to '{keyword}'. Modern Korean interior background. IMPORTANT: absolutely no text, no letters, no words, no numbers, no signs, no banners, no labels, no watermarks of any kind visible anywhere in the image.",
+        f"Korean lifestyle photo about '{keyword}'. Korean people, Korean style surroundings. IMPORTANT: strictly no text, no writing, no letters, no numbers, no signs, no banners anywhere in the image whatsoever.",
     ]
 
     image_url_list = []
@@ -214,7 +214,7 @@ def generate_thumbnail_with_vertex(keyword, title):
     print(f"\n🖼️  썸네일 생성 중...")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
-    prompt = f"Eye-catching blog thumbnail with Korean people related to '{keyword}'. Vibrant colors, Korean urban or indoor background, natural and lively scene. Absolutely no text, no signs, no banners, no writing anywhere in the image."
+    prompt = f"Eye-catching blog thumbnail photo with Korean people related to '{keyword}'. Vibrant colors, Korean urban or indoor background, natural and lively scene. IMPORTANT: zero text, zero letters, zero words, zero numbers, zero signs, zero banners, zero watermarks anywhere in the entire image. Pure photographic scene only."
 
     try:
         response = client.models.generate_content(
