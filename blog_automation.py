@@ -156,9 +156,12 @@ def add_text_to_thumbnail(img_bytes, title):
         font_size = max(36, w // 16)
         font = None
         font_paths = [
-            r"C:\Windows\Fonts\malgunbd.ttf",   # 맑은 고딕 Bold
-            r"C:\Windows\Fonts\malgun.ttf",      # 맑은 고딕
-            r"C:\Windows\Fonts\gulim.ttc",       # 굴림
+            r"C:\Windows\Fonts\malgunbd.ttf",              # 맑은 고딕 Bold (Windows)
+            r"C:\Windows\Fonts\malgun.ttf",                # 맑은 고딕 (Windows)
+            r"C:\Windows\Fonts\gulim.ttc",                 # 굴림 (Windows)
+            "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",   # Linux Bold
+            "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",       # Linux
+            "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf",  # Linux 바른고딕
         ]
         for fp in font_paths:
             try:
