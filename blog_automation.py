@@ -134,47 +134,71 @@ def generate_images_with_vertex(keyword, count=3):
 
 
 def add_text_to_thumbnail(img_bytes, title):
-    """썸네일 이미지에 한국어 제목 텍스트 합성"""
+    """썸네일 이미지에 한국어 제목 텍스트 합성 - 상위 블로거 스타일"""
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter
         import textwrap
 
         img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
         w, h = img.size
 
-        # 반투명 검정 오버레이 (하단 40%)
+        # 하단 그라데이션 오버레이 (60% → 100% 점점 진해짐)
         overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
         draw_overlay = ImageDraw.Draw(overlay)
-        draw_overlay.rectangle([(0, int(h * 0.6)), (w, h)], fill=(0, 0, 0, 160))
+        for i in range(int(h * 0.45), h):
+            alpha = int(210 * (i - h * 0.45) / (h * 0.55))
+            draw_overlay.line([(0, i), (w, i)], fill=(0, 0, 0, alpha))
         img = Image.alpha_composite(img, overlay)
 
         draw = ImageDraw.Draw(img)
 
-        # 윈도우 기본 한국어 폰트
-        font_path = r"C:\Windows\Fonts\malgun.ttf"
-        font_size = max(30, w // 20)
-        try:
-            font = ImageFont.truetype(font_path, font_size)
-        except:
+        # 폰트 설정 - 굵은 폰트 우선 시도
+        font_size = max(36, w // 16)
+        font = None
+        font_paths = [
+            r"C:\Windows\Fonts\malgunbd.ttf",   # 맑은 고딕 Bold
+            r"C:\Windows\Fonts\malgun.ttf",      # 맑은 고딕
+            r"C:\Windows\Fonts\gulim.ttc",       # 굴림
+        ]
+        for fp in font_paths:
+            try:
+                font = ImageFont.truetype(fp, font_size)
+                small_font = ImageFont.truetype(fp, max(18, font_size // 2))
+                break
+            except:
+                continue
+        if font is None:
             font = ImageFont.load_default()
+            small_font = font
 
-        # 제목 줄바꿈 (최대 20자)
-        lines = textwrap.wrap(title, width=20)
-        total_h = len(lines) * (font_size + 10)
-        y = h - total_h - 40
+        # 상단 좌측 카테고리 뱃지 (노란색 포인트)
+        badge_text = "정보"
+        badge_padding = 12
+        bbox_b = draw.textbbox((0, 0), badge_text, font=small_font)
+        bw = bbox_b[2] - bbox_b[0] + badge_padding * 2
+        bh = bbox_b[3] - bbox_b[1] + badge_padding
+        draw.rounded_rectangle([20, 20, 20 + bw, 20 + bh], radius=6, fill=(255, 200, 0, 230))
+        draw.text((20 + badge_padding, 20 + badge_padding // 2), badge_text, font=small_font, fill=(0, 0, 0, 255))
+
+        # 제목 텍스트 (최대 16자 줄바꿈)
+        lines = textwrap.wrap(title, width=16)[:3]  # 최대 3줄
+        total_h = len(lines) * (font_size + 12)
+        y = h - total_h - 50
 
         for line in lines:
             bbox = draw.textbbox((0, 0), line, font=font)
             text_w = bbox[2] - bbox[0]
             x = (w - text_w) // 2
-            # 그림자
-            draw.text((x+2, y+2), line, font=font, fill=(0, 0, 0, 200))
-            # 흰색 텍스트
+
+            # 텍스트 그림자 (여러 겹으로 선명하게)
+            for dx, dy in [(-2, -2), (2, -2), (-2, 2), (2, 2), (0, 3)]:
+                draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 180))
+            # 흰색 메인 텍스트
             draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
-            y += font_size + 10
+            y += font_size + 12
 
         output = io.BytesIO()
-        img.convert("RGB").save(output, format="JPEG", quality=85)
+        img.convert("RGB").save(output, format="JPEG", quality=88)
         return output.getvalue()
     except Exception as e:
         print(f"   ⚠️ 텍스트 합성 실패: {e}")
@@ -350,16 +374,16 @@ def generate_blog_post(keyword):
 - 예: "비슷한 주제로 [관련키워드]도 정리해뒀으니 함께 참고해보세요!"
 - 댓글/공유 유도: "궁금한 점은 댓글로 남겨주세요 :)"
 
-[6. AI 생성 표시] - 글 맨 마지막에 반드시 포함
-<p style="background:#f1f3f5;border:1px solid #dee2e6;padding:8px 14px;border-radius:6px;color:#adb5bd;font-size:0.78em;margin-top:30px;line-height:1.5">🤖 본 콘텐츠는 AI(인공지능)의 도움을 받아 작성되었습니다. 「AI 생성 콘텐츠 표시에 관한 지침」에 따라 이를 고지하며, 정보의 정확성은 공식 채널을 통해 확인하시기 바랍니다.</p>
+[6. 면책문구 + AI 생성 표시] - 글 맨 마지막에 반드시 포함 (순서 지킬 것)
+<p style="background:#f8f9fa;border-left:3px solid #adb5bd;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.9em;margin-top:30px">※ 본 정보는 작성 시점({today}) 기준이며, 시장 상황·정책 변경 등에 따라 실제 내용과 다를 수 있습니다. 최신 정보는 공식 채널을 통해 반드시 확인하시기 바랍니다.</p>
+<p style="background:#f1f3f5;border:1px solid #dee2e6;padding:8px 14px;border-radius:6px;color:#adb5bd;font-size:0.78em;margin-top:10px;line-height:1.5">🤖 본 콘텐츠는 AI(인공지능)의 도움을 받아 작성되었습니다. 「AI 생성 콘텐츠 표시에 관한 지침」에 따라 이를 고지하며, 정보의 정확성은 공식 채널을 통해 확인하시기 바랍니다.</p>
 
 === 주의사항 ===
 - 절대 ```html 같은 코드블록 표시 사용하지 말 것
 - 순수 HTML 태그만 사용
 - 표는 반드시 1개 이상 포함
 - 제목 줄 이후 바로 HTML 본문 작성
-- 가격, 날짜, 법령, 정책, 수치 등 시간이 지나면 바뀔 수 있는 정보가 포함된 경우, 해당 내용 바로 아래에 다음과 같은 형식의 안내 문구를 자연스럽게 삽입할 것:
-  <p style="background:#f8f9fa;border-left:3px solid #adb5bd;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.9em;margin:10px 0">※ 본 정보는 작성 시점({today}) 기준이며, 시장 상황·정책 변경 등에 따라 실제 내용과 다를 수 있습니다. 최신 정보는 공식 채널을 통해 반드시 확인하시기 바랍니다.</p>"""
+- 가격, 날짜, 법령, 정책, 수치 등 시간에 따라 바뀔 수 있는 정보가 있더라도 글 중간에 면책문구를 삽입하지 말 것. 면책문구는 글 맨 마지막(AI 생성 표시 바로 위)에 한 번만 넣음."""
 
     message = client.messages.create(
         model=CLAUDE_MODEL,
