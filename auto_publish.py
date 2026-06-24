@@ -102,10 +102,14 @@ def main():
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 날짜 확인
-    if data.get("date") != today:
-        print(f"⚠️ 오늘({today}) 키워드가 아닙니다. (저장된 날짜: {data.get('date')})")
+    # 날짜 확인 (오늘 또는 어제 키워드 허용)
+    yesterday = (now_kst - timedelta(days=1)).strftime("%Y-%m-%d")
+    saved_date = data.get("date")
+    if saved_date not in [today, yesterday]:
+        print(f"⚠️ 사용 가능한 키워드가 없습니다. (저장된 날짜: {saved_date}, 오늘: {today})")
         return
+    if saved_date == yesterday:
+        print(f"ℹ️ 어제({yesterday}) 키워드로 발행합니다. (오늘 키워드 아직 미도착)")
 
     # 현재 시간에 맞는 키워드 찾기 (현재 시간 이전 미발행 슬롯 포함)
     schedule = data.get("schedule", [])
