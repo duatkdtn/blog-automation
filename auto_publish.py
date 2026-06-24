@@ -77,6 +77,67 @@ def request_google_indexing(post_url):
         return False
 
 
+def send_naver_email(keyword, title, content, image_urls, blogspot_url, published_at):
+    """네이버 블로그 복붙용 글을 Gmail로 전송"""
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    gmail_address = os.environ.get("GMAIL_ADDRESS")
+    gmail_password = os.environ.get("GMAIL_APP_PASSWORD")
+
+    if not gmail_address or not gmail_password:
+        print("⚠️ Gmail 환경변수 없음 - 이메일 전송 건너뜀")
+        return
+
+    # 네이버용 HTML 구성 (이미지 포함, 복붙하면 바로 사용 가능)
+    images_html = ""
+    for url in image_urls[:3]:
+        images_html += f'<img src="{url}" style="max-width:100%;margin:10px 0"><br>\n'
+
+    # 블로그스팟 본문에서 HTML 태그 제거한 텍스트 (네이버용)
+    import re
+    plain_content = re.sub(r'<[^>]+>', '', content)
+    plain_content = re.sub(r'\n{3,}', '\n\n', plain_content).strip()
+
+    email_html = f"""
+<html><body style="font-family:맑은고딕,sans-serif;max-width:700px;margin:0 auto;padding:20px">
+
+<div style="background:#f0f7ff;border-left:4px solid #4A90E2;padding:15px;margin-bottom:20px;border-radius:4px">
+  <h2 style="margin:0 0 8px 0;color:#333">📝 네이버 블로그 발행용</h2>
+  <p style="margin:0;color:#666">발행 시각: {published_at} | 키워드: {keyword}</p>
+  <p style="margin:5px 0 0 0"><a href="{blogspot_url}" style="color:#4A90E2">🔗 블로그스팟 원문 보기</a></p>
+</div>
+
+<div style="background:#fff3cd;border:1px solid #ffc107;padding:12px;border-radius:4px;margin-bottom:20px">
+  <strong>📋 사용 방법:</strong> 아래 내용을 복사해서 네이버 블로그에 붙여넣기 하세요.
+</div>
+
+<hr style="border:2px solid #333;margin:20px 0">
+<h1 style="font-size:24px;color:#111">{title}</h1>
+<hr style="border:1px solid #ddd;margin:20px 0">
+
+{images_html}
+
+{content}
+
+<hr style="border:2px solid #333;margin:30px 0">
+</body></html>
+"""
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"[네이버 발행용] {title}"
+    msg["From"] = gmail_address
+    msg["To"] = gmail_address
+    msg.attach(MIMEText(email_html, "html", "utf-8"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(gmail_address, gmail_password)
+        server.sendmail(gmail_address, gmail_address, msg.as_string())
+
+    print(f"✅ 네이버용 이메일 전송 완료! → {gmail_address}")
+
+
 def main():
     restore_token()
     setup_env()
@@ -196,24 +257,19 @@ def main():
         print(f"\n🔍 구글 색인 요청 중...")
         request_google_indexing(post_url)
 
-        # 네이버 백링크용 글 생성
-        print(f"\n📝 네이버 백링크용 글 생성 시작...")
+        # 7. 네이버용 글 이메일 전송
+        print(f"\n📧 네이버용 글 이메일 전송 중...")
         try:
-            from naver_post_generator import generate_naver_post
-            related_keywords = target.get("related_keywords", [])
-            naver_result = generate_naver_post(
+            send_naver_email(
                 keyword=keyword,
                 title=final_title,
                 content=content,
                 image_urls=all_images if all_images else [],
                 blogspot_url=post_url,
-                related_keywords=related_keywords
+                published_at=now_kst.strftime("%Y-%m-%d %H:%M")
             )
-            print(f"✅ 네이버용 파일 생성 완료!")
-            print(f"   📄 {naver_result['html_path']}")
-            print(f"   📝 {naver_result['txt_path']}")
         except Exception as e:
-            print(f"⚠️ 네이버 글 생성 실패 (블로그스팟 발행은 성공): {e}")
+            print(f"⚠️ 네이버 이메일 전송 실패 (발행은 성공): {e}")
     else:
         print(f"\n❌ 발행 실패")
 
