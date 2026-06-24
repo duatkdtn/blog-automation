@@ -646,6 +646,12 @@ def add_internal_links(content, keyword, blog_id):
         if not items:
             return content
 
+        # 현재 발행 중인 글(같은 키워드 제목) 제외
+        items = [p for p in items if keyword not in p.get("title", "") and keyword[:10] not in p.get("title", "")]
+
+        if not items:
+            return content
+
         # 글 목록 텍스트로 만들기
         posts_text = "\n".join([f"- {p['title']} | {p['url']}" for p in items])
 
