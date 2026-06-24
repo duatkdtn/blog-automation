@@ -206,7 +206,9 @@ def main():
             inject_seo_metadata,
             insert_images_into_content,
             publish_to_blogger,
-            get_google_credentials
+            get_google_credentials,
+            add_external_links,
+            add_internal_links
         )
     except ImportError as e:
         print(f"❌ blog_automation.py import 실패: {e}")
@@ -235,6 +237,15 @@ def main():
         all_images = images
     if all_images:
         content = insert_images_into_content(content, all_images, keyword)
+
+    # 4-1. 외부링크 버튼 추가
+    print(f"\n🔗 외부링크 추가 중...")
+    content = add_external_links(content, keyword)
+
+    # 4-2. 내부링크 추가
+    print(f"\n📚 내부링크 추가 중...")
+    blog_id = os.environ.get("BLOG_ID")
+    content = add_internal_links(content, keyword, blog_id)
 
     # 5. 블로그스팟 발행
     print(f"\n📤 블로그스팟 발행 중...")

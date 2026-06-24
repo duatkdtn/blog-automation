@@ -476,14 +476,23 @@ def inject_seo_metadata(content, title, description, keywords_meta, keyword):
 
 
 def insert_images_into_content(content, image_urls, keyword):
-    """본문 h2 섹션마다 이미지 삽입"""
+    """본문 h2 섹션마다 이미지 삽입 + alt태그 키워드 포함"""
     if not image_urls:
         return content
 
     img_style = 'style="width:100%;max-width:700px;height:auto;margin:15px auto;display:block;border-radius:8px;"'
 
+    # alt태그용 설명 변형 (이미지마다 다르게)
+    alt_variants = [
+        f"{keyword} 관련 이미지",
+        f"{keyword} 설명 사진",
+        f"{keyword} 정보 안내",
+        f"{keyword} 참고 이미지",
+    ]
+
     # 맨 첫 이미지는 본문 맨 위에
-    first_img = f'<p><img src="{image_urls[0]}" alt="{keyword}" {img_style} /></p>\n'
+    first_alt = alt_variants[0]
+    first_img = f'<p><img src="{image_urls[0]}" alt="{first_alt}" {img_style} /></p>\n'
 
     # h2 섹션마다 이미지 삽입
     sections = content.split('<h2>')
@@ -493,11 +502,214 @@ def insert_images_into_content(content, image_urls, keyword):
     for section in sections[1:]:
         result += '<h2>' + section
         if img_index < len(image_urls):
-            img_html = f'\n<p><img src="{image_urls[img_index]}" alt="{keyword}" {img_style} /></p>\n'
+            alt_text = alt_variants[img_index % len(alt_variants)]
+            img_html = f'\n<p><img src="{image_urls[img_index]}" alt="{alt_text}" {img_style} /></p>\n'
             result += img_html
             img_index += 1
 
     return result
+
+
+# 외부링크 카테고리별 공식 사이트 목록
+EXTERNAL_LINKS = {
+    "보험": [
+        ("국민건강보험 공식사이트", "https://www.nhis.or.kr"),
+        ("금융감독원", "https://www.fss.or.kr"),
+        ("건강보험심사평가원", "https://www.hira.or.kr"),
+    ],
+    "취업/직장": [
+        ("고용노동부", "https://www.moel.go.kr"),
+        ("워크넷", "https://www.work.go.kr"),
+        ("고용24", "https://www.고용24.kr"),
+    ],
+    "부동산/청약": [
+        ("청약홈", "https://www.applyhome.co.kr"),
+        ("국토교통부", "https://www.molit.go.kr"),
+        ("부동산공시가격알리미", "https://www.realtyprice.kr"),
+    ],
+    "의료/건강": [
+        ("국민건강보험", "https://www.nhis.or.kr"),
+        ("질병관리청", "https://www.kdca.go.kr"),
+        ("건강보험심사평가원", "https://www.hira.or.kr"),
+    ],
+    "정부지원/복지": [
+        ("복지로", "https://www.bokjiro.go.kr"),
+        ("정부24", "https://www.gov.kr"),
+        ("국민비서", "https://www.ips.go.kr"),
+    ],
+    "세금/법률": [
+        ("국세청 홈택스", "https://www.hometax.go.kr"),
+        ("법제처", "https://www.law.go.kr"),
+        ("대한법률구조공단", "https://www.klac.or.kr"),
+    ],
+    "육아/교육": [
+        ("교육부", "https://www.moe.go.kr"),
+        ("임신육아종합포털", "https://www.childcare.go.kr"),
+        ("EBS", "https://www.ebs.co.kr"),
+    ],
+    "경제/금융": [
+        ("한국은행", "https://www.bok.or.kr"),
+        ("금융위원회", "https://www.fsc.go.kr"),
+        ("금융감독원", "https://www.fss.or.kr"),
+    ],
+    "자동차": [
+        ("한국교통안전공단", "https://www.kotsa.or.kr"),
+        ("국토교통부", "https://www.molit.go.kr"),
+        ("자동차민원 대국민포털", "https://www.ecar.go.kr"),
+    ],
+    "환경/날씨": [
+        ("기상청", "https://www.weather.go.kr"),
+        ("환경부", "https://www.me.go.kr"),
+        ("에어코리아", "https://www.airkorea.or.kr"),
+    ],
+    "여행": [
+        ("한국관광공사", "https://www.visitkorea.or.kr"),
+        ("외교부 해외안전여행", "https://www.0404.go.kr"),
+    ],
+    "반려동물": [
+        ("동물보호관리시스템", "https://www.animal.go.kr"),
+        ("농림축산식품부", "https://www.mafra.go.kr"),
+    ],
+    "뷰티/식품": [
+        ("식품의약품안전처", "https://www.mfds.go.kr"),
+        ("식품안전나라", "https://www.foodsafetykorea.go.kr"),
+    ],
+    "IT/전자": [
+        ("과학기술정보통신부", "https://www.msit.go.kr"),
+        ("한국인터넷진흥원", "https://www.kisa.or.kr"),
+    ],
+    "스포츠/연예": [
+        ("대한체육회", "https://www.sports.or.kr"),
+        ("한국콘텐츠진흥원", "https://www.kocca.kr"),
+    ],
+}
+
+
+def get_external_links_for_keyword(keyword):
+    """키워드에 맞는 외부링크 카테고리 자동 판단"""
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+    categories = list(EXTERNAL_LINKS.keys())
+    prompt = f"""키워드: "{keyword}"
+이 키워드가 아래 카테고리 중 어디에 해당하는지 1개만 골라주세요. 카테고리 이름만 정확히 출력하세요.
+카테고리: {', '.join(categories)}
+해당 없으면 "없음"이라고만 출력하세요."""
+
+    try:
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=50,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        category = message.content[0].text.strip()
+        return EXTERNAL_LINKS.get(category, [])
+    except:
+        return []
+
+
+def add_external_links(content, keyword):
+    """글 하단에 외부링크 버튼 추가"""
+    links = get_external_links_for_keyword(keyword)
+    if not links:
+        return content
+
+    buttons_html = ""
+    for name, url in links[:2]:
+        buttons_html += f'''<a href="{url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
+
+    external_section = f'''
+<div style="background:#fff8f8;border:1px solid #ffcccc;border-radius:8px;padding:20px;margin:30px 0">
+<p style="font-weight:bold;color:#c0392b;margin:0 0 12px">📌 공식 사이트에서 정확한 정보를 확인하세요</p>
+{buttons_html}</div>'''
+
+    # 면책문구 바로 앞에 삽입
+    if '<p style="background:#f8f9fa' in content:
+        content = content.replace('<p style="background:#f8f9fa', external_section + '\n<p style="background:#f8f9fa', 1)
+    else:
+        content += external_section
+
+    return content
+
+
+def add_internal_links(content, keyword, blog_id):
+    """Blogger API로 기존 글 목록 가져와서 연관 글 내부링크 추가"""
+    try:
+        creds = get_google_credentials()
+        service = build('blogger', 'v3', credentials=creds)
+
+        # 최근 발행글 50개 가져오기
+        posts = service.posts().list(
+            blogId=blog_id,
+            maxResults=50,
+            fields="items(title,url)"
+        ).execute()
+
+        items = posts.get("items", [])
+        if not items:
+            return content
+
+        # 글 목록 텍스트로 만들기
+        posts_text = "\n".join([f"- {p['title']} | {p['url']}" for p in items])
+
+        # Claude에게 연관 글 2개 선택 요청
+        client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+        prompt = f"""오늘 발행할 글의 키워드: "{keyword}"
+
+아래 기존 발행 글 목록에서 오늘 키워드와 연관성이 높은 글 2개를 골라주세요.
+형식: 제목|URL (한 줄에 하나씩, 정확히 2개만)
+
+글 목록:
+{posts_text}
+
+해당 없으면 "없음"이라고만 출력하세요."""
+
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        result = message.content[0].text.strip()
+        if result == "없음" or not result:
+            return content
+
+        # 파싱
+        related = []
+        for line in result.split("\n"):
+            line = line.strip().lstrip("-").strip()
+            if "|" in line:
+                parts = line.split("|")
+                if len(parts) >= 2:
+                    title = parts[0].strip()
+                    url = parts[1].strip()
+                    if url.startswith("http"):
+                        related.append((title, url))
+
+        if not related:
+            return content
+
+        # 내부링크 섹션 생성
+        links_html = ""
+        for title, url in related[:2]:
+            links_html += f'<li style="margin:8px 0"><a href="{url}" style="color:#2980b9;text-decoration:none">👉 {title}</a></li>\n'
+
+        internal_section = f'''
+<div style="background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:20px;margin:30px 0">
+<p style="font-weight:bold;color:#1a5276;margin:0 0 12px">📚 함께 읽으면 좋은 글</p>
+<ul style="padding-left:20px;margin:0">
+{links_html}</ul></div>'''
+
+        # 면책문구 바로 앞에 삽입
+        if '<p style="background:#f8f9fa' in content:
+            content = content.replace('<p style="background:#f8f9fa', internal_section + '\n<p style="background:#f8f9fa', 1)
+        else:
+            content += internal_section
+
+        print(f"✅ 내부링크 {len(related)}개 추가 완료!")
+        return content
+
+    except Exception as e:
+        print(f"⚠️ 내부링크 추가 실패 (발행은 계속): {e}")
+        return content
 
 
 def publish_to_blogger(title, content):
