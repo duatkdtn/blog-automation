@@ -77,6 +77,30 @@ def request_google_indexing(post_url):
         return False
 
 
+ANCHOR_TEXTS = [
+    "자세한 내용 확인하기",
+    "원문 보러가기",
+    "더 자세히 알아보기",
+    "관련 정보 원문",
+    "참고 자료 보기",
+    "전체 내용 확인",
+    "원본 글 읽기",
+    "상세 정보 보기",
+    "전문 내용 보기",
+    "더 많은 정보 보기",
+    "관련 글 바로가기",
+    "자세한 정보는 여기서",
+    "내용 더 보기",
+    "원문 확인하기",
+    "전체 글 읽기",
+    "참고한 원문 보기",
+    "출처 글 확인",
+    "더 읽어보기",
+    "관련 포스팅 보기",
+    "전체 정보 확인하기",
+]
+
+
 def send_naver_email(keyword, title, content, image_urls, blogspot_url, published_at):
     """네이버 블로그 복붙용 글을 Gmail로 전송"""
     import smtplib
@@ -95,8 +119,12 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
     for url in image_urls[:3]:
         images_html += f'<img src="{url}" style="max-width:100%;margin:10px 0"><br>\n'
 
-    # 블로그스팟 본문에서 HTML 태그 제거한 텍스트 (네이버용)
+    # 랜덤 앵커텍스트 선택
+    import random
     import re
+    anchor_text = random.choice(ANCHOR_TEXTS)
+
+    # 블로그스팟 본문에서 HTML 태그 제거한 텍스트 (네이버용)
     plain_content = re.sub(r'<[^>]+>', '', content)
     plain_content = re.sub(r'\n{3,}', '\n\n', plain_content).strip()
 
@@ -120,6 +148,10 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 {images_html}
 
 {content}
+
+<div style="border-top:2px solid #ddd;margin-top:40px;padding-top:20px;text-align:center">
+  <a href="{blogspot_url}" style="display:inline-block;background:#2c3e50;color:white;padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none;font-size:15px">👉 {anchor_text}</a>
+</div>
 
 <hr style="border:2px solid #333;margin:30px 0">
 </body></html>
