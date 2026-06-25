@@ -210,7 +210,13 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
     anchor_text = random.choice(ANCHOR_TEXTS)
 
     # 본문 줄바꿈 처리
-    naver_body_html = naver_body.replace('\n', '<br>\n')
+    br_tag = '<br>\n'
+    naver_body_html = naver_body.replace('\n', br_tag)
+
+    # 제목 박스 HTML 미리 생성 (f-string 내 백슬래시 회피)
+    nl_to_br = naver_titles.replace('\n', '<br>') if naver_titles else ''
+    titles_html = f'<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px"><strong>📌 추천 제목 3가지</strong><br><br>{nl_to_br}</div>' if naver_titles else ''
+    tags_html = f'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">{naver_tags}</div>' if naver_tags else ''
 
     email_html = f"""
 <html><body style="font-family:맑은고딕,sans-serif;max-width:700px;margin:0 auto;padding:20px">
@@ -224,7 +230,7 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
   <strong>📋 사용 방법:</strong> 아래 제목 중 하나 선택 → 본문 복사 → 네이버 블로그에 붙여넣기
 </div>
 
-{'<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px"><strong>📌 추천 제목 3가지</strong><br><br>' + naver_titles.replace('\n','<br>') + '</div>' if naver_titles else ''}
+{titles_html}
 
 <hr style="border:2px solid #333;margin:20px 0">
 <h1 style="font-size:22px;color:#111">✍️ 본문 (복붙용)</h1>
@@ -236,7 +242,7 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 {naver_body_html}
 </div>
 
-{'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">' + naver_tags + '</div>' if naver_tags else ''}
+{tags_html}
 
 <div style="border-top:2px solid #ddd;margin-top:40px;padding-top:20px;text-align:center">
   <a href="{blogspot_url}" style="display:inline-block;background:#2c3e50;color:white;padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none;font-size:15px">👉 {anchor_text}</a>
