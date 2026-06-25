@@ -21,6 +21,7 @@ BG_SIDEBAR = "#0f0f1a"
 BG_ITEM = "#252538"
 ACCENT = "#8b7cf8"
 ACCENT_HOVER = "#a594ff"
+GOLD = "#D4AF37"
 ACCENT_ACTIVE = "#252545"
 TEXT_WHITE = "#eeeeff"
 TEXT_GRAY = "#6666aa"
@@ -170,7 +171,7 @@ class BlogMasterApp:
                 continue
             page, icon, label = item
             btn_frame = tk.Frame(self.sidebar, bg=BG_SIDEBAR, cursor="hand2",
-                                 highlightthickness=1, highlightbackground="#3a3a5a")
+                                 highlightthickness=1, highlightbackground=GOLD)
             btn_frame.pack(fill="x", padx=8, pady=3)
 
             inner = tk.Frame(btn_frame, bg=BG_SIDEBAR, padx=6, pady=8, cursor="hand2")
@@ -192,7 +193,7 @@ class BlogMasterApp:
                     tl.config(bg="#3a3a6a", fg=TEXT_WHITE)
             def on_leave(e, f=btn_frame, p2=page, i=inner, il=icon_lbl, tl=text_lbl):
                 if self.current_page != p2:
-                    f.config(bg=BG_SIDEBAR, highlightbackground="#3a3a5a")
+                    f.config(bg=BG_SIDEBAR, highlightbackground=GOLD)
                     i.config(bg=BG_SIDEBAR)
                     il.config(bg=BG_SIDEBAR, fg=TEXT_GRAY)
                     tl.config(bg=BG_SIDEBAR, fg=TEXT_GRAY)
@@ -211,7 +212,7 @@ class BlogMasterApp:
 
         # 발행 이력 버튼
         hist_frame = tk.Frame(bottom, bg=BG_SIDEBAR, cursor="hand2",
-                              highlightthickness=1, highlightbackground="#3a3a5a")
+                              highlightthickness=1, highlightbackground=GOLD)
         hist_frame.pack(fill="x", padx=8, pady=(0, 4))
         hist_inner = tk.Frame(hist_frame, bg=BG_SIDEBAR, padx=6, pady=8)
         hist_inner.pack(fill="x")
@@ -229,7 +230,7 @@ class BlogMasterApp:
 
         # 설정 버튼
         set_frame = tk.Frame(bottom, bg=BG_SIDEBAR, cursor="hand2",
-                             highlightthickness=1, highlightbackground="#3a3a5a")
+                             highlightthickness=1, highlightbackground=GOLD)
         set_frame.pack(fill="x", padx=8, pady=(0, 6))
         set_inner = tk.Frame(set_frame, bg=BG_SIDEBAR, padx=6, pady=8)
         set_inner.pack(fill="x")
@@ -281,8 +282,7 @@ class BlogMasterApp:
         elif page == "keyword":
             self.build_keyword()
         elif page == "email":
-            self.run_keyword_email()
-            self.show_page("dashboard")
+            self.build_email()
         elif page == "history":
             self.build_history()
         elif page == "settings":
@@ -1507,19 +1507,230 @@ class BlogMasterApp:
         except Exception as e:
             self.log(f"❌ 오류: {e}")
 
+    # ================================================
+    # 이메일 발송 페이지
+    # ================================================
+    def build_email(self):
+        frame = tk.Frame(self.main_area, bg=BG_DARK)
+        frame.pack(fill="both", expand=True, padx=25, pady=20)
+
+        tk.Label(frame, text="이메일 발송", font=("Malgun Gothic", 18, "bold"),
+                 bg=BG_DARK, fg=TEXT_WHITE).pack(anchor="w", pady=(0, 15))
+
+        # 키워드 선택 카드
+        kw_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=15)
+        kw_card.pack(fill="x", pady=(0, 12))
+        tk.Label(kw_card, text="발송할 키워드 선택", font=("Malgun Gothic", 11, "bold"),
+                 bg=BG_CARD, fg=ACCENT).pack(anchor="w", pady=(0, 10))
+
+        # today_keywords.json 로드
+        self.email_check_vars = []
+        schedule_items = []
+        try:
+            json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "today_keywords.json")
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            schedule_items = data.get("schedule", [])
+        except:
+            schedule_items = []
+
+        if not schedule_items:
+            tk.Label(kw_card, text="today_keywords.json 없음 - 먼저 키워드 이메일을 발송하세요",
+                     font=("Malgun Gothic", 10), bg=BG_CARD, fg=DANGER).pack(anchor="w")
+        else:
+            # 전체선택 체크박스
+            all_var = tk.BooleanVar(value=True)
+            def toggle_all():
+                for v in self.email_check_vars:
+                    v.set(all_var.get())
+            all_row = tk.Frame(kw_card, bg=BG_CARD)
+            all_row.pack(fill="x", pady=(0, 6))
+            tk.Checkbutton(all_row, variable=all_var, command=toggle_all,
+                           bg=BG_CARD, fg=TEXT_GRAY, activebackground=BG_CARD,
+                           selectcolor=BG_ITEM, font=("Malgun Gothic", 10),
+                           text="전체 선택").pack(side="left")
+
+            tk.Frame(kw_card, bg="#252540", height=1).pack(fill="x", pady=(0, 8))
+
+            for item in schedule_items:
+                var = tk.BooleanVar(value=True)
+                self.email_check_vars.append(var)
+                row = tk.Frame(kw_card, bg=BG_ITEM, padx=10, pady=8)
+                row.pack(fill="x", pady=3)
+
+                cb = tk.Checkbutton(row, variable=var, bg=BG_ITEM,
+                                    activebackground=BG_ITEM, selectcolor="#ffffff")
+                cb.pack(side="left")
+
+                time_lbl = tk.Label(row, text=item.get("time", ""),
+                                    font=("Malgun Gothic", 10, "bold"),
+                                    bg=BG_ITEM, fg=TEXT_WHITE, padx=8, pady=2)
+                time_lbl.pack(side="left", padx=(4, 8))
+
+                kw_text = item.get("keyword", "")
+                tk.Label(row, text=kw_text[:40] + "..." if len(kw_text) > 40 else kw_text,
+                         font=("Malgun Gothic", 10), bg=BG_ITEM, fg=TEXT_WHITE).pack(side="left")
+
+                if item.get("published"):
+                    tk.Label(row, text="✅ 발행완료", font=("Malgun Gothic", 9),
+                             bg=BG_ITEM, fg=SUCCESS).pack(side="right", padx=4)
+                else:
+                    tk.Label(row, text="⏳ 대기중", font=("Malgun Gothic", 9),
+                             bg=BG_ITEM, fg=TEXT_GRAY).pack(side="right", padx=4)
+
+        # 수신 이메일 카드
+        rec_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=15)
+        rec_card.pack(fill="x", pady=(0, 12))
+        tk.Label(rec_card, text="수신 이메일", font=("Malgun Gothic", 11, "bold"),
+                 bg=BG_CARD, fg=ACCENT).pack(anchor="w", pady=(0, 8))
+        rec_row = tk.Frame(rec_card, bg=BG_CARD)
+        rec_row.pack(fill="x")
+        self.email_recipient_var = tk.StringVar(value="duatkdtn@gmail.com")
+        tk.Entry(rec_row, textvariable=self.email_recipient_var,
+                 font=("Malgun Gothic", 11), bg=BG_ITEM, fg=TEXT_WHITE,
+                 insertbackground=TEXT_WHITE, relief="flat", bd=0).pack(fill="x", ipady=6, padx=2)
+
+        # 로그 카드
+        log_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=15)
+        log_card.pack(fill="x", pady=(0, 12))
+        tk.Label(log_card, text="발송 로그", font=("Malgun Gothic", 11, "bold"),
+                 bg=BG_CARD, fg=ACCENT).pack(anchor="w", pady=(0, 8))
+        self.email_log = tk.Text(log_card, height=5, font=("Consolas", 10),
+                                 bg="#0f0f1a", fg=SUCCESS, relief="flat",
+                                 state="disabled", wrap="word")
+        self.email_log.pack(fill="x")
+
+        # 버튼
+        btn_row = tk.Frame(frame, bg=BG_DARK)
+        btn_row.pack(fill="x", pady=(4, 0))
+
+        def send_selected():
+            selected = [schedule_items[i] for i, v in enumerate(self.email_check_vars) if v.get()]
+            if not selected:
+                messagebox.showwarning("알림", "발송할 키워드를 선택해주세요.")
+                return
+            if not messagebox.askyesno("확인", f"선택한 {len(selected)}개 키워드 이메일을 발송할까요?"):
+                return
+            threading.Thread(target=self._send_email_selected, args=(selected,), daemon=True).start()
+
+        def send_keyword_email():
+            if not messagebox.askyesno("확인", "오늘의 키워드 추천 이메일을 발송할까요?"):
+                return
+            threading.Thread(target=self._run_keyword_email, daemon=True).start()
+
+        tk.Button(btn_row, text="키워드 추천 이메일 발송", font=("Malgun Gothic", 11),
+                  bg=BG_ITEM, fg=ACCENT, relief="flat", bd=0, padx=16, pady=8,
+                  cursor="hand2", command=send_keyword_email).pack(side="left", padx=(0, 8))
+
+        tk.Button(btn_row, text="⚡ 선택 키워드 바로보내기", font=("Malgun Gothic", 11, "bold"),
+                  bg=ACCENT, fg="white", relief="flat", bd=0, padx=16, pady=8,
+                  cursor="hand2", command=send_selected).pack(side="left", padx=(0, 8))
+
+        def schedule_placeholder():
+            messagebox.showinfo("알림", "예약보내기는 추후 지원 예정입니다.")
+
+        tk.Button(btn_row, text="🕐 예약 (추후지원)", font=("Malgun Gothic", 10),
+                  bg=BG_ITEM, fg=TEXT_GRAY, relief="flat", bd=0, padx=12, pady=8,
+                  cursor="hand2", command=schedule_placeholder).pack(side="left")
+
+    def _show_send_options(self, selected_items):
+        """바로보내기 / 예약보내기 선택 팝업"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("발송 방법 선택")
+        dialog.geometry("340x180")
+        dialog.resizable(False, False)
+        dialog.configure(bg=BG_MAIN)
+        dialog.grab_set()
+
+        # 중앙 배치
+        dialog.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - 340) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - 180) // 2
+        dialog.geometry(f"340x180+{x}+{y}")
+
+        tk.Label(dialog, text=f"선택한 {len(selected_items)}개 키워드 발송 방법",
+                 font=("Malgun Gothic", 12, "bold"), bg=BG_MAIN, fg=FG_MAIN).pack(pady=(20, 16))
+
+        btn_frame = tk.Frame(dialog, bg=BG_MAIN)
+        btn_frame.pack()
+
+        def do_send_now():
+            dialog.destroy()
+            if not messagebox.askyesno("확인", f"선택한 {len(selected_items)}개 키워드 이메일을 바로 발송할까요?"):
+                return
+            threading.Thread(target=self._send_email_selected, args=(selected_items,), daemon=True).start()
+
+        def do_schedule():
+            dialog.destroy()
+            messagebox.showinfo("알림", "예약보내기는 추후 지원 예정입니다.")
+
+        tk.Button(btn_frame, text="⚡ 바로보내기", font=("Malgun Gothic", 11, "bold"),
+                  bg=ACCENT, fg="white", relief="flat", bd=0, padx=20, pady=8,
+                  cursor="hand2", command=do_send_now).pack(side="left", padx=8)
+
+        tk.Button(btn_frame, text="🕐 예약보내기", font=("Malgun Gothic", 11),
+                  bg=BG_ITEM, fg=FG_MAIN, relief="flat", bd=0, padx=20, pady=8,
+                  cursor="hand2", command=do_schedule).pack(side="left", padx=8)
+
+    def _email_log(self, msg):
+        try:
+            self.email_log.config(state="normal")
+            self.email_log.insert("end", msg + "\n")
+            self.email_log.see("end")
+            self.email_log.config(state="disabled")
+        except:
+            pass
+
+    def _send_email_selected(self, selected_items):
+        self._email_log("📧 네이버용 이메일 발송 시작...")
+        try:
+            import smtplib
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD
+
+            for item in selected_items:
+                keyword = item.get("keyword", "")
+                title = item.get("title", keyword)
+                post_url = item.get("post_url", "")
+                self._email_log(f"  → {keyword} 발송 중...")
+
+                body = f"""<html><body>
+<h2>{title}</h2>
+<p>키워드: {keyword}</p>
+<p>발행시간: {item.get('time', '')} | 상태: {'발행완료' if item.get('published') else '대기중'}</p>
+{'<p><a href="' + post_url + '">블로그스팟 원문 보기</a></p>' if post_url else ''}
+</body></html>"""
+
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = f"[키워드 발송] {title}"
+                msg["From"] = GMAIL_ADDRESS
+                msg["To"] = self.email_recipient_var.get()
+                msg.attach(MIMEText(body, "html", "utf-8"))
+
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                    server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+                    server.sendmail(GMAIL_ADDRESS, self.email_recipient_var.get(), msg.as_string())
+
+                self._email_log(f"  ✅ {keyword} 완료!")
+
+            self._email_log("🎉 모든 이메일 발송 완료!")
+        except Exception as e:
+            self._email_log(f"❌ 오류: {e}")
+
     def run_keyword_email(self):
         if messagebox.askyesno("확인", "키워드 이메일을 지금 발송할까요?"):
             self.show_page("publish")
             threading.Thread(target=self._run_keyword_email, daemon=True).start()
 
     def _run_keyword_email(self):
-        self.log("📧 키워드 이메일 발송 중...")
+        self._email_log("📧 키워드 추천 이메일 발송 중...")
         try:
             import keyword_email
             keyword_email.main()
-            self.log("✅ 이메일 발송 완료!")
+            self._email_log("✅ 키워드 이메일 발송 완료!")
         except Exception as e:
-            self.log(f"❌ 오류: {e}")
+            self._email_log(f"❌ 오류: {e}")
 
     def save_settings(self):
         try:
