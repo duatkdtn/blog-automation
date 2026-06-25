@@ -362,7 +362,7 @@ class BlogMasterApp:
         rt_tab_row = tk.Frame(c3, bg=BG_CARD)
         rt_tab_row.pack(fill="x", pady=(0, 8))
         self.rt_tab_btns = {}
-        for label, val in [("네이트", "nate"), ("다음", "daum"), ("구글트렌드", "google")]:
+        for label, val in [("네이트", "nate"), ("다음", "daum"), ("구글트렌드", "google"), ("카테고리별", "category")]:
             btn = tk.Label(rt_tab_row, text=label, font=("Malgun Gothic", 10),
                            bg=ACCENT if val == "nate" else ACCENT_ACTIVE,
                            fg=TEXT_WHITE if val == "nate" else ACCENT,
@@ -370,6 +370,21 @@ class BlogMasterApp:
             btn.pack(side="left", padx=(0, 4))
             btn.bind("<Button-1>", lambda e, v=val: self._switch_rt_tab(v))
             self.rt_tab_btns[val] = btn
+
+        # 카테고리별 탭용 드롭다운 (기본 숨김)
+        self.cat_tab_frame = tk.Frame(c3, bg=BG_CARD)
+        self.cat_tab_var = tk.StringVar(value="재테크·금융")
+        CAT_OPTIONS = ["재테크·금융", "건강·의학", "부동산", "비즈니스·경제", "IT·컴퓨터",
+                       "스타·연예인", "국내여행", "세계여행", "육아·결혼", "요리·레시피",
+                       "패션·미용", "사회·정치", "교육·학문", "게임", "스포츠",
+                       "반려동물", "인테리어·DIY", "자동차", "문화·책", "일상·생각"]
+        cat_combo = ttk.Combobox(self.cat_tab_frame, textvariable=self.cat_tab_var,
+                                  values=CAT_OPTIONS, state="readonly", width=14,
+                                  font=("Malgun Gothic", 10))
+        cat_combo.pack(side="left", padx=(0, 8))
+        tk.Button(self.cat_tab_frame, text="조회", font=("Malgun Gothic", 10),
+                  bg=ACCENT, fg="white", relief="flat", bd=0, padx=10, pady=2,
+                  cursor="hand2", command=lambda: self._fetch_category_news(self.cat_tab_var.get())).pack(side="left")
 
         # 고정 높이 컨테이너 (레이아웃 안정)
         rt_container = tk.Frame(c3, bg=BG_CARD, height=250)
@@ -659,11 +674,64 @@ class BlogMasterApp:
         for val, btn in self.rt_tab_btns.items():
             btn.config(bg=ACCENT if val == source else ACCENT_ACTIVE,
                        fg=TEXT_WHITE if val == source else ACCENT)
+        # 카테고리 드롭다운 표시/숨김
+        if source == "category":
+            self.cat_tab_frame.pack(fill="x", pady=(0, 6))
+            for w in self.rt_list_frame.winfo_children():
+                w.destroy()
+            tk.Label(self.rt_list_frame, text="카테고리 선택 후 조회 버튼을 눌러주세요.",
+                     font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+        else:
+            self.cat_tab_frame.pack_forget()
+            for w in self.rt_list_frame.winfo_children():
+                w.destroy()
+            tk.Label(self.rt_list_frame, text="불러오는 중...",
+                     font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
+            threading.Thread(target=self._fetch_realtime_keywords, daemon=True).start()
+
+    def _fetch_category_news(self, category):
+        """카테고리별 네이버 뉴스 RSS에서 키워드 수집"""
+        CAT_RSS = {
+            "재테크·금융": "https://rss.naver.com/main/rss/news/economy.xml",
+            "건강·의학": "https://rss.naver.com/main/rss/news/society.xml",
+            "부동산": "https://rss.naver.com/main/rss/news/economy.xml",
+            "비즈니스·경제": "https://rss.naver.com/main/rss/news/economy.xml",
+            "IT·컴퓨터": "https://rss.naver.com/main/rss/news/it.xml",
+            "스타·연예인": "https://rss.naver.com/main/rss/news/entertainment.xml",
+            "국내여행": "https://rss.naver.com/main/rss/news/society.xml",
+            "세계여행": "https://rss.naver.com/main/rss/news/world.xml",
+            "육아·결혼": "https://rss.naver.com/main/rss/news/society.xml",
+            "요리·레시피": "https://rss.naver.com/main/rss/news/society.xml",
+            "패션·미용": "https://rss.naver.com/main/rss/news/entertainment.xml",
+            "사회·정치": "https://rss.naver.com/main/rss/news/politics.xml",
+            "교육·학문": "https://rss.naver.com/main/rss/news/society.xml",
+            "게임": "https://rss.naver.com/main/rss/news/it.xml",
+            "스포츠": "https://rss.naver.com/main/rss/news/sports.xml",
+            "반려동물": "https://rss.naver.com/main/rss/news/society.xml",
+            "인테리어·DIY": "https://rss.naver.com/main/rss/news/society.xml",
+            "자동차": "https://rss.naver.com/main/rss/news/it.xml",
+            "문화·책": "https://rss.naver.com/main/rss/news/culture.xml",
+            "일상·생각": "https://rss.naver.com/main/rss/news/society.xml",
+        }
         for w in self.rt_list_frame.winfo_children():
             w.destroy()
         tk.Label(self.rt_list_frame, text="불러오는 중...",
                  font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_GRAY).grid(row=0, column=0)
-        threading.Thread(target=self._fetch_realtime_keywords, daemon=True).start()
+
+        def fetch():
+            try:
+                import requests, re
+                url = CAT_RSS.get(category, "https://rss.naver.com/main/rss/news/society.xml")
+                headers = {"User-Agent": "Mozilla/5.0"}
+                resp = requests.get(url, headers=headers, timeout=8)
+                titles = re.findall(r'<title><!\[CDATA\[(.+?)\]\]></title>', resp.text)
+                # 첫번째는 채널 제목이라 제거
+                titles = [t for t in titles if len(t) > 2][:20]
+                self.root.after(0, lambda: self._render_realtime_keywords(titles))
+            except Exception as e:
+                self.root.after(0, lambda: self._render_realtime_keywords([f"오류: {e}"]))
+
+        threading.Thread(target=fetch, daemon=True).start()
 
     def _use_trend_keyword(self, keyword):
         """클릭한 검색어를 키워드 분석 탭으로 이동해서 바로 분석"""
@@ -820,6 +888,67 @@ class BlogMasterApp:
         tk.Label(frame, text="키워드 분석", font=("Malgun Gothic", 18, "bold"),
                  bg=BG_DARK, fg=TEXT_WHITE).pack(anchor="w", pady=(0, 15))
 
+        # ── 카테고리 카드 ──
+        cat_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=12)
+        cat_card.pack(fill="x", pady=(0, 8))
+
+        tk.Label(cat_card, text="카테고리 선택", font=("Malgun Gothic", 10, "bold"),
+                 bg=BG_CARD, fg=ACCENT).pack(anchor="w", pady=(0, 8))
+
+        CATEGORIES = [
+            ("전체", None),
+            ("재테크·금융", ["주식", "절세", "보험", "연금", "적금", "투자", "ETF", "ISA", "IRP"]),
+            ("건강·의학", ["다이어트", "영양제", "병원", "질병", "운동", "건강검진", "의료비"]),
+            ("부동산", ["청약", "전세", "매매", "임대", "아파트", "분양", "부동산세금"]),
+            ("비즈니스·경제", ["창업", "마케팅", "세금", "사업자", "직장인", "부업", "경제"]),
+            ("IT·컴퓨터", ["AI", "앱", "스마트폰", "노트북", "프로그램", "인공지능", "챗GPT"]),
+            ("스타·연예인", ["아이돌", "드라마", "영화", "방송", "연예인", "콘서트", "음악"]),
+            ("국내여행", ["여행지", "숙소", "맛집", "관광", "캠핑", "제주도", "강원도"]),
+            ("세계여행", ["해외여행", "항공권", "호텔", "유럽", "일본", "동남아", "미국"]),
+            ("육아·결혼", ["육아", "출산", "임신", "결혼", "웨딩", "어린이집", "교육"]),
+            ("요리·레시피", ["레시피", "요리", "맛집", "간식", "다이어트식단", "베이킹"]),
+            ("패션·미용", ["화장품", "스킨케어", "패션", "뷰티", "헤어", "네일", "다이어트"]),
+            ("사회·정치", ["정책", "법률", "지원금", "복지", "선거", "사회이슈"]),
+            ("교육·학문", ["공부법", "수능", "영어", "자격증", "취업", "학원", "독서"]),
+            ("게임", ["게임", "모바일게임", "PC게임", "리뷰", "신작게임", "e스포츠"]),
+            ("스포츠", ["축구", "야구", "운동", "헬스", "골프", "농구", "피트니스"]),
+            ("반려동물", ["강아지", "고양이", "펫", "동물병원", "사료", "반려동물용품"]),
+            ("인테리어·DIY", ["인테리어", "홈데코", "DIY", "가구", "청소", "정리정돈"]),
+            ("자동차", ["자동차", "전기차", "중고차", "자동차보험", "주차", "드라이브"]),
+            ("문화·책", ["독서", "책추천", "영화리뷰", "전시회", "공연", "문화생활"]),
+            ("일상·생각", ["일상", "감성", "에세이", "생각", "라이프스타일", "힐링"]),
+        ]
+        self.selected_category = tk.StringVar(value="전체")
+
+        cat_scroll_frame = tk.Frame(cat_card, bg=BG_CARD)
+        cat_scroll_frame.pack(fill="x")
+
+        # 카테고리 버튼들 (2줄로 배치)
+        self._cat_buttons = {}
+        row1 = tk.Frame(cat_scroll_frame, bg=BG_CARD)
+        row1.pack(fill="x", pady=(0, 4))
+        row2 = tk.Frame(cat_scroll_frame, bg=BG_CARD)
+        row2.pack(fill="x")
+
+        half = len(CATEGORIES) // 2 + 1
+        self._categories_data = CATEGORIES
+
+        def select_cat(name, btn):
+            self.selected_category.set(name)
+            for b in self._cat_buttons.values():
+                b.config(bg=BG_ITEM, fg=TEXT_GRAY)
+            btn.config(bg=ACCENT, fg="white")
+
+        for i, (name, seeds) in enumerate(CATEGORIES):
+            parent_row = row1 if i < half else row2
+            btn = tk.Button(parent_row, text=name, font=("Malgun Gothic", 9),
+                            bg=ACCENT if name == "전체" else BG_ITEM,
+                            fg="white" if name == "전체" else TEXT_GRAY,
+                            relief="flat", bd=0, padx=8, pady=4, cursor="hand2")
+            btn.config(command=lambda n=name, b=btn: select_cat(n, b))
+            btn.pack(side="left", padx=2, pady=1)
+            self._cat_buttons[name] = btn
+
         # ── 입력 카드 ──
         input_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=15)
         input_card.pack(fill="x", pady=(0, 10))
@@ -962,10 +1091,23 @@ class BlogMasterApp:
     def run_keyword_analysis(self):
         keywords = self.kw_entry.get().strip()
         PLACEHOLDER = "키워드를 입력하세요 (예: 손예진)"
+
+        # 카테고리 선택됐고 키워드 비어있으면 → 시드 키워드 중 랜덤으로 입력
+        selected_cat = self.selected_category.get()
+        if (not keywords or keywords == PLACEHOLDER) and selected_cat != "전체":
+            seeds = next((s for n, s in self._categories_data if n == selected_cat and s), None)
+            if seeds:
+                import random
+                keywords = random.choice(seeds)
+                self.kw_entry.delete(0, tk.END)
+                self.kw_entry.insert(0, keywords)
+                self.kw_entry.config(fg=TEXT_WHITE)
+
         if not keywords or keywords == PLACEHOLDER:
             messagebox.showwarning("알림", "키워드를 입력해주세요!")
             return
-        self.kw_log.config(text="⏳ 조회 중...", fg=WARNING)
+
+        self.kw_log.config(text=f"⏳ [{selected_cat}] {keywords} 조회 중...", fg=WARNING)
         for w in self.kw_result_frame.winfo_children():
             w.destroy()
         for w in self.kw_recommend_frame.winfo_children():
