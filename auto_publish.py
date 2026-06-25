@@ -101,6 +101,78 @@ ANCHOR_TEXTS = [
 ]
 
 
+def generate_naver_content(keyword, title, content, blogspot_url):
+    """Claude API로 네이버용 요약 글 생성"""
+    import re
+    try:
+        import anthropic
+        claude_api_key = os.environ.get("CLAUDE_API_KEY")
+        if not claude_api_key:
+            try:
+                from config import CLAUDE_API_KEY
+                claude_api_key = CLAUDE_API_KEY
+            except:
+                pass
+        if not claude_api_key:
+            return None, None, None
+
+        # 블스 본문에서 HTML 태그 제거
+        plain_content = re.sub(r'<[^>]+>', '', content)
+        plain_content = re.sub(r'\n{3,}', '\n\n', plain_content).strip()
+
+        client = anthropic.Anthropic(api_key=claude_api_key)
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=3000,
+            messages=[{
+                "role": "user",
+                "content": f"""아래 블로그 글을 네이버 블로그용으로 재작성해줘.
+
+키워드: {keyword}
+제목: {title}
+원문 블로그: {blogspot_url}
+
+원문 내용:
+{plain_content[:3000]}
+
+다음 형식으로 작성해줘:
+
+[제목3가지]
+1. [검색 노출형] 제목
+2. [핵심 요약형] 제목
+3. [카피라이팅형] 제목
+
+[본문]
+- 1인칭 경험담 형식 ("저도 직접 해봤는데" 말투)
+- 친근하고 솔직한 말투
+- 도입부 → 핵심 내용 요약 → 주의사항 → FAQ 3개 → 마무리 순서
+- 마무리에 "더 자세한 내용은 아래 원문에서 확인하세요 👇" 문구 포함
+- 외부 공식사이트 링크는 절대 넣지 말것
+- 분량은 800~1200자
+
+[해시태그]
+#태그1 #태그2 ... (10개)"""
+            }]
+        )
+
+        result = message.content[0].text
+
+        # 제목, 본문, 해시태그 파싱
+        titles_match = re.search(r'\[제목3가지\](.*?)\[본문\]', result, re.DOTALL)
+        body_match = re.search(r'\[본문\](.*?)\[해시태그\]', result, re.DOTALL)
+        tags_match = re.search(r'\[해시태그\](.*?)$', result, re.DOTALL)
+
+        titles = titles_match.group(1).strip() if titles_match else ""
+        body = body_match.group(1).strip() if body_match else result
+        tags = tags_match.group(1).strip() if tags_match else ""
+
+        return titles, body, tags
+
+    except Exception as e:
+        print(f"⚠️ 네이버용 글 생성 실패: {e}")
+        return None, None, None
+
+
 def send_naver_email(keyword, title, content, image_urls, blogspot_url, published_at):
     """네이버 블로그 복붙용 글을 Gmail로 전송"""
     import smtplib
@@ -114,19 +186,31 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
         print("⚠️ Gmail 환경변수 없음 - 이메일 전송 건너뜀")
         return
 
-    # 네이버용 HTML 구성 (이미지 포함, 복붙하면 바로 사용 가능)
+    import random
+    import re
+
+    # 네이버용 글 생성
+    print("🤖 네이버용 글 생성 중...")
+    naver_titles, naver_body, naver_tags = generate_naver_content(keyword, title, content, blogspot_url)
+
+    # 생성 실패 시 기존 방식으로 폴백
+    if not naver_body:
+        print("⚠️ 네이버용 글 생성 실패 - 원문 그대로 발송")
+        plain_content = re.sub(r'<[^>]+>', '', content)
+        naver_body = plain_content
+        naver_titles = ""
+        naver_tags = ""
+
+    # 이미지 HTML
     images_html = ""
     for url in image_urls[:3]:
         images_html += f'<img src="{url}" style="max-width:100%;margin:10px 0"><br>\n'
 
-    # 랜덤 앵커텍스트 선택
-    import random
-    import re
+    # 앵커텍스트
     anchor_text = random.choice(ANCHOR_TEXTS)
 
-    # 블로그스팟 본문에서 HTML 태그 제거한 텍스트 (네이버용)
-    plain_content = re.sub(r'<[^>]+>', '', content)
-    plain_content = re.sub(r'\n{3,}', '\n\n', plain_content).strip()
+    # 본문 줄바꿈 처리
+    naver_body_html = naver_body.replace('\n', '<br>\n')
 
     email_html = f"""
 <html><body style="font-family:맑은고딕,sans-serif;max-width:700px;margin:0 auto;padding:20px">
@@ -137,16 +221,22 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 </div>
 
 <div style="background:#fff3cd;border:1px solid #ffc107;padding:12px;border-radius:4px;margin-bottom:20px">
-  <strong>📋 사용 방법:</strong> 아래 내용을 복사해서 네이버 블로그에 붙여넣기 하세요.
+  <strong>📋 사용 방법:</strong> 아래 제목 중 하나 선택 → 본문 복사 → 네이버 블로그에 붙여넣기
 </div>
 
+{'<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px"><strong>📌 추천 제목 3가지</strong><br><br>' + naver_titles.replace('\n','<br>') + '</div>' if naver_titles else ''}
+
 <hr style="border:2px solid #333;margin:20px 0">
-<h1 style="font-size:24px;color:#111">{title}</h1>
+<h1 style="font-size:22px;color:#111">✍️ 본문 (복붙용)</h1>
 <hr style="border:1px solid #ddd;margin:20px 0">
 
 {images_html}
 
-{content}
+<div style="line-height:1.9;font-size:15px;color:#222">
+{naver_body_html}
+</div>
+
+{'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">' + naver_tags + '</div>' if naver_tags else ''}
 
 <div style="border-top:2px solid #ddd;margin-top:40px;padding-top:20px;text-align:center">
   <a href="{blogspot_url}" style="display:inline-block;background:#2c3e50;color:white;padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none;font-size:15px">👉 {anchor_text}</a>
