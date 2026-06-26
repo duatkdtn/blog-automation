@@ -500,7 +500,8 @@ def build_email_html(keywords, best6, today_str):
 
         time_badge = ""
         if is_best:
-            time_badge = f'<span style="background:#764ba2; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-left:6px;">⏰ {best6_time[kw_name]} 발행</span>'
+            pub_date = now_kst().strftime("%m월%d일").lstrip("0").replace("월0", "월")
+            time_badge = f'<span style="background:#764ba2; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-left:6px;">⏰ {pub_date} {best6_time[kw_name]} 발행</span>'
 
         comp_badge = f'<span style="background:{comp_color}; color:white; padding:1px 6px; border-radius:8px; font-size:10px;">경쟁 {competition}</span>' if competition else ""
         ad_badge = f'<span style="background:#ff6b81; color:white; padding:1px 6px; border-radius:8px; font-size:10px; margin-left:3px;">단가 {ad_price}</span>' if ad_price else ""
