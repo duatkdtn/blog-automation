@@ -149,6 +149,9 @@ def generate_naver_content(keyword, title, content, blogspot_url):
 - 마무리에 "더 자세한 내용은 아래 원문에서 확인하세요 👇" 문구 포함
 - 외부 공식사이트 링크는 절대 넣지 말것
 - 분량은 800~1200자
+- 마크다운 문법 절대 사용 금지 (###, ##, #, ---, ** 등 절대 사용하지 말것)
+- 수평선(---) 절대 사용 금지
+- 줄 시작에 # 기호 절대 사용 금지
 
 [해시태그]
 #태그1 #태그2 ... (10개)"""
@@ -217,6 +220,10 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
     naver_body = _re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', naver_body)
     naver_body = _re.sub(r'\*(.+?)\*', r'<em>\1</em>', naver_body)
     naver_body = _re.sub(r'^- (.+)$', r'• \1', naver_body, flags=_re.MULTILINE)
+    # 찌꺼기 제거 (빈 ##, ---, 단독 # 등)
+    naver_body = _re.sub(r'^#{1,6}\s*$', '', naver_body, flags=_re.MULTILINE)
+    naver_body = _re.sub(r'^-{2,}\s*$', '', naver_body, flags=_re.MULTILINE)
+    naver_body = _re.sub(r'\n{3,}', '\n\n', naver_body)
 
     # 본문 줄바꿈 처리
     br_tag = '<br>\n'
