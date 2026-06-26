@@ -209,6 +209,15 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
     # 앵커텍스트
     anchor_text = random.choice(ANCHOR_TEXTS)
 
+    # 마크다운 → HTML 변환
+    import re as _re
+    naver_body = _re.sub(r'^### (.+)$', r'<h3>\1</h3>', naver_body, flags=_re.MULTILINE)
+    naver_body = _re.sub(r'^## (.+)$', r'<h2>\1</h2>', naver_body, flags=_re.MULTILINE)
+    naver_body = _re.sub(r'^# (.+)$', r'<h1>\1</h1>', naver_body, flags=_re.MULTILINE)
+    naver_body = _re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', naver_body)
+    naver_body = _re.sub(r'\*(.+?)\*', r'<em>\1</em>', naver_body)
+    naver_body = _re.sub(r'^- (.+)$', r'• \1', naver_body, flags=_re.MULTILINE)
+
     # 본문 줄바꿈 처리
     br_tag = '<br>\n'
     naver_body_html = naver_body.replace('\n', br_tag)
