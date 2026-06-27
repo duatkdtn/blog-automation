@@ -199,10 +199,43 @@ def add_text_to_thumbnail(img_bytes, title):
         return img_bytes
 
 
+def generate_hook_text(keyword, title):
+    """Claude API로 썸네일용 후킹 문구 생성 (15자 이내)"""
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+        message = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=100,
+            messages=[{
+                "role": "user",
+                "content": f"""아래 블로그 제목을 보고 썸네일에 들어갈 후킹 문구를 1개만 만들어줘.
+
+블로그 제목: {title}
+키워드: {keyword}
+
+조건:
+- 15자 이내
+- 짧고 강렬하게
+- 숫자 포함하면 더 좋음 (예: 3가지, 30만원)
+- 궁금증 유발 (예: 모르면 손해, 이것만 알면)
+- 문구만 출력, 다른 말 없이"""
+            }]
+        )
+        hook = message.content[0].text.strip().strip('"').strip("'")
+        return hook[:20] if hook else title
+    except:
+        return title
+
+
 def generate_thumbnail_with_vertex(keyword, title):
-    """AI Studio Gemini로 썸네일 생성 + 한국어 제목 합성"""
+    """AI Studio Gemini로 썸네일 생성 + 후킹 문구 합성"""
     import time
     print(f"\n🖼️  썸네일 생성 중...")
+
+    # 후킹 문구 생성
+    hook_text = generate_hook_text(keyword, title)
+    print(f"   📌 썸네일 문구: {hook_text}")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     prompt = f"Eye-catching blog thumbnail photo with Korean people related to '{keyword}'. Vibrant colors, Korean urban or indoor background, natural and lively scene. IMPORTANT: zero text, zero letters, zero words, zero numbers, zero signs, zero banners, zero watermarks anywhere in the entire image. Pure photographic scene only."
@@ -218,7 +251,7 @@ def generate_thumbnail_with_vertex(keyword, title):
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
                 img_bytes = part.inline_data.data
-                img_bytes = add_text_to_thumbnail(img_bytes, title)
+                img_bytes = add_text_to_thumbnail(img_bytes, hook_text)
                 url = upload_image_to_cloudinary(img_bytes, f"thumbnail_{keyword}_{int(time.time())}")
                 if url:
                     print(f"   ✅ 썸네일 완료!")

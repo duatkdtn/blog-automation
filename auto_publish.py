@@ -232,7 +232,7 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
     # 제목 박스 HTML 미리 생성 (f-string 내 백슬래시 회피)
     nl_to_br = naver_titles.replace('\n', '<br>') if naver_titles else ''
     titles_html = f'<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px"><strong>📌 추천 제목 3가지</strong><br><br>{nl_to_br}</div>' if naver_titles else ''
-    tags_html = f'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">{naver_tags}</div>' if naver_tags else ''
+    tags_html = f'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">📌 {naver_tags}</div>' if naver_tags else ''
 
     email_html = f"""
 <html><body style="font-family:맑은고딕,sans-serif;max-width:700px;margin:0 auto;padding:20px">
