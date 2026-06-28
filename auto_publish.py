@@ -147,6 +147,10 @@ def generate_naver_content(keyword, title, content, blogspot_url):
 - 1인칭 경험담 형식 ("저도 직접 해봤는데" 말투)
 - 친근하고 솔직한 말투
 - 도입부 → 핵심 내용 요약 → 주의사항 → FAQ 3개 → 마무리 순서
+- FAQ는 반드시 아래 형식으로 작성:
+  ❓ Q. 질문 내용
+  💡 A. 답변 내용
+  (3개 모두 이 형식 적용)
 - 마무리에 "더 자세한 내용은 아래 원문에서 확인하세요 👇" 문구 포함
 - 외부 공식사이트 링크는 절대 넣지 말것
 - 분량은 800~1200자
@@ -272,12 +276,12 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 {naver_body_html}
 </div>
 
-{tags_html}
-
 <div style="border-top:2px solid #ddd;margin-top:40px;padding-top:20px;text-align:center">
   <a href="{blogspot_url}" style="display:inline-block;background:#2c3e50;color:white;padding:12px 28px;border-radius:6px;font-weight:bold;text-decoration:none;font-size:15px">👉 {anchor_text}</a>
-  <p style="margin:12px 0 0 0;font-size:13px;color:#888">원문: <a href="{blogspot_url}" style="color:#4A90E2">{blogspot_url}</a></p>
+  <p style="margin:12px 0 0 0;font-size:16px;color:#333">🔗 원문: <a href="{blogspot_url}" style="color:#4A90E2;font-weight:bold;word-break:break-all;">{blogspot_url}</a></p>
 </div>
+
+{tags_html}
 
 <hr style="border:2px solid #333;margin:30px 0">
 </body></html>
