@@ -2056,7 +2056,7 @@ class BlogMasterApp:
         # 테이블 헤더
         header = tk.Frame(card, bg="#252540")
         header.pack(fill="x", pady=(0, 5))
-        for col, w in [("발행 시간", 15), ("키워드", 20), ("상태", 8), ("URL", 30)]:
+        for col, w in [("발행 시간", 15), ("키워드", 20), ("상태", 8), ("URL", 28), ("", 12)]:
             tk.Label(header, text=col, font=("Malgun Gothic", 10, "bold"),
                      bg="#252540", fg=TEXT_WHITE, width=w, anchor="w", padx=5).pack(side="left")
 
@@ -2082,12 +2082,24 @@ class BlogMasterApp:
                              width=8, anchor="w", padx=5).pack(side="left")
 
                     url = item.get("post_url", "-")
-                    url_label = tk.Label(row, text=url[:35] + "..." if len(url) > 35 else url,
+                    url_label = tk.Label(row, text=url[:28] + "..." if len(url) > 28 else url,
                                          font=("Malgun Gothic", 10), bg=BG_CARD, fg=ACCENT,
-                                         cursor="hand2", anchor="w", padx=5)
+                                         cursor="hand2", anchor="w", padx=5, width=28)
                     url_label.pack(side="left")
                     if url != "-":
                         url_label.bind("<Button-1>", lambda e, u=url: self.open_url(u))
+
+                    # 네블 백링크 버튼
+                    kw = item.get("keyword", "")
+                    title = item.get("title", kw)
+                    post_url = url
+                    naver_btn = tk.Button(
+                        row, text="네블 백링크",
+                        font=("Malgun Gothic", 9), bg="#03c75a", fg="white",
+                        relief="flat", padx=6, pady=2, cursor="hand2",
+                        command=lambda k=kw, t=title, u=post_url: self._open_naver_backlink_popup(k, t, u)
+                    )
+                    naver_btn.pack(side="left", padx=5)
 
         except FileNotFoundError:
             tk.Label(card, text="발행 이력 없음", font=("Malgun Gothic", 11),
@@ -2095,6 +2107,109 @@ class BlogMasterApp:
         except Exception as e:
             tk.Label(card, text=f"오류: {e}", font=("Malgun Gothic", 10),
                      bg=BG_CARD, fg=DANGER).pack()
+
+    def _open_naver_backlink_popup(self, keyword, title, blogspot_url):
+        """네블 백링크 글 생성 팝업"""
+        popup = tk.Toplevel(self.root)
+        popup.title("네이버 백링크 글 생성")
+        popup.geometry("700x650")
+        popup.configure(bg=BG_DARK)
+        popup.grab_set()
+
+        tk.Label(popup, text=f"📝 네이버 백링크 글 생성",
+                 font=("Malgun Gothic", 14, "bold"), bg=BG_DARK, fg=TEXT_WHITE).pack(anchor="w", padx=20, pady=(15, 3))
+        tk.Label(popup, text=f"키워드: {keyword}",
+                 font=("Malgun Gothic", 10), bg=BG_DARK, fg=TEXT_GRAY).pack(anchor="w", padx=20, pady=(0, 10))
+
+        status_lbl = tk.Label(popup, text="⏳ 생성 중... (30초~1분 소요)",
+                               font=("Malgun Gothic", 10), bg=BG_DARK, fg=WARNING)
+        status_lbl.pack(anchor="w", padx=20, pady=(0, 8))
+
+        # 제목 표시
+        title_frame = tk.Frame(popup, bg=BG_CARD, padx=15, pady=10)
+        title_frame.pack(fill="x", padx=20, pady=(0, 8))
+        tk.Label(title_frame, text="📌 네이버용 제목", font=("Malgun Gothic", 10, "bold"),
+                 bg=BG_CARD, fg=ACCENT).pack(anchor="w")
+        title_var = tk.StringVar(value="생성 중...")
+        title_lbl = tk.Label(title_frame, textvariable=title_var,
+                              font=("Malgun Gothic", 11), bg=BG_CARD, fg=TEXT_WHITE,
+                              wraplength=620, justify="left")
+        title_lbl.pack(anchor="w", pady=(4, 0))
+
+        # 본문 텍스트박스
+        tk.Label(popup, text="✍️ 본문 (복붙용)", font=("Malgun Gothic", 10, "bold"),
+                 bg=BG_DARK, fg=TEXT_WHITE).pack(anchor="w", padx=20, pady=(0, 4))
+        text_frame = tk.Frame(popup, bg=BG_DARK)
+        text_frame.pack(fill="both", expand=True, padx=20, pady=(0, 8))
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.pack(side="right", fill="y")
+        body_text = tk.Text(text_frame, font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_WHITE,
+                            relief="flat", wrap="word", yscrollcommand=scrollbar.set)
+        body_text.pack(fill="both", expand=True)
+        scrollbar.config(command=body_text.yview)
+        body_text.insert("1.0", "생성 중...")
+        body_text.config(state="disabled")
+
+        # 해시태그
+        tag_var = tk.StringVar(value="")
+        tag_lbl = tk.Label(popup, textvariable=tag_var,
+                           font=("Malgun Gothic", 9), bg=BG_DARK, fg=TEXT_GRAY,
+                           wraplength=660, justify="left")
+        tag_lbl.pack(anchor="w", padx=20, pady=(0, 8))
+
+        # 버튼 영역
+        btn_frame = tk.Frame(popup, bg=BG_DARK)
+        btn_frame.pack(fill="x", padx=20, pady=(0, 15))
+
+        def copy_all():
+            content = body_text.get("1.0", "end-1c")
+            self.root.clipboard_clear()
+            self.root.clipboard_append(content)
+            status_lbl.config(text="✅ 본문이 클립보드에 복사됐습니다!", fg=SUCCESS)
+
+        def copy_title():
+            self.root.clipboard_clear()
+            self.root.clipboard_append(title_var.get())
+            status_lbl.config(text="✅ 제목이 클립보드에 복사됐습니다!", fg=SUCCESS)
+
+        tk.Button(btn_frame, text="📋 본문 복사", font=("Malgun Gothic", 10, "bold"),
+                  bg="#03c75a", fg="white", relief="flat", padx=12, pady=6,
+                  cursor="hand2", command=copy_all).pack(side="left", padx=(0, 8))
+        tk.Button(btn_frame, text="📋 제목 복사", font=("Malgun Gothic", 10),
+                  bg=ACCENT, fg="white", relief="flat", padx=12, pady=6,
+                  cursor="hand2", command=copy_title).pack(side="left", padx=(0, 8))
+        tk.Button(btn_frame, text="닫기", font=("Malgun Gothic", 10),
+                  bg="#444", fg="white", relief="flat", padx=12, pady=6,
+                  cursor="hand2", command=popup.destroy).pack(side="right")
+
+        # 백그라운드로 글 생성
+        def do_generate():
+            try:
+                from naver_post_generator import generate_naver_post
+                result = generate_naver_post(keyword, title, "", [], blogspot_url)
+
+                naver_title = result.get("title", "")
+                naver_content = result.get("content", "")
+                hashtags = result.get("hashtags", [])
+                tag_str = " ".join(hashtags)
+
+                def update_ui():
+                    title_var.set(naver_title)
+                    body_text.config(state="normal")
+                    body_text.delete("1.0", "end")
+                    body_text.insert("1.0", naver_content)
+                    body_text.config(state="disabled")
+                    tag_var.set(tag_str)
+                    status_lbl.config(text="✅ 생성 완료! 제목/본문을 복사해서 네이버 블로그에 붙여넣으세요.", fg=SUCCESS)
+
+                popup.after(0, update_ui)
+
+            except Exception as ex:
+                import traceback
+                print(traceback.format_exc())
+                popup.after(0, lambda: status_lbl.config(text=f"❌ 오류: {ex}", fg=DANGER))
+
+        threading.Thread(target=do_generate, daemon=True).start()
 
     # ================================================
     # 설정 페이지
@@ -2487,56 +2602,4 @@ class BlogMasterApp:
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = f"[\ud0a4\uc6cc\ub4dc \ubc1c\uc1a1] {title}"
                 msg["From"] = GMAIL_ADDRESS
-                msg["To"] = self.email_recipient_var.get()
-                msg.attach(MIMEText(body, "html", "utf-8"))
-
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-                    server.sendmail(GMAIL_ADDRESS, self.email_recipient_var.get(), msg.as_string())
-                self._email_log(f"  \u2705 {keyword} \uc644\ub8cc!")
-
-            self._email_log("\U0001f389 \ubaa8\ub4e0 \uc774\uba54\uc77c \ubc1c\uc1a1 \uc644\ub8cc!")
-        except Exception as e:
-            self._email_log(f"\u274c \uc624\ub958: {e}")
-
-    def run_keyword_email(self):
-        if messagebox.askyesno("\ud655\uc778", "\ud0a4\uc6cc\ub4dc \uc774\uba54\uc77c\uc744 \uc9c0\uae08 \ubc1c\uc1a1\ud560\uae4c\uc694?"):
-            self.show_page("publish")
-            threading.Thread(target=self._run_keyword_email, daemon=True).start()
-
-    def _run_keyword_email(self):
-        self._email_log("\U0001f4e7 \ud0a4\uc6cc\ub4dc \ucd94\ucc9c \uc774\uba54\uc77c \ubc1c\uc1a1 \uc911...")
-        try:
-            import keyword_email
-            keyword_email.main()
-            self._email_log("\u2705 \ud0a4\uc6cc\ub4dc \uc774\uba54\uc77c \ubc1c\uc1a1 \uc644\ub8cc!")
-        except Exception as e:
-            self._email_log(f"\u274c \uc624\ub958: {e}")
-
-    def save_settings(self):
-        try:
-            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
-            with open(config_path, "r", encoding="utf-8") as f:
-                cfg = f.read()
-            for key, entry in self.setting_entries.items():
-                value = entry.get().strip()
-                if value:
-                    import re
-                    pattern = rf'^({key}\s*=\s*)["\'\'].*?["\'\']'
-                    replacement = f'{key} = "{value}"'
-                    cfg = re.sub(pattern, replacement, cfg, flags=re.MULTILINE)
-            with open(config_path, "w", encoding="utf-8") as f:
-                f.write(cfg)
-            self.config_data = self.load_config()
-            messagebox.showinfo("\uc644\ub8cc", "\uc124\uc815\uc774 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4!")
-        except Exception as e:
-            messagebox.showerror("\uc624\ub958", f"\uc800\uc7a5 \uc2e4\ud328: {e}")
-
-
-# ================================================
-# \uc2e4\ud589
-# ================================================
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = BlogMasterApp(root)
-    root.mainloop()
+                msg["To"
