@@ -448,6 +448,12 @@ def generate_blog_post(keyword):
 
     content = '\n'.join(content_lines)
 
+    # 외부링크 버튼 추가
+    try:
+        content = add_external_links(content, keyword)
+    except Exception as e:
+        print(f"⚠️ 외부링크 추가 실패 (글 생성은 계속): {e}")
+
     print(f"✅ 글 생성 완료! 제목: {title}")
     return title, content
 
@@ -614,6 +620,16 @@ EXTERNAL_LINKS = {
         ("대한체육회", "https://www.sports.or.kr"),
         ("한국콘텐츠진흥원", "https://www.kocca.kr"),
     ],
+    "레저/공공시설": [
+        ("정부24 시설예약", "https://www.gov.kr"),
+        ("한국관광공사", "https://www.visitkorea.or.kr"),
+        ("공공데이터포털", "https://www.data.go.kr"),
+    ],
+    "지역정보": [
+        ("정부24", "https://www.gov.kr"),
+        ("행정안전부", "https://www.mois.go.kr"),
+        ("국민신문고", "https://www.epeople.go.kr"),
+    ],
 }
 
 
@@ -779,41 +795,3 @@ def main():
 
     keyword = input("\n📌 키워드를 입력하세요: ")
 
-    if not keyword.strip():
-        print("❌ 키워드를 입력해주세요!")
-        return
-
-    # 글 생성
-    title, content = generate_blog_post(keyword)
-
-    # Vertex AI로 본문 이미지 생성
-    image_urls = generate_images_with_vertex(keyword, count=3)
-
-    # Vertex AI로 썸네일 생성
-    thumbnail_url = generate_thumbnail_with_vertex(keyword, title)
-
-    # 이미지 삽입 (썸네일을 맨 앞에)
-    if thumbnail_url:
-        image_urls = [thumbnail_url] + image_urls
-
-    if image_urls:
-        content = insert_images_into_content(content, image_urls, keyword)
-        print(f"🖼️  이미지 {len(image_urls)}장 삽입됐어요! (썸네일 포함)")
-
-    print(f"\n{'='*50}")
-    print(f"제목: {title}")
-    print(f"{'='*50}")
-
-    # 발행 여부 확인
-    publish = input("\n블로그에 발행하시겠어요? (y/n): ")
-
-    if publish.lower() == 'y':
-        publish_to_blogger(title, content)
-    else:
-        print("발행을 취소했습니다.")
-
-    print("\n✨ 완료!")
-
-
-if __name__ == "__main__":
-    main()

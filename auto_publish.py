@@ -166,13 +166,24 @@ def generate_naver_content(keyword, title, content, blogspot_url):
         result = message.content[0].text
 
         # 제목, 본문, 해시태그 파싱
-        titles_match = re.search(r'\[제목3가지\](.*?)\[본문\]', result, re.DOTALL)
+        # 공백 허용 + 다양한 구분자 대응
+        titles_match = re.search(r'\[제목\s*3\s*가지\](.*?)\[본문\]', result, re.DOTALL)
         body_match = re.search(r'\[본문\](.*?)\[해시태그\]', result, re.DOTALL)
         tags_match = re.search(r'\[해시태그\](.*?)$', result, re.DOTALL)
 
         titles = titles_match.group(1).strip() if titles_match else ""
-        body = body_match.group(1).strip() if body_match else result
+        body = body_match.group(1).strip() if body_match else ""
         tags = tags_match.group(1).strip() if tags_match else ""
+
+        # 파싱 실패 시 대체 파싱: 번호 1. 2. 3. 으로 시작하는 줄 추출
+        if not titles:
+            title_lines = re.findall(r'^[1-3][.)]\s*.+', result, re.MULTILINE)
+            if title_lines:
+                titles = "\n".join(title_lines[:3])
+
+        # 본문 파싱 실패 시 전체 결과 사용
+        if not body:
+            body = result
 
         return titles, body, tags
 
@@ -420,34 +431,4 @@ def main():
         # 발행 완료 표시
         target["published"] = True
         target["post_url"] = post_url
-        target["published_at"] = now_kst.strftime("%Y-%m-%d %H:%M")
-
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print("💾 발행 상태 저장 완료")
-
-        # 6. 구글 색인 요청
-        print(f"\n🔍 구글 색인 요청 중...")
-        request_google_indexing(post_url)
-
-        # 7. 네이버용 글 이메일 전송
-        print(f"\n📧 네이버용 글 이메일 전송 중...")
-        try:
-            send_naver_email(
-                keyword=keyword,
-                title=final_title,
-                content=content,
-                image_urls=all_images if all_images else [],
-                blogspot_url=post_url,
-                published_at=now_kst.strftime("%Y-%m-%d %H:%M")
-            )
-        except Exception as e:
-            print(f"⚠️ 네이버 이메일 전송 실패 (발행은 성공): {e}")
-    else:
-        print(f"\n❌ 발행 실패")
-
-    print("\n🎉 완료!")
-
-
-if __name__ == "__main__":
-    main()
+        target["published_at"] = now_kst.strftime
