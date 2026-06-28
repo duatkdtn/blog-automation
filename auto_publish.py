@@ -420,4 +420,30 @@ def main():
 
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print("💾 발행 상태
+        print("💾 발행 상태 저장 완료")
+
+        # 6. 구글 색인 요청
+        print(f"\n🔍 구글 색인 요청 중...")
+        request_google_indexing(post_url)
+
+        # 7. 네이버용 글 이메일 전송
+        print(f"\n📧 네이버용 글 이메일 전송 중...")
+        try:
+            send_naver_email(
+                keyword=keyword,
+                title=final_title,
+                content=content,
+                image_urls=all_images if all_images else [],
+                blogspot_url=post_url,
+                published_at=now_kst.strftime("%Y-%m-%d %H:%M")
+            )
+        except Exception as e:
+            print(f"⚠️ 네이버 이메일 전송 실패 (발행은 성공): {e}")
+    else:
+        print(f"\n❌ 발행 실패")
+
+    print("\n🎉 완료!")
+
+
+if __name__ == "__main__":
+    main()
