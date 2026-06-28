@@ -7,6 +7,7 @@
 import json
 import os
 import sys
+import re
 import base64
 import requests
 from datetime import datetime
@@ -229,9 +230,22 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
     br_tag = '<br>\n'
     naver_body_html = naver_body.replace('\n', br_tag)
 
-    # 제목 박스 HTML 미리 생성 (f-string 내 백슬래시 회피)
-    nl_to_br = naver_titles.replace('\n', '<br>') if naver_titles else ''
-    titles_html = f'<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px"><strong>📌 추천 제목 3가지</strong><br><br>{nl_to_br}</div>' if naver_titles else ''
+    # 제목 박스 HTML 미리 생성 - 라벨 고정으로 붙이기
+    TITLE_LABELS = ["🔍 검색 노출형", "📝 핵심 요약형", "🎯 카피라이팅형"]
+    if naver_titles:
+        lines = [l.strip() for l in naver_titles.strip().split('\n') if l.strip()]
+        # 번호(1. 2. 3.) 제거하고 라벨 고정 부착
+        labeled_lines = []
+        for idx, line in enumerate(lines[:3]):
+            clean = line.lstrip('0123456789.-) ').strip()
+            # [검색 노출형] 같은 태그가 있으면 제거
+            clean = re.sub(r'\[.*?\]', '', clean).strip()
+            label = TITLE_LABELS[idx] if idx < len(TITLE_LABELS) else f"{idx+1}."
+            labeled_lines.append(f'<div style="margin-bottom:10px"><span style="background:#764ba2;color:white;padding:2px 8px;border-radius:8px;font-size:11px;margin-right:6px">{label}</span><strong>{clean}</strong></div>')
+        titles_inner = '\n'.join(labeled_lines)
+        titles_html = f'<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px"><strong>📌 추천 제목 3가지</strong><br><br>{titles_inner}</div>'
+    else:
+        titles_html = ''
     tags_html = f'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">📌 {naver_tags}</div>' if naver_tags else ''
 
     email_html = f"""
@@ -406,30 +420,4 @@ def main():
 
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print("💾 발행 상태 저장 완료")
-
-        # 6. 구글 색인 요청
-        print(f"\n🔍 구글 색인 요청 중...")
-        request_google_indexing(post_url)
-
-        # 7. 네이버용 글 이메일 전송
-        print(f"\n📧 네이버용 글 이메일 전송 중...")
-        try:
-            send_naver_email(
-                keyword=keyword,
-                title=final_title,
-                content=content,
-                image_urls=all_images if all_images else [],
-                blogspot_url=post_url,
-                published_at=now_kst.strftime("%Y-%m-%d %H:%M")
-            )
-        except Exception as e:
-            print(f"⚠️ 네이버 이메일 전송 실패 (발행은 성공): {e}")
-    else:
-        print(f"\n❌ 발행 실패")
-
-    print("\n🎉 완료!")
-
-
-if __name__ == "__main__":
-    main()
+        print("💾 발행 상태
