@@ -2094,7 +2094,7 @@ class BlogMasterApp:
                     title = item.get("title", kw)
                     post_url = url
                     naver_btn = tk.Button(
-                        row, text="네블 백링크",
+                        row, text="네이버 블로그용 글 생성",
                         font=("Malgun Gothic", 9), bg="#03c75a", fg="white",
                         relief="flat", padx=6, pady=2, cursor="hand2",
                         command=lambda k=kw, t=title, u=post_url: self._open_naver_backlink_popup(k, t, u)
