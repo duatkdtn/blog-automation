@@ -2602,4 +2602,56 @@ class BlogMasterApp:
                 msg = MIMEMultipart("alternative")
                 msg["Subject"] = f"[\ud0a4\uc6cc\ub4dc \ubc1c\uc1a1] {title}"
                 msg["From"] = GMAIL_ADDRESS
-                msg["To"
+                msg["To"] = self.email_recipient_var.get()
+                msg.attach(MIMEText(body, "html", "utf-8"))
+
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                    server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+                    server.sendmail(GMAIL_ADDRESS, self.email_recipient_var.get(), msg.as_string())
+                self._email_log(f"  \u2705 {keyword} \uc644\ub8cc!")
+
+            self._email_log("\U0001f389 \ubaa8\ub4e0 \uc774\uba54\uc77c \ubc1c\uc1a1 \uc644\ub8cc!")
+        except Exception as e:
+            self._email_log(f"\u274c \uc624\ub958: {e}")
+
+    def run_keyword_email(self):
+        if messagebox.askyesno("\ud655\uc778", "\ud0a4\uc6cc\ub4dc \uc774\uba54\uc77c\uc744 \uc9c0\uae08 \ubc1c\uc1a1\ud560\uae4c\uc694?"):
+            self.show_page("publish")
+            threading.Thread(target=self._run_keyword_email, daemon=True).start()
+
+    def _run_keyword_email(self):
+        self._email_log("\U0001f4e7 \ud0a4\uc6cc\ub4dc \ucd94\ucc9c \uc774\uba54\uc77c \ubc1c\uc1a1 \uc911...")
+        try:
+            import keyword_email
+            keyword_email.main()
+            self._email_log("\u2705 \ud0a4\uc6cc\ub4dc \uc774\uba54\uc77c \ubc1c\uc1a1 \uc644\ub8cc!")
+        except Exception as e:
+            self._email_log(f"\u274c \uc624\ub958: {e}")
+
+    def save_settings(self):
+        try:
+            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = f.read()
+            for key, entry in self.setting_entries.items():
+                value = entry.get().strip()
+                if value:
+                    import re
+                    pattern = rf'^({key}\s*=\s*)["\'\'].*?["\'\']'
+                    replacement = f'{key} = "{value}"'
+                    cfg = re.sub(pattern, replacement, cfg, flags=re.MULTILINE)
+            with open(config_path, "w", encoding="utf-8") as f:
+                f.write(cfg)
+            self.config_data = self.load_config()
+            messagebox.showinfo("\uc644\ub8cc", "\uc124\uc815\uc774 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4!")
+        except Exception as e:
+            messagebox.showerror("\uc624\ub958", f"\uc800\uc7a5 \uc2e4\ud328: {e}")
+
+
+# ================================================
+# \uc2e4\ud589
+# ================================================
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = BlogMasterApp(root)
+    root.mainloop()
