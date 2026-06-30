@@ -350,13 +350,19 @@ def main():
     target = None
 
     current_hour_int = int(current_time.split(":")[0])
+    is_yesterday = (saved_date == yesterday)
 
     for item in schedule:
         item_hour_int = int(item["time"].split(":")[0])
-        # 현재 시간 이하인 슬롯 중 미발행 항목 찾기 (가장 오래된 것부터)
-        if item_hour_int <= current_hour_int and not item.get("published", False):
-            target = item
-            break
+        if not item.get("published", False):
+            # 어제 날짜 키워드면 시간 상관없이 미발행 전부 발행
+            if is_yesterday:
+                target = item
+                break
+            # 오늘 날짜면 현재 시간 이하 슬롯만 발행
+            if item_hour_int <= current_hour_int:
+                target = item
+                break
 
     if not target:
         print(f"⏰ {current_time} - 발행 예정 키워드 없음 (이미 발행됐거나 해당 없음)")
