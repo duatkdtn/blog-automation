@@ -74,6 +74,13 @@ class BlogMasterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("비니 v1.0")
+        try:
+            import os
+            icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bini_icon.ico")
+            if os.path.exists(icon_path):
+                self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
         self.root.geometry("900x650")
         self.root.configure(bg=BG_DARK)
         self.root.resizable(True, True)
