@@ -425,3 +425,5 @@ def main():
         target["published"] = True
         target["post_url"] = post_url
         target["published_at"] = now_kst.strftime
+if __name__ == '__main__':
+    main()
