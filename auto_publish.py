@@ -336,36 +336,23 @@ def main():
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 날짜 확인 (오늘 또는 어제 키워드 허용)
-    yesterday = (now_kst - timedelta(days=1)).strftime("%Y-%m-%d")
+    # 날짜 확인 (오늘 날짜 키워드만 발행)
     saved_date = data.get("date")
-    if saved_date not in [today, yesterday]:
-        print(f"⚠️ 사용 가능한 키워드가 없습니다. (저장된 날짜: {saved_date}, 오늘: {today})")
+    if saved_date != today:
+        print(f"⚠️ 오늘({today}) 발행할 키워드가 없습니다. (저장된 날짜: {saved_date})")
         return
-    if saved_date == yesterday:
-        print(f"ℹ️ 어제({yesterday}) 키워드로 발행합니다. (오늘 키워드 아직 미도착)")
 
-    # 현재 시간에 맞는 키워드 찾기 (현재 시간 이전 미발행 슬롯 포함)
+    # 순서대로 미발행 항목 찾기 (시간 체크 없음 - 1번부터 순서대로)
     schedule = data.get("schedule", [])
     target = None
 
-    current_hour_int = int(current_time.split(":")[0])
-    is_yesterday = (saved_date == yesterday)
-
     for item in schedule:
-        item_hour_int = int(item["time"].split(":")[0])
         if not item.get("published", False):
-            # 어제 날짜 키워드면 시간 상관없이 미발행 전부 발행
-            if is_yesterday:
-                target = item
-                break
-            # 오늘 날짜면 현재 시간 이하 슬롯만 발행
-            if item_hour_int <= current_hour_int:
-                target = item
-                break
+            target = item
+            break
 
     if not target:
-        print(f"⏰ {current_time} - 발행 예정 키워드 없음 (이미 발행됐거나 해당 없음)")
+        print(f"✅ 오늘 발행할 키워드가 모두 발행 완료되었습니다.")
         return
 
     print(f"🕐 예정 시간 {target['time']} 슬롯 발행 시작 (현재 KST {current_time})")

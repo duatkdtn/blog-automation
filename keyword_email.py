@@ -444,11 +444,12 @@ def enrich_keywords_with_titles(keywords, best6):
 
 def save_today_keywords(keywords, best6):
     """자동발행 스크립트가 읽어갈 JSON 저장"""
-    today = now_kst().strftime("%Y-%m-%d")
+    from datetime import timedelta
+    tomorrow = (now_kst() + timedelta(days=1)).strftime("%Y-%m-%d")
     best6_keywords_map = {kw.get("keyword"): kw for kw in keywords}
 
     data = {
-        "date": today,
+        "date": tomorrow,
         "schedule": []
     }
 
