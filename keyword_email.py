@@ -463,6 +463,7 @@ def save_today_keywords(keywords, best6):
             "naver_title": updated_kw.get("naver_title", ""),  # 네이버용 제목
             "type": kw.get("type", ""),
             "related_keywords": updated_kw.get("related", []),
+            "naver_top_titles": updated_kw.get("naver_top_titles", []),
             "published": False
         })
 

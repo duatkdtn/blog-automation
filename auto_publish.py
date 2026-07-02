@@ -102,7 +102,7 @@ ANCHOR_TEXTS = [
 ]
 
 
-def generate_naver_content(keyword, title, content, blogspot_url):
+def generate_naver_content(keyword, title, content, blogspot_url, related_keywords=None, naver_top_titles=None):
     """Claude API로 네이버용 요약 글 생성"""
     import re
     try:
@@ -121,6 +121,10 @@ def generate_naver_content(keyword, title, content, blogspot_url):
         plain_content = re.sub(r'<[^>]+>', '', content)
         plain_content = re.sub(r'\n{3,}', '\n\n', plain_content).strip()
 
+        # 연관검색어, 네이버 상위 제목 텍스트 구성
+        related_text = ", ".join(related_keywords) if related_keywords else "없음"
+        naver_top_text = "\n".join([f"- {t}" for t in naver_top_titles]) if naver_top_titles else "없음"
+
         client = anthropic.Anthropic(api_key=claude_api_key)
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
@@ -131,6 +135,9 @@ def generate_naver_content(keyword, title, content, blogspot_url):
 
 키워드: {keyword}
 제목: {title}
+실제 연관검색어 (네이버/구글 API 조회): {related_text}
+네이버 현재 상위 노출 제목 (참고용):
+{naver_top_text}
 원문 블로그: {blogspot_url}
 
 원문 내용:
@@ -140,8 +147,9 @@ def generate_naver_content(keyword, title, content, blogspot_url):
 
 [제목3가지]
 아래 3가지 유형의 제목을 각각 1개씩 만들어줘.
-공통 규칙: 메인키워드 + 저경쟁 연관검색어 조합, 30자 이내, 숫자 포함 선택적
-- 네이버 블로그 상위 노출 스타일 참고
+공통 규칙: 메인키워드 + 실제 연관검색어 조합, 30자 이내, 숫자 포함 선택적
+- 반드시 위의 실제 연관검색어 단어를 제목에 포함할 것
+- 네이버 상위 노출 제목 스타일 참고하되 차별화할 것
 - 제목만 출력, 유형 태그([검색 노출형] 등) 절대 포함하지 말 것
 
 1. 검색 노출형: 키워드를 앞에 배치, 정보 탐색 의도 반영 (예: "K뷰티 수면팩 성분 비교, 직접 써봤어요")
@@ -197,7 +205,7 @@ def generate_naver_content(keyword, title, content, blogspot_url):
         return None, None, None
 
 
-def send_naver_email(keyword, title, content, image_urls, blogspot_url, published_at):
+def send_naver_email(keyword, title, content, image_urls, blogspot_url, published_at, related_keywords=None, naver_top_titles=None):
     """네이버 블로그 복붙용 글을 Gmail로 전송"""
     import smtplib
     from email.mime.multipart import MIMEMultipart
@@ -215,7 +223,7 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 
     # 네이버용 글 생성
     print("🤖 네이버용 글 생성 중...")
-    naver_titles, naver_body, naver_tags = generate_naver_content(keyword, title, content, blogspot_url)
+    naver_titles, naver_body, naver_tags = generate_naver_content(keyword, title, content, blogspot_url, related_keywords, naver_top_titles)
 
     # 생성 실패 시 기존 방식으로 폴백
     if not naver_body:
@@ -438,10 +446,13 @@ def main():
 
         # 네이버용 이메일 발송
         naver_title = target.get("naver_title", "")
+        related_keywords = target.get("related_keywords", [])
+        naver_top_titles = target.get("naver_top_titles", [])
         try:
             send_naver_email(keyword, naver_title or final_title, content,
                            [img for img in all_images if img], post_url,
-                           now_kst.strftime("%Y-%m-%d %H:%M"))
+                           now_kst.strftime("%Y-%m-%d %H:%M"),
+                           related_keywords, naver_top_titles)
         except Exception as e:
             print(f"⚠️ 네이버 이메일 전송 실패 (발행은 완료): {e}")
     else:
