@@ -58,8 +58,10 @@ def get_google_credentials():
     """Google 인증 처리"""
     creds = None
 
-    if os.path.exists('token.pickle'):
-        with open('token.pickle', 'rb') as token:
+    token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+
+    if os.path.exists(token_path):
+        with open(token_path, 'rb') as token:
             creds = pickle.load(token)
 
     if not creds or not creds.valid:
@@ -78,7 +80,7 @@ def get_google_credentials():
             flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
             creds = flow.run_local_server(port=0, open_browser=True)
 
-        with open('token.pickle', 'wb') as token:
+        with open(token_path, 'wb') as token:
             pickle.dump(creds, token)
 
     return creds
@@ -447,12 +449,6 @@ def generate_blog_post(keyword):
             content_lines.append(line)
 
     content = '\n'.join(content_lines)
-
-    # 외부링크 버튼 추가
-    try:
-        content = add_external_links(content, keyword)
-    except Exception as e:
-        print(f"⚠️ 외부링크 추가 실패 (글 생성은 계속): {e}")
 
     print(f"✅ 글 생성 완료! 제목: {title}")
     return title, content

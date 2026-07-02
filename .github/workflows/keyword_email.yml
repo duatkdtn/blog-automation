@@ -27,6 +27,7 @@ jobs:
       - name: 키워드 이메일 발송
         env:
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
