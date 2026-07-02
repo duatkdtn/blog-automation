@@ -424,6 +424,23 @@ def main():
         # 발행 완료 표시
         target["published"] = True
         target["post_url"] = post_url
-        target["published_at"] = now_kst.strftime
+        target["published_at"] = now_kst.strftime("%Y-%m-%d %H:%M")
+
+        # JSON 파일 저장 (GitHub Actions가 커밋할 수 있도록)
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"💾 today_keywords.json 업데이트 완료 (published: true)")
+
+        # 네이버용 이메일 발송
+        naver_title = target.get("naver_title", "")
+        try:
+            send_naver_email(keyword, naver_title or final_title, content,
+                           [img for img in all_images if img], post_url,
+                           now_kst.strftime("%Y-%m-%d %H:%M"))
+        except Exception as e:
+            print(f"⚠️ 네이버 이메일 전송 실패 (발행은 완료): {e}")
+    else:
+        print(f"❌ 블로그스팟 발행 실패")
+
 if __name__ == '__main__':
     main()
