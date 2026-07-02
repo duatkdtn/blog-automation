@@ -349,14 +349,7 @@ def main():
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 날짜 확인 (오늘 또는 내일 날짜 키워드 발행 허용)
-    saved_date = data.get("date")
-    tomorrow = (now_kst + timedelta(days=1)).strftime("%Y-%m-%d")
-    if saved_date != today and saved_date != tomorrow:
-        print(f"⚠️ 발행할 키워드가 없습니다. (저장된 날짜: {saved_date}, 오늘: {today})")
-        return
-
-    # 순서대로 미발행 항목 찾기 (시간 체크 없음 - 1번부터 순서대로)
+    # 순서대로 미발행 항목 찾기 (날짜 체크 없음 - 미발행 항목 있으면 순서대로 발행)
     schedule = data.get("schedule", [])
     target = None
 
