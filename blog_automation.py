@@ -545,7 +545,14 @@ def insert_images_into_content(content, image_urls, keyword):
 
 
 # 외부링크 카테고리별 공식 사이트 목록
+# 지도형 카테고리: URL에 KEYWORD_PLACEHOLDER 포함 → 실제 키워드로 치환됨
+MAP_CATEGORIES = {"먹거리/맛집", "여행", "반려동물", "레저/공공시설", "지역정보"}
+
 EXTERNAL_LINKS = {
+    "먹거리/맛집": [
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+    ],
     "보험": [
         ("국민건강보험 공식사이트", "https://www.nhis.or.kr"),
         ("금융감독원", "https://www.fss.or.kr"),
@@ -597,12 +604,12 @@ EXTERNAL_LINKS = {
         ("에어코리아", "https://www.airkorea.or.kr"),
     ],
     "여행": [
-        ("한국관광공사", "https://www.visitkorea.or.kr"),
-        ("외교부 해외안전여행", "https://www.0404.go.kr"),
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
     "반려동물": [
-        ("동물보호관리시스템", "https://www.animal.go.kr"),
-        ("농림축산식품부", "https://www.mafra.go.kr"),
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
     "뷰티/식품": [
         ("식품의약품안전처", "https://www.mfds.go.kr"),
@@ -617,20 +624,18 @@ EXTERNAL_LINKS = {
         ("한국콘텐츠진흥원", "https://www.kocca.kr"),
     ],
     "레저/공공시설": [
-        ("정부24 시설예약", "https://www.gov.kr"),
-        ("한국관광공사", "https://www.visitkorea.or.kr"),
-        ("공공데이터포털", "https://www.data.go.kr"),
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
     "지역정보": [
-        ("정부24", "https://www.gov.kr"),
-        ("행정안전부", "https://www.mois.go.kr"),
-        ("국민신문고", "https://www.epeople.go.kr"),
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
 }
 
 
 def get_external_links_for_keyword(keyword):
-    """키워드에 맞는 외부링크 카테고리 자동 판단"""
+    """키워드에 맞는 외부링크 카테고리 자동 판단. (category, links) 튜플 반환"""
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
     categories = list(EXTERNAL_LINKS.keys())
     prompt = f"""키워드: "{keyword}"
@@ -645,24 +650,36 @@ def get_external_links_for_keyword(keyword):
             messages=[{"role": "user", "content": prompt}]
         )
         category = message.content[0].text.strip()
-        return EXTERNAL_LINKS.get(category, [])
+        return category, EXTERNAL_LINKS.get(category, [])
     except:
-        return []
+        return "없음", []
 
 
 def add_external_links(content, keyword):
     """글 하단에 외부링크 버튼 추가"""
-    links = get_external_links_for_keyword(keyword)
+    from urllib.parse import quote
+    category, links = get_external_links_for_keyword(keyword)
     if not links:
         return content
 
+    # 지도형 카테고리: URL에 키워드 삽입
+    encoded_keyword = quote(keyword)
+    is_map = category in MAP_CATEGORIES
+
     buttons_html = ""
     for name, url in links[:2]:
-        buttons_html += f'''<a href="{url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
+        actual_url = url.replace("KEYWORD_PLACEHOLDER", encoded_keyword)
+        buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
+
+    # 카테고리에 따라 섹션 제목 변경
+    if is_map:
+        section_title = "📍 네이버·카카오 지도에서 위치 확인하세요"
+    else:
+        section_title = "📌 공식 사이트에서 정확한 정보를 확인하세요"
 
     external_section = f'''
 <div style="background:#fff8f8;border:1px solid #ffcccc;border-radius:8px;padding:20px;margin:30px 0">
-<p style="font-weight:bold;color:#c0392b;margin:0 0 12px">📌 공식 사이트에서 정확한 정보를 확인하세요</p>
+<p style="font-weight:bold;color:#c0392b;margin:0 0 12px">{section_title}</p>
 {buttons_html}</div>'''
 
     # 면책문구 바로 앞에 삽입
