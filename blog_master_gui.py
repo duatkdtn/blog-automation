@@ -2431,17 +2431,19 @@ class BlogMasterApp:
             from blog_automation import (
                 generate_blog_post, generate_images_with_vertex,
                 generate_thumbnail_with_vertex, generate_seo_metadata,
-                inject_seo_metadata, insert_images_into_content, publish_to_blogger
+                inject_seo_metadata, insert_images_into_content, publish_to_blogger,
+                add_external_links
             )
             self.set_step(0)
             self.log("\uae00 \uc0dd\uc131 \uc911...")
-            title, content_body = generate_blog_post(keyword)
+            title, content_body, map_keyword, place_links = generate_blog_post(keyword)
             self.log(f"\uc81c\ubaa9: {title}")
 
             self.set_step(1)
             self.log("SEO \uba54\ud0c0\ub370\uc774\ud130 \uc0dd\uc131 \uc911...")
             desc, keywords_meta = generate_seo_metadata(keyword, title, content_body)
             content_body = inject_seo_metadata(content_body, title, desc, keywords_meta, keyword)
+            content_body = add_external_links(content_body, keyword, map_keyword=map_keyword, place_links=place_links)
 
             self.set_step(2)
             self.log("\uc774\ubbf8\uc9c0 \uc0dd\uc131 \uc911...")

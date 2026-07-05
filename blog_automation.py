@@ -339,6 +339,84 @@ def search_naver_news(keyword):
         return ""
 
 
+# 장소 관련 키워드 목록
+LOCATION_KEYWORDS = ["맛집", "식당", "카페", "여행", "관광", "숙소", "펜션", "호텔", "명소", "공원", "마트", "시장", "쇼핑"]
+
+def extract_map_keyword(keyword):
+    """키워드에서 지도 검색용 짧은 단어 추출"""
+    stop_words = ["추천", "총정리", "방법", "비교", "후기", "직접", "완벽", "정리", "알아보기",
+                  "알아봤어요", "해봤어요", "확인", "재봤어요", "출연", "나온", "위치"]
+    words = keyword.split()
+    result = []
+    for word in words:
+        if any(sw in word for sw in stop_words):
+            break
+        result.append(word)
+        if len(result) >= 4:
+            break
+    return " ".join(result) if result else keyword[:15]
+
+
+def get_naver_local_places(keyword):
+    """
+    네이버 로컬 검색 API로 실제 장소 정보 가져오기
+    맛집/여행/지역 키워드인 경우에만 호출
+    반환: (place_data_text, map_keyword, place_links) or (None, None, None)
+    """
+    if not any(loc in keyword for loc in LOCATION_KEYWORDS):
+        return None, None, None
+
+    map_keyword = extract_map_keyword(keyword)
+    print(f"\n📍 실제 장소 정보 검색 중: '{map_keyword}'")
+
+    url = "https://openapi.naver.com/v1/search/local.json"
+    headers = {
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
+    }
+    params = {"query": map_keyword, "display": 5, "sort": "comment"}
+
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=5)
+        data = response.json()
+        items = data.get("items", [])
+
+        if not items:
+            print(f"   ⚠️ 장소 정보 없음 - 일반 글쓰기 모드")
+            return None, map_keyword, None
+
+        places = []
+        place_links = []
+        for item in items[:5]:
+            name = item.get("title", "").replace("<b>", "").replace("</b>", "")
+            address = item.get("address", "")
+            road_address = item.get("roadAddress", "")
+            telephone = item.get("telephone", "")
+            link = item.get("link", "")
+            category = item.get("category", "")
+
+            place_info = f"- 이름: {name}"
+            if category:
+                place_info += f" ({category})"
+            if road_address:
+                place_info += f"\n  주소: {road_address}"
+            elif address:
+                place_info += f"\n  주소: {address}"
+            if telephone:
+                place_info += f"\n  전화: {telephone}"
+            places.append(place_info)
+            if link:
+                place_links.append((name, link))
+
+        place_data_text = "\n".join(places)
+        print(f"   ✅ 실제 장소 {len(items)}개 수집 완료")
+        return place_data_text, map_keyword, place_links
+
+    except Exception as e:
+        print(f"   ⚠️ 장소 검색 실패: {e}")
+        return None, map_keyword, None
+
+
 def generate_blog_post(keyword):
     """Claude API로 블로그 글 생성"""
     from datetime import datetime
@@ -346,6 +424,9 @@ def generate_blog_post(keyword):
 
     # 최신 뉴스 수집
     news_text = search_naver_news(keyword)
+
+    # 맛집/여행/지역 키워드면 실제 장소 정보 수집
+    place_data_text, map_keyword, place_links = get_naver_local_places(keyword)
 
     print(f"\n✍️  '{keyword}' 키워드로 블로그 글 생성 중...")
 
@@ -364,11 +445,16 @@ def generate_blog_post(keyword):
 주의: 뉴스 내용이 특정 지역이나 특수한 사례인 경우 글 전체를 그 내용으로 채우지 말고, 전국 독자에게 유용한 일반적인 정보 위주로 작성하세요.
 """
 
+    # 실제 장소 정보가 있으면 프롬프트에 포함
+    place_section = ""
+    if place_data_text:
+        place_section = f"""\n⚠️ 중요: 아래는 네이버에서 실제 검색된 장소 정보입니다.\n반드시 아래 정보만 사용하고, 가게 이름·주소·전화번호를 절대 임의로 만들지 마세요.\n\n=== 실제 장소 정보 ===\n{place_data_text}\n======================\n"""
+
     prompt = f"""당신은 한국어 블로그 작가이자 구글 SEO 전문가입니다.
 아래 키워드로 구글 상위노출 + 클릭률 높은 수익형 블로그 글을 작성해주세요.
 
 오늘 날짜: {today}
-{news_section}
+{news_section}{place_section}
 키워드: {keyword}
 글 길이: 반드시 2000자 이상 3000자 이하로 작성할 것. 각 섹션을 충분히 풍부하게 채워야 함. 2000자 미만이거나 3000자 초과하면 안 됨.
 톤: 친근하고 따뜻한 말투. "저도 처음엔 몰랐는데요~", "직접 해보니까요~" 같은 경험담 문체. 독자에게 직접 말하듯 자연스럽게.
