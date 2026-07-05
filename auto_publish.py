@@ -389,7 +389,7 @@ def main():
 
     # 1. 글 생성
     print(f"\n🤖 글 생성 중...")
-    blog_title, content = generate_blog_post(keyword)
+    blog_title, content, map_keyword, place_links = generate_blog_post(keyword)
 
     # 제목은 today_keywords.json의 추천 제목 사용 (없으면 Claude 생성 제목)
     final_title = title if title else blog_title
@@ -413,7 +413,7 @@ def main():
 
     # 4-1. 외부링크 버튼 추가
     print(f"\n🔗 외부링크 추가 중...")
-    content = add_external_links(content, keyword)
+    content = add_external_links(content, keyword, map_keyword=map_keyword, place_links=place_links)
 
     # 4-2. 내부링크 추가
     print(f"\n📚 내부링크 추가 중...")

@@ -451,7 +451,7 @@ def generate_blog_post(keyword):
     content = '\n'.join(content_lines)
 
     print(f"✅ 글 생성 완료! 제목: {title}")
-    return title, content
+    return title, content, map_keyword, place_links
 
 
 def generate_seo_metadata(keyword, title, content):
@@ -655,21 +655,35 @@ def get_external_links_for_keyword(keyword):
         return "없음", []
 
 
-def add_external_links(content, keyword):
+def add_external_links(content, keyword, map_keyword=None, place_links=None):
     """글 하단에 외부링크 버튼 추가"""
     from urllib.parse import quote
     category, links = get_external_links_for_keyword(keyword)
     if not links:
         return content
 
-    # 지도형 카테고리: URL에 키워드 삽입
-    encoded_keyword = quote(keyword)
     is_map = category in MAP_CATEGORIES
 
     buttons_html = ""
-    for name, url in links[:2]:
-        actual_url = url.replace("KEYWORD_PLACEHOLDER", encoded_keyword)
-        buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
+    if is_map:
+        # 짧은 검색어 결정
+        search_kw = map_keyword if map_keyword else extract_map_keyword(keyword)
+        encoded_short = quote(search_kw)
+
+        if place_links:
+            # 실제 네이버 플레이스 링크 (최대 2개)
+            for name, place_url in place_links[:2]:
+                buttons_html += f'''<a href="{place_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">📍 {name} 위치보기</a>\n'''
+        else:
+            # 짧은 키워드로 지도 검색
+            buttons_html += f'''<a href="https://map.naver.com/v5/search/{encoded_short}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ 네이버 지도 바로가기</a>\n'''
+            buttons_html += f'''<a href="https://map.kakao.com/?q={encoded_short}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ 카카오맵 바로가기</a>\n'''
+    else:
+        # 공식 사이트 링크 (기존 방식)
+        encoded_keyword = quote(keyword)
+        for name, url in links[:2]:
+            actual_url = url.replace("KEYWORD_PLACEHOLDER", encoded_keyword)
+            buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
 
     # 카테고리에 따라 섹션 제목 변경
     if is_map:
