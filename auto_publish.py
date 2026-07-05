@@ -184,15 +184,21 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
         body_match = re.search(r'\[본문\](.*?)\[해시태그\]', result, re.DOTALL)
         tags_match = re.search(r'\[해시태그\](.*?)$', result, re.DOTALL)
 
-        titles = titles_match.group(1).strip() if titles_match else ""
+        titles_raw = titles_match.group(1).strip() if titles_match else ""
         body = body_match.group(1).strip() if body_match else ""
         tags = tags_match.group(1).strip() if tags_match else ""
 
-        # 파싱 실패 시 대체 파싱: 번호 1. 2. 3. 으로 시작하는 줄 추출
+        # 제목 섹션에서 번호 붙은 줄만 추출 (Claude가 앞에 설명글 붙여도 무시)
+        if titles_raw:
+            title_lines = re.findall(r'^[1-3][.)]\s*.+', titles_raw, re.MULTILINE)
+            titles = "\n".join(title_lines[:3])
+        else:
+            titles = ""
+
+        # 파싱 실패 시 전체 결과에서 번호 줄 추출
         if not titles:
             title_lines = re.findall(r'^[1-3][.)]\s*.+', result, re.MULTILINE)
-            if title_lines:
-                titles = "\n".join(title_lines[:3])
+            titles = "\n".join(title_lines[:3])
 
         # 본문 파싱 실패 시 전체 결과 사용
         if not body:
@@ -265,9 +271,12 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
         # 번호(1. 2. 3.) 제거하고 라벨 고정 부착
         labeled_lines = []
         for idx, line in enumerate(lines[:3]):
-            clean = line.lstrip('0123456789.-) ').strip()
-            # [검색 노출형] 같은 태그가 있으면 제거
-            clean = re.sub(r'\[.*?\]', '', clean).strip()
+            # "1. " "2) " 번호만 제거 (lstrip은 숫자 전체를 지우는 버그 있음)
+            clean = re.sub(r'^[1-3][.)]\s*', '', line).strip()
+            # [검색 노출형] 같은 대괄호 태그 제거
+            clean = re.sub(r'^\[.*?\]\s*', '', clean).strip()
+            # "검색 노출형: " "핵심 요약형: " 텍스트 제거
+            clean = re.sub(r'^(검색 노출형|핵심 요약형|카피라이팅형)\s*:\s*', '', clean).strip()
             label = TITLE_LABELS[idx] if idx < len(TITLE_LABELS) else f"{idx+1}."
             labeled_lines.append(f'<div style="margin-bottom:10px"><span style="background:#764ba2;color:white;padding:2px 8px;border-radius:8px;font-size:11px;margin-right:6px">{label}</span><strong>{clean}</strong></div>')
         titles_inner = '\n'.join(labeled_lines)
