@@ -145,7 +145,7 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
 
 다음 형식으로 작성해줘:
 
-[제목3가지]
+===제목시작===
 아래 3가지 유형의 제목을 각각 1개씩 만들어줘.
 공통 규칙: 메인키워드 + 실제 연관검색어 조합, 30자 이내, 숫자 포함 선택적
 - 반드시 위의 실제 연관검색어 단어를 제목에 포함할 것
@@ -156,7 +156,7 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
 2. 핵심 요약형: 글의 핵심 정보를 압축 (예: "수면팩 브랜드 3가지 성분 차이 총정리")
 3. 카피라이팅형: 감성/호기심 유발, 경험담 문체 (예: "자는 동안 피부 바뀐다는 수면팩, 진짜였어요")
 
-[본문]
+===본문시작===
 - 1인칭 경험담 형식 ("저도 직접 해봤는데" 말투)
 - 친근하고 솔직한 말투
 - 초등학생이나 70대 할머니도 바로 이해할 수 있는 쉬운 말 사용. 전문 용어, 어려운 한자어 절대 금지
@@ -174,7 +174,7 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
 - 수평선(---) 절대 사용 금지
 - 줄 시작에 # 기호 절대 사용 금지
 
-[해시태그]
+===해시태그시작===
 #태그1 #태그2 ... (10개)"""
             }]
         )
@@ -182,10 +182,16 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
         result = message.content[0].text
 
         # 제목, 본문, 해시태그 파싱
-        # 공백 허용 + 다양한 구분자 대응
-        titles_match = re.search(r'\[제목\s*3\s*가지\](.*?)\[본문\]', result, re.DOTALL)
-        body_match = re.search(r'\[본문\](.*?)\[해시태그\]', result, re.DOTALL)
-        tags_match = re.search(r'\[해시태그\](.*?)$', result, re.DOTALL)
+        # ===마커=== 방식 우선, 구 [마커] 방식 폴백
+        titles_match = re.search(r'===제목시작===(.*?)===본문시작===', result, re.DOTALL)
+        if not titles_match:
+            titles_match = re.search(r'\[제목\s*3\s*가지\](.*?)\[본문\]', result, re.DOTALL)
+        body_match = re.search(r'===본문시작===(.*?)===해시태그시작===', result, re.DOTALL)
+        if not body_match:
+            body_match = re.search(r'\[본문\](.*?)\[해시태그\]', result, re.DOTALL)
+        tags_match = re.search(r'===해시태그시작===(.*?)$', result, re.DOTALL)
+        if not tags_match:
+            tags_match = re.search(r'\[해시태그\](.*?)$', result, re.DOTALL)
 
         titles_raw = titles_match.group(1).strip() if titles_match else ""
         body = body_match.group(1).strip() if body_match else ""
@@ -202,10 +208,20 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
         if not titles:
             title_lines = re.findall(r'^[1-3][.)]\s*.+', result, re.MULTILINE)
             titles = "\n".join(title_lines[:3])
+        else:
+            title_lines = re.findall(r'^[1-3][.)]\s*.+', titles, re.MULTILINE)
 
-        # 본문 파싱 실패 시 전체 결과 사용
+        # 본문 파싱 실패 시 전체 결과 사용 (단, 제목 줄·마커는 제거)
         if not body:
             body = result
+            # 마커 제거
+            for marker in ['===제목시작===', '===본문시작===', '===해시태그시작===',
+                           '[제목3가지]', '[본문]', '[해시태그]']:
+                body = body.replace(marker, '')
+            # 제목 줄 제거 (이미 titles로 추출했으니 본문에서 빼기)
+            for t_line in title_lines:
+                body = body.replace(t_line, '')
+            body = re.sub(r'\n{3,}', '\n\n', body).strip()
 
         return titles, body, tags
 
