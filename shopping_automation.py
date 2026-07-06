@@ -454,8 +454,6 @@ def generate_shopping_post(category, product):
 
 가격은 시기에 따라 변동될 수 있습니다.
 👇 현재 가격 확인하기
-제품 구매하러 가기 → [쇼핑링크]
-
 ━━━━━━━━━━━━━━━━━━
 
 (첫 번째 소제목 텍스트만 - 이모지/대괄호 없이)
@@ -473,7 +471,6 @@ def generate_shopping_post(category, product):
 
 재고와 할인 여부는 아래에서 확인할 수 있습니다.
 👇 오늘 최저가 확인하기
-제품 구매하러 가기 → [쇼핑링크]
 ---BODY_END---
 
 ---TAGS_START---
@@ -494,9 +491,11 @@ def generate_shopping_post(category, product):
         titles_match = re.search(r"---SEO_TITLES_START---(.+?)---SEO_TITLES_END---", raw, re.DOTALL)
         seo_titles = titles_match.group(1).strip() if titles_match else ""
 
-        # 본문 파싱
+        # 본문 파싱 (BODY_END 없으면 TAGS_START 전까지)
         body_match = re.search(r"---BODY_START---(.+?)---BODY_END---", raw, re.DOTALL)
-        post_body = body_match.group(1).strip() if body_match else raw
+        if not body_match:
+            body_match = re.search(r"---BODY_START---(.+?)---TAGS_START---", raw, re.DOTALL)
+        post_body = body_match.group(1).strip() if body_match else ""
 
         # 본문 클린업: 마크다운·태그 자동 제거
         post_body = re.sub(r'\*\*(.+?)\*\*', r'\1', post_body)          # **볼드** → 볼드
@@ -541,7 +540,6 @@ def send_shopping_email_bulk(items):
         seo_titles   = item.get("seo_titles", "")
         post_body    = item.get("post_body", "")
         hashtags     = item.get("hashtags", "")
-        shopping_url = item.get("shopping_url", "")
         pub_time_str = item.get("pub_time_str", f"{6 + i*3:02d}:00")
 
         color = colors[i % len(colors)]
@@ -559,18 +557,6 @@ def send_shopping_email_bulk(items):
             clean = re.sub(r"^[1-5][.)\s]+", "", line).strip()
             titles_html += f'<div style="margin:4px 0;padding:5px 10px;background:#f8f8f8;border-radius:4px;font-size:13px">{j+1}. {clean}</div>'
 
-        if bc_product:
-            bc_rate  = bc_product.get("commissionRate", 0)
-            bc_rv    = bc_product.get("reviewInfo", {})
-            bc_cnt   = bc_rv.get("totalReviewCount", 0)
-            bc_score = bc_rv.get("averageReviewScore", 0)
-            link_badge = f'<span style="background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:bold">✅ 브랜드커넥트 {bc_rate}% · ⭐{bc_score} ({bc_cnt:,}개)</span>'
-        elif shopping_url:
-            link_badge = '<span style="background:#fff8e1;color:#e65100;border:1px solid #ffe082;padding:3px 10px;border-radius:20px;font-size:12px">🔗 원본 URL (수수료 없음)</span>'
-        else:
-            link_badge = '<span style="background:#fce4ec;color:#b71c1c;border:1px solid #ef9a9a;padding:3px 10px;border-radius:20px;font-size:12px">⚠️ 링크 없음</span>'
-
-        link_line = f'<div style="margin:6px 0;font-size:12px;color:#555">쇼핑링크(본문삽입완료): <a href="{shopping_url}" style="color:#1565c0;word-break:break-all">{shopping_url}</a></div>' if shopping_url else ""
         img_parts = []
         for img_url in images[:4]:
             img_parts.append(f'<img src="{img_url}" style="width:calc(50% - 4px);max-height:130px;object-fit:cover;border-radius:6px;display:inline-block;vertical-align:top" alt="상품이미지">')
@@ -588,8 +574,6 @@ def send_shopping_email_bulk(items):
   <div style="padding:12px 16px">
     {img_html}
     <div style="font-size:12px;color:#777;margin-bottom:8px">카테고리: {cat['name']} | 최저가: {price_fmt}</div>
-    {link_badge}<br>
-    {link_line}
     <div style="margin:10px 0">
       <div style="font-size:12px;font-weight:bold;color:#333;margin-bottom:5px">📌 SEO 제목 (하나 선택)</div>
       {titles_html}
@@ -608,12 +592,12 @@ def send_shopping_email_bulk(items):
 <div style="background:#1a237e;color:white;padding:18px 20px;border-radius:10px;margin-bottom:14px;text-align:center">
   <div style="font-size:12px;opacity:0.7;margin-bottom:4px">🛒 쇼핑 자동화 · 네이버 블로그 전용</div>
   <div style="font-size:20px;font-weight:bold">{today_str} · 총 {len(items)}개 상품</div>
-  <div style="font-size:12px;opacity:0.65;margin-top:4px">본문 [쇼핑링크] 자동 삽입 완료</div>
+  <div style="font-size:12px;opacity:0.65;margin-top:4px">브랜드커넥트 링크를 [쇼핑링크] 자리에 직접 삽입하세요</div>
 </div>
 
 <div style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;border:1px solid #ddd">
   <strong>📋 사용 방법</strong><br>
-  1️⃣ SEO 제목 1개 선택 &nbsp; 2️⃣ 본문 펼쳐서 복붙 (링크 이미 삽입됨) &nbsp; 3️⃣ 네이버 블로그 순서대로 발행<br>
+  1️⃣ SEO 제목 1개 선택 &nbsp; 2️⃣ 본문 펼쳐서 복붙 &nbsp; 3️⃣ [쇼핑링크] 자리에 브랜드커넥트 링크 교체 후 발행<br>
   <span style="color:#1a237e;font-size:12px">⏰ 권장 시간: 06:00 / 09:00 / 12:00 / 15:00 / 18:00</span>
 </div>
 
@@ -670,15 +654,7 @@ def main():
             print(f"⚠️ [{i+1}번] 글 작성 실패, 스킵")
             continue
 
-        # ── 4. [쇼핑링크] 자동 교체 ──
-        if bc_product:
-            shopping_url = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
-        else:
-            shopping_url = product.get("link", "")
-        if shopping_url:
-            post_body = post_body.replace("[쇼핑링크]", shopping_url)
-
-        # ── 5. 발행 기록 저장 ──
+        # ── 4. 발행 기록 저장 ──
         if product_id:
             save_published_product(product_id, product_name)
 
@@ -693,7 +669,6 @@ def main():
             "seo_titles":   seo_titles,
             "post_body":    post_body,
             "hashtags":     hashtags,
-            "shopping_url": shopping_url,
             "pub_time_str": pub_time_str,
         })
 
