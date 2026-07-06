@@ -1,10 +1,15 @@
 # ================================================
-# 쇼핑커넥트 블로그 자동화 v2.0
-# 흐름: 데이터랩 인기 카테고리 → 네이버 쇼핑 1위 상품
-#       → 이미지 4장 → Claude 글 작성 → 이메일 발송
+# 쇼핑커넥트 블로그 자동화 v3.0
+# 흐름: 데이터랩 인기 카테고리 → 5개 상품 선택
+#       → Claude 글 작성 → 블로그스팟 예약 발행
+#       → 이메일 1통 (5개 묶음)
 # ================================================
 
-import os, re, sys, json, requests, smtplib
+import os, re, sys, json, requests, smtplib, pickle, base64
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -28,9 +33,21 @@ GMAIL_APP_PASSWORD  = _get("GMAIL_APP_PASSWORD")
 EMAIL_RECIPIENT     = _get("EMAIL_RECIPIENT", "duatkdtn@gmail.com")
 NAVER_COOKIE        = _get("NAVER_COOKIE", "")
 NAVER_SPACE_ID      = _get("NAVER_SPACE_ID", "962414636778176")
+BLOG_ID             = _get("BLOG_ID", "7703234808905245526")
+GOOGLE_CLIENT_ID    = _get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET= _get("GOOGLE_CLIENT_SECRET", "")
+SCOPES              = ["https://www.googleapis.com/auth/blogger"]
 
 PUBLISHED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "published_products.txt")
 NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
+
+# ── GitHub Actions: GOOGLE_TOKEN → token.pickle 복원 ──
+_token_b64 = os.environ.get("GOOGLE_TOKEN", "")
+if _token_b64:
+    _token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+    with open(_token_path, "wb") as _f:
+        _f.write(base64.b64decode(_token_b64))
+    print("✅ token.pickle 복원 완료")
 
 # ── 네이버 데이터랩 쇼핑 카테고리 (대분류 고정) ──
 CATEGORIES = [
@@ -158,6 +175,63 @@ def save_published_product(product_id, product_name):
     print(f"✅ 발행 기록 저장: {product_name}")
 
 
+def get_google_credentials():
+    """Google Blogger 인증"""
+    creds = None
+    token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+    if os.path.exists(token_path):
+        with open(token_path, "rb") as f:
+            creds = pickle.load(f)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            client_config = {
+                "installed": {
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost"]
+                }
+            }
+            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            creds = flow.run_local_server(port=0, open_browser=True)
+        with open(token_path, "wb") as f:
+            pickle.dump(creds, f)
+    return creds
+
+
+def publish_to_blogger_scheduled(title, content_html, publish_time):
+    """
+    블로그스팟에 예약 발행
+    publish_time: datetime 객체 (KST 기준)
+    """
+    try:
+        creds = get_google_credentials()
+        service = build("blogger", "v3", credentials=creds)
+
+        # RFC 3339 형식 (Blogger API 요구)
+        publish_str = publish_time.strftime("%Y-%m-%dT%H:%M:%S+09:00")
+
+        post = {
+            "title": title,
+            "content": content_html,
+            "published": publish_str,
+        }
+        result = service.posts().insert(
+            blogId=BLOG_ID,
+            body=post,
+            isDraft=False
+        ).execute()
+        url = result.get("url", "")
+        print(f"   ✅ 블로그스팟 예약 발행 성공: {publish_time.strftime('%H:%M')} → {url}")
+        return url
+    except Exception as e:
+        print(f"   ⚠️ 블로그스팟 발행 오류: {e}")
+        return ""
+
+
 def find_new_product():
     """
     데이터랩 인기 카테고리 → 쇼핑 검색 → 브랜드커넥트 우선 선택
@@ -203,6 +277,65 @@ def find_new_product():
 
     print("⚠️ 새 상품 없음")
     return None, None, None
+
+
+def find_new_products(count=5):
+    """
+    여러 카테고리에서 미발행 상품 최대 count개 반환
+    반환: list of (category, product, bc_product)
+    """
+    published_ids = load_published_ids()
+    print(f"📋 발행된 상품 수: {len(published_ids)}개")
+
+    trending = get_trending_category()
+    category_order = ([trending] if trending else []) + \
+                     [c for c in CATEGORIES if not trending or c["id"] != trending["id"]]
+
+    results = []
+    used_ids = set(published_ids)  # 이번 실행 중 선택된 것도 중복 방지
+
+    for category in category_order:
+        if len(results) >= count:
+            break
+
+        print(f"\n🔍 [{len(results)+1}/{count}] 카테고리: {category['name']}")
+        products = get_top_product(category)
+
+        new_products = []
+        for product in products:
+            pid = str(product.get("productId", ""))
+            if pid and pid not in used_ids:
+                new_products.append(product)
+            else:
+                print(f"   └ 스킵: {product.get('title','')[:20]}")
+
+        if not new_products:
+            print("   └ 미발행 상품 없음, 다음 카테고리로")
+            continue
+
+        # 브랜드커넥트 우선
+        selected_product = None
+        selected_bc = None
+
+        if NAVER_COOKIE:
+            print(f"   └ 브랜드커넥트 검색 중...")
+            bc_product, bc_info = find_best_brandconnect(new_products)
+            if bc_product:
+                selected_product = bc_product
+                selected_bc = bc_info
+                pid = str(selected_product.get("productId", ""))
+                print(f"   ✅ 브랜드커넥트 선택: {selected_product.get('title','')[:25]}")
+
+        if not selected_product:
+            selected_product = new_products[0]
+            pid = str(selected_product.get("productId", ""))
+            print(f"   ✅ 일반 상품 선택: {selected_product.get('title','')[:25]}")
+
+        used_ids.add(pid)
+        results.append((category, selected_product, selected_bc))
+
+    print(f"\n📦 총 {len(results)}개 상품 선택 완료")
+    return results
 
 
 # ── 3.5단계: 브랜드커넥트 상품 검색 ────────────────
@@ -451,6 +584,161 @@ def generate_shopping_post(category, product):
 
 # ── 6단계: 이메일 발송 ───────────────────────────
 
+def send_shopping_email_bulk(items):
+    """
+    5개 상품을 하나의 이메일로 발송
+    items: list of dict (category, product, bc_product, images, seo_titles, post_body, hashtags, publish_time, blogger_url)
+    """
+    if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
+        print("⚠️ Gmail 환경변수 없음")
+        return
+    if not items:
+        print("⚠️ 발송할 상품 없음")
+        return
+
+    now_str  = datetime.now().strftime("%Y-%m-%d %H:%M")
+    today_str = datetime.now().strftime("%Y년 %m월 %d일")
+    colors   = ["#4A90E2", "#7B68EE", "#20B2AA", "#FF8C00", "#DC143C"]
+
+    # ── 상품 카드 HTML 생성 ──
+    cards_html = ""
+    for i, item in enumerate(items):
+        cat        = item["category"]
+        product    = item["product"]
+        bc_product = item.get("bc_product")
+        images     = item.get("images", [])
+        seo_titles = item.get("seo_titles", "")
+        post_body  = item.get("post_body", "")
+        hashtags   = item.get("hashtags", "")
+        pub_time   = item.get("publish_time")
+        blogger_url= item.get("blogger_url", "")
+
+        color   = colors[i % len(colors)]
+        num     = i + 1
+        name    = product.get("title", "")
+        price   = product.get("lprice", "")
+        link    = product.get("link", "")
+        brand   = product.get("brand", "") or product.get("maker", "")
+        pub_str = pub_time.strftime("%H:%M") if pub_time else f"{6 + i*3:02d}:00"
+
+        try:
+            price_fmt = f"{int(price):,}원" if price else "가격 미정"
+        except Exception:
+            price_fmt = price or "가격 미정"
+
+        # SEO 제목 첫 번째 추출
+        title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
+        main_title  = re.sub(r"^[1-5][.)\s]+", "", title_lines[0]).strip() if title_lines else name
+
+        # 링크 안내
+        if bc_product:
+            bc_url   = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
+            bc_rate  = bc_product.get("commissionRate", 0)
+            bc_rv    = bc_product.get("reviewInfo", {})
+            bc_cnt   = bc_rv.get("totalReviewCount", 0)
+            bc_score = bc_rv.get("averageReviewScore", 0)
+            try:
+                bc_price_fmt = f"{int(bc_product.get('salePrice', 0)):,}원"
+            except Exception:
+                bc_price_fmt = price_fmt
+            link_box = f"""
+<div style="background:#e8f5e9;border:1px solid #4caf50;padding:12px;border-radius:6px;margin:10px 0;font-size:13px">
+  ✅ <strong>브랜드커넥트</strong> | 수수료 <strong style="color:#e53935">{bc_rate}%</strong> | ⭐{bc_score} ({bc_cnt:,}개)<br>
+  쇼핑링크: <a href="{bc_url}" style="color:#0066cc;word-break:break-all">{bc_url}</a>
+</div>"""
+        elif link:
+            link_box = f"""
+<div style="background:#fff3cd;border:1px solid #ffc107;padding:12px;border-radius:6px;margin:10px 0;font-size:13px">
+  🔗 쇼핑커넥트 등록 필요<br>
+  원본 URL: <a href="{link}" style="color:#0066cc;word-break:break-all">{link}</a>
+</div>"""
+        else:
+            link_box = ""
+
+        # 이미지 (첫 번째만)
+        img_html = ""
+        if images:
+            img_html = f'<img src="{images[0]}" style="max-width:100%;max-height:180px;border-radius:6px;margin:8px 0;display:block" alt="상품이미지">'
+
+        # 블로그스팟 발행 링크
+        blogger_box = ""
+        if blogger_url:
+            blogger_box = f'<div style="font-size:12px;color:#666;margin-top:6px">📡 블로그스팟 예약 발행 완료: <a href="{blogger_url}">{blogger_url}</a></div>'
+
+        # 본문 (처음 300자 미리보기)
+        body_preview = post_body[:300].replace("\n", " ") + "..." if len(post_body) > 300 else post_body.replace("\n", " ")
+
+        # SEO 제목 전체
+        titles_html = ""
+        for j, line in enumerate(title_lines[:5]):
+            clean = re.sub(r"^[1-5][.)\s]+", "", line).strip()
+            titles_html += f'<div style="margin:3px 0;font-size:13px">• {clean}</div>'
+
+        cards_html += f"""
+<div style="border:2px solid {color};border-radius:10px;margin:16px 0;overflow:hidden">
+  <!-- 헤더 -->
+  <div style="background:{color};color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <span style="background:white;color:{color};padding:2px 8px;border-radius:10px;font-weight:bold;font-size:13px">{num}번</span>
+      &nbsp;&nbsp;<strong style="font-size:15px">{name[:35]}</strong>
+    </div>
+    <div style="font-size:13px;opacity:0.9">📅 {pub_str} 발행</div>
+  </div>
+  <!-- 본문 -->
+  <div style="padding:14px 16px;background:#fff">
+    {img_html}
+    <div style="font-size:13px;color:#555;margin:6px 0">
+      카테고리: {cat['name']} | 최저가: {price_fmt}
+    </div>
+    {link_box}
+    {blogger_box}
+    <div style="margin-top:10px">
+      <strong style="font-size:13px">📌 SEO 제목 (하나 선택)</strong>
+      {titles_html}
+    </div>
+    <details style="margin-top:10px">
+      <summary style="cursor:pointer;font-size:13px;color:#4A90E2;font-weight:bold">✍️ 본문 보기 (클릭해서 펼치기)</summary>
+      <div style="background:#f9f9f9;padding:12px;border-radius:4px;margin-top:8px;font-size:13px;line-height:1.8;white-space:pre-line">{post_body}</div>
+      <div style="background:#f0f0f0;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#666">{hashtags}</div>
+    </details>
+  </div>
+</div>
+"""
+
+    # ── 전체 이메일 ──
+    email_html = f"""<html><body style="font-family:맑은고딕,sans-serif;max-width:720px;margin:0 auto;padding:20px;background:#f5f5f5">
+
+<div style="background:linear-gradient(135deg,#1a73e8,#0d47a1);color:white;padding:20px;border-radius:12px;margin-bottom:20px;text-align:center">
+  <h2 style="margin:0 0 6px 0;font-size:22px">🛒 쇼핑 자동화 발행용</h2>
+  <p style="margin:0;opacity:0.85;font-size:14px">{today_str} | 총 {len(items)}개 상품</p>
+</div>
+
+<div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px">
+  <strong>📋 사용 방법</strong><br>
+  1️⃣ 브랜드커넥트 링크 → 본문 [쇼핑링크] 두 곳 교체<br>
+  2️⃣ SEO 제목 중 1개 선택<br>
+  3️⃣ 네이버 블로그에 번호 순서대로 복붙 발행<br>
+  4️⃣ 블로그스팟은 자동 예약 발행 완료 ✅
+</div>
+
+{cards_html}
+
+<p style="text-align:center;font-size:12px;color:#999;margin-top:20px">쇼핑 자동화 v3 · {now_str}</p>
+</body></html>"""
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"[쇼핑발행] {today_str} · {len(items)}개 상품"
+    msg["From"]    = GMAIL_ADDRESS
+    msg["To"]      = EMAIL_RECIPIENT
+    msg.attach(MIMEText(email_html, "html", "utf-8"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_ADDRESS, EMAIL_RECIPIENT, msg.as_string())
+
+    print(f"✅ 이메일 발송 완료 ({len(items)}개 상품) → {EMAIL_RECIPIENT}")
+
+
 def send_shopping_email(category, product, images, seo_titles, post_body, hashtags, bc_product=None):
     if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
         print("⚠️ Gmail 환경변수 없음")
@@ -597,42 +885,94 @@ def send_shopping_email(category, product, images, seo_titles, post_body, hashta
 # ── 메인 ──────────────────────────────────────────
 
 def main():
-    print("=" * 50)
-    print("🛒 쇼핑커넥트 자동화 v2 시작")
-    print("=" * 50)
+    print("=" * 55)
+    print("🛒 쇼핑커넥트 자동화 v3 시작 (5개 상품)")
+    print("=" * 55)
 
-    # 1. 새 상품 찾기
-    category, product, bc_product = find_new_product()
-    if not product:
-        print("❌ 새 상품 없음. 종료.")
+    # ── 기준 시간: 실행 시각 기준으로 발행 시간 계산 ──
+    now = datetime.now()
+    # 발행 시간: +4h, +7h, +10h, +13h, +16h (3시간 간격)
+    publish_offsets = [4, 7, 10, 13, 16]
+
+    # ── 1. 5개 상품 선택 ──
+    selected = find_new_products(count=5)
+    if not selected:
+        print("❌ 발행할 상품 없음. 종료.")
         sys.exit(0)
 
-    if bc_product:
-        print(f"💰 브랜드커넥트 수수료: {bc_product.get('commissionRate', 0)}%")
+    email_items = []
 
-    product_id   = str(product.get("productId", ""))
-    product_name = product.get("title", "")
+    for i, (category, product, bc_product) in enumerate(selected):
+        print(f"\n{'='*55}")
+        print(f"[{i+1}/{len(selected)}] {product.get('title','')[:35]}")
+        print(f"{'='*55}")
 
-    # 2. 이미지 수집
-    print(f"\n🖼️ 이미지 수집 중...")
-    images = get_product_images(product)
+        product_id   = str(product.get("productId", ""))
+        product_name = product.get("title", "")
+        publish_time = now + timedelta(hours=publish_offsets[i])
 
-    # 3. 글 작성
-    print(f"\n✍️ Claude 글 작성 중...")
-    seo_titles, post_body, hashtags = generate_shopping_post(category, product)
-    if not post_body:
-        print("❌ 글 작성 실패. 종료.")
-        sys.exit(1)
+        # ── 2. 이미지 수집 ──
+        print("🖼️ 이미지 수집 중...")
+        images = get_product_images(product)
 
-    # 4. 이메일 발송
-    print(f"\n📧 이메일 발송 중...")
-    send_shopping_email(category, product, images, seo_titles, post_body, hashtags, bc_product)
+        # ── 3. 글 작성 ──
+        print("✍️ Claude 글 작성 중...")
+        seo_titles, post_body, hashtags = generate_shopping_post(category, product)
+        if not post_body:
+            print(f"⚠️ [{i+1}번] 글 작성 실패, 스킵")
+            continue
 
-    # 5. 발행 기록 저장
-    if product_id:
-        save_published_product(product_id, product_name)
+        # ── 4. 블로그스팟 예약 발행 ──
+        blogger_url = ""
+        title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
+        main_title  = re.sub(r"^[1-5][.)\s]+", "", title_lines[0]).strip() if title_lines else product_name
 
-    print("\n✅ 완료!")
+        # 블로그스팟 본문 HTML 구성
+        bc_link = ""
+        if bc_product:
+            bc_link = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
+        elif product.get("link"):
+            bc_link = product.get("link", "")
+        body_for_blog = post_body.replace("[쇼핑링크]", bc_link).replace("\n", "<br>")
+        imgs_html = "".join(
+            f'<img src="{u}" style="max-width:100%;margin:8px 0;display:block"><br>'
+            for u in images
+        )
+        blog_content = f"""
+<div style="font-family:맑은고딕,sans-serif;max-width:680px;margin:0 auto;line-height:1.9">
+{imgs_html}
+<p style="font-size:12px;color:#999;border:1px solid #eee;padding:8px;border-radius:4px">
+이 포스팅은 제휴 마케팅 활동의 일환으로, 판매 발생 시 수수료를 제공받을 수 있습니다.
+</p>
+{body_for_blog}
+<p style="margin-top:20px;font-size:13px;color:#555">{hashtags}</p>
+</div>"""
+
+        print(f"📤 블로그스팟 예약 발행 중... ({publish_time.strftime('%m/%d %H:%M')})")
+        blogger_url = publish_to_blogger_scheduled(main_title, blog_content, publish_time)
+
+        # ── 5. 발행 기록 저장 ──
+        if product_id:
+            save_published_product(product_id, product_name)
+
+        email_items.append({
+            "category":    category,
+            "product":     product,
+            "bc_product":  bc_product,
+            "images":      images,
+            "seo_titles":  seo_titles,
+            "post_body":   post_body,
+            "hashtags":    hashtags,
+                    "publish_time": publish_time,
+            "blogger_url": blogger_url,
+        })
+
+    # ── 6. 이메일 1통으로 발송 ──
+    if email_items:
+        print(f"\n📧 이메일 발송 중... ({len(email_items)}개 상품)")
+        send_shopping_email_bulk(email_items)
+
+    print(f"\n✅ 완료! {len(email_items)}개 상품 처리")
 
 
 if __name__ == "__main__":
