@@ -519,10 +519,7 @@ def generate_shopping_post(category, product):
 # ── 6단계: 이메일 발송 ───────────────────────────
 
 def send_shopping_email_bulk(items):
-    """
-    5개 상품을 하나의 이메일로 발송
-    items: list of dict (category, product, bc_product, images, seo_titles, post_body, hashtags, publish_time, blogger_url)
-    """
+    """5개 상품을 하나의 이메일로 발송 (네이버 블로그 복붙용)"""
     if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
         print("⚠️ Gmail 환경변수 없음")
         return
@@ -530,125 +527,96 @@ def send_shopping_email_bulk(items):
         print("⚠️ 발송할 상품 없음")
         return
 
-    now_str  = datetime.now().strftime("%Y-%m-%d %H:%M")
-    today_str = datetime.now().strftime("%Y년 %m월 %d일")
-    colors   = ["#4A90E2", "#7B68EE", "#20B2AA", "#FF8C00", "#DC143C"]
+    kst       = datetime.utcnow() + timedelta(hours=9)
+    today_str = kst.strftime("%Y년 %m월 %d일")
+    now_str   = kst.strftime("%Y-%m-%d %H:%M")
+    colors    = ["#3F51B5", "#7B1FA2", "#00796B", "#E65100", "#C62828"]
 
-    # ── 상품 카드 HTML 생성 ──
     cards_html = ""
     for i, item in enumerate(items):
-        cat        = item["category"]
-        product    = item["product"]
-        bc_product = item.get("bc_product")
-        images     = item.get("images", [])
-        seo_titles = item.get("seo_titles", "")
-        post_body  = item.get("post_body", "")
-        hashtags   = item.get("hashtags", "")
-        pub_time   = item.get("publish_time")
-        blogger_url= item.get("blogger_url", "")
+        cat          = item["category"]
+        product      = item["product"]
+        bc_product   = item.get("bc_product")
+        images       = item.get("images", [])
+        seo_titles   = item.get("seo_titles", "")
+        post_body    = item.get("post_body", "")
+        hashtags     = item.get("hashtags", "")
+        shopping_url = item.get("shopping_url", "")
+        pub_time_str = item.get("pub_time_str", f"{6 + i*3:02d}:00")
 
-        color   = colors[i % len(colors)]
-        num     = i + 1
-        name    = product.get("title", "")
-        price   = product.get("lprice", "")
-        link    = product.get("link", "")
-        brand   = product.get("brand", "") or product.get("maker", "")
-
-
+        color = colors[i % len(colors)]
+        num   = i + 1
+        name  = product.get("title", "")
+        price = product.get("lprice", "")
         try:
             price_fmt = f"{int(price):,}원" if price else "가격 미정"
         except Exception:
             price_fmt = price or "가격 미정"
 
-        # SEO 제목 첫 번째 추출
         title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
-        main_title  = re.sub(r"^[1-5][.)\s]+", "", title_lines[0]).strip() if title_lines else name
+        titles_html = ""
+        for j, line in enumerate(title_lines[:5]):
+            clean = re.sub(r"^[1-5][.)\s]+", "", line).strip()
+            titles_html += f'<div style="margin:4px 0;padding:5px 10px;background:#f8f8f8;border-radius:4px;font-size:13px">{j+1}. {clean}</div>'
 
-        # 링크 안내
         if bc_product:
-            bc_url   = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
             bc_rate  = bc_product.get("commissionRate", 0)
             bc_rv    = bc_product.get("reviewInfo", {})
             bc_cnt   = bc_rv.get("totalReviewCount", 0)
             bc_score = bc_rv.get("averageReviewScore", 0)
-            try:
-                bc_price_fmt = f"{int(bc_product.get('salePrice', 0)):,}원"
-            except Exception:
-                bc_price_fmt = price_fmt
-            link_box = f"""
-<div style="background:#e8f5e9;border:1px solid #4caf50;padding:12px;border-radius:6px;margin:10px 0;font-size:13px">
-  ✅ <strong>브랜드커넥트</strong> | 수수료 <strong style="color:#e53935">{bc_rate}%</strong> | ⭐{bc_score} ({bc_cnt:,}개)<br>
-  쇼핑링크: <a href="{bc_url}" style="color:#0066cc;word-break:break-all">{bc_url}</a>
-</div>"""
-        elif link:
-            link_box = f"""
-<div style="background:#fff3cd;border:1px solid #ffc107;padding:12px;border-radius:6px;margin:10px 0;font-size:13px">
-  🔗 쇼핑커넥트 등록 필요<br>
-  원본 URL: <a href="{link}" style="color:#0066cc;word-break:break-all">{link}</a>
-</div>"""
+            link_badge = f'<span style="background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:bold">✅ 브랜드커넥트 {bc_rate}% · ⭐{bc_score} ({bc_cnt:,}개)</span>'
+        elif shopping_url:
+            link_badge = '<span style="background:#fff8e1;color:#e65100;border:1px solid #ffe082;padding:3px 10px;border-radius:20px;font-size:12px">🔗 원본 URL (수수료 없음)</span>'
         else:
-            link_box = ""
+            link_badge = '<span style="background:#fce4ec;color:#b71c1c;border:1px solid #ef9a9a;padding:3px 10px;border-radius:20px;font-size:12px">⚠️ 링크 없음</span>'
 
-        # 이미지 (첫 번째만)
-        img_html = ""
-        if images:
-            img_html = f'<img src="{images[0]}" style="max-width:100%;max-height:180px;border-radius:6px;margin:8px 0;display:block" alt="상품이미지">'
-
-
-        # 본문 (처음 300자 미리보기)
-        body_preview = post_body[:300].replace("\n", " ") + "..." if len(post_body) > 300 else post_body.replace("\n", " ")
-
-        # SEO 제목 전체
-        titles_html = ""
-        for j, line in enumerate(title_lines[:5]):
-            clean = re.sub(r"^[1-5][.)\s]+", "", line).strip()
-            titles_html += f'<div style="margin:3px 0;font-size:13px">• {clean}</div>'
+        link_line = f'<div style="margin:6px 0;font-size:12px;color:#555">쇼핑링크(본문삽입완료): <a href="{shopping_url}" style="color:#1565c0;word-break:break-all">{shopping_url}</a></div>' if shopping_url else ""
+        img_html  = f'<img src="{images[0]}" style="max-width:100%;max-height:160px;border-radius:6px;margin:8px 0;display:block" alt="상품이미지">' if images else ""
 
         cards_html += f"""
-<div style="border:2px solid {color};border-radius:10px;margin:16px 0;overflow:hidden">
-  <!-- 헤더 -->
-  <div style="background:{color};color:white;padding:12px 16px">
-    <span style="background:white;color:{color};padding:2px 8px;border-radius:10px;font-weight:bold;font-size:13px">{num}번</span>
-    &nbsp;&nbsp;<strong style="font-size:15px">{name[:35]}</strong>
-  </div>
-  <!-- 본문 -->
-  <div style="padding:14px 16px;background:#fff">
-    {img_html}
-    <div style="font-size:13px;color:#555;margin:6px 0">
-      카테고리: {cat['name']} | 최저가: {price_fmt}
+<div style="border-left:4px solid {color};background:#fff;margin:14px 0;overflow:hidden;border:1px solid #e0e0e0;border-left:4px solid {color}">
+  <div style="background:{color};color:white;padding:10px 16px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <span style="background:rgba(255,255,255,0.2);padding:2px 10px;border-radius:12px;font-weight:bold;font-size:13px">{num}번</span>
+      &nbsp;<strong style="font-size:14px">{name[:42]}</strong>
     </div>
-    {link_box}
-    <div style="margin-top:10px">
-      <strong style="font-size:13px">📌 SEO 제목 (하나 선택)</strong>
+    <div style="font-size:12px;opacity:0.85;white-space:nowrap">📅 {pub_time_str} 발행</div>
+  </div>
+  <div style="padding:12px 16px">
+    {img_html}
+    <div style="font-size:12px;color:#777;margin-bottom:8px">카테고리: {cat['name']} | 최저가: {price_fmt}</div>
+    {link_badge}<br>
+    {link_line}
+    <div style="margin:10px 0">
+      <div style="font-size:12px;font-weight:bold;color:#333;margin-bottom:5px">📌 SEO 제목 (하나 선택)</div>
       {titles_html}
     </div>
     <details style="margin-top:10px">
-      <summary style="cursor:pointer;font-size:13px;color:#4A90E2;font-weight:bold">✍️ 본문 보기 (클릭해서 펼치기)</summary>
-      <div style="background:#f9f9f9;padding:12px;border-radius:4px;margin-top:8px;font-size:13px;line-height:1.8;white-space:pre-line">{post_body}</div>
-      <div style="background:#f0f0f0;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#666">{hashtags}</div>
+      <summary style="cursor:pointer;font-size:13px;color:{color};font-weight:bold;padding:4px 0">✍️ 본문 펼치기 (복붙용)</summary>
+      <div style="background:#fafafa;border:1px solid #eee;padding:12px;border-radius:4px;margin-top:8px;font-size:13px;line-height:1.9;white-space:pre-line">{post_body}</div>
+      <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#888">{hashtags}</div>
     </details>
   </div>
 </div>
 """
 
-    # ── 전체 이메일 ──
-    email_html = f"""<html><body style="font-family:맑은고딕,sans-serif;max-width:720px;margin:0 auto;padding:20px;background:#f5f5f5">
+    email_html = f"""<html><body style="font-family:맑은고딕,sans-serif;max-width:680px;margin:0 auto;padding:20px;background:#f0f2f5">
 
-<div style="background:linear-gradient(135deg,#1a73e8,#0d47a1);color:white;padding:20px;border-radius:12px;margin-bottom:20px;text-align:center">
-  <h2 style="margin:0 0 6px 0;font-size:22px">🛒 네이버 블로그 발행용</h2>
-  <p style="margin:0;opacity:0.85;font-size:14px">{today_str} | 총 {len(items)}개 상품</p>
+<div style="background:#1a237e;color:white;padding:18px 20px;border-radius:10px;margin-bottom:14px;text-align:center">
+  <div style="font-size:12px;opacity:0.7;margin-bottom:4px">🛒 쇼핑 자동화 · 네이버 블로그 전용</div>
+  <div style="font-size:20px;font-weight:bold">{today_str} · 총 {len(items)}개 상품</div>
+  <div style="font-size:12px;opacity:0.65;margin-top:4px">본문 [쇼핑링크] 자동 삽입 완료</div>
 </div>
 
-<div style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:16px;font-size:13px">
+<div style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;border:1px solid #ddd">
   <strong>📋 사용 방법</strong><br>
-  1️⃣ SEO 제목 중 1개 선택<br>
-  2️⃣ 브랜드커넥트 링크로 본문 [쇼핑링크] 두 곳 교체<br>
-  3️⃣ 네이버 블로그에 번호 순서대로 복붙 발행
+  1️⃣ SEO 제목 1개 선택 &nbsp; 2️⃣ 본문 펼쳐서 복붙 (링크 이미 삽입됨) &nbsp; 3️⃣ 네이버 블로그 순서대로 발행<br>
+  <span style="color:#1a237e;font-size:12px">⏰ 권장 시간: 06:00 / 09:00 / 12:00 / 15:00 / 18:00</span>
 </div>
 
 {cards_html}
 
-<p style="text-align:center;font-size:12px;color:#999;margin-top:20px">쇼핑 자동화 v3 · {now_str}</p>
+<p style="text-align:center;font-size:11px;color:#aaa;margin-top:20px">쇼핑 자동화 v4 · {now_str}</p>
 </body></html>"""
 
     msg = MIMEMultipart("alternative")
@@ -663,148 +631,6 @@ def send_shopping_email_bulk(items):
 
     print(f"✅ 이메일 발송 완료 ({len(items)}개 상품) → {EMAIL_RECIPIENT}")
 
-
-def send_shopping_email(category, product, images, seo_titles, post_body, hashtags, bc_product=None):
-    if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
-        print("⚠️ Gmail 환경변수 없음")
-        return
-
-    name  = product.get("title", "")
-    price = product.get("lprice", "")
-    link  = product.get("link", "")
-    brand = product.get("brand", "") or product.get("maker", "")
-
-    try:
-        price_fmt = f"{int(price):,}원" if price else "가격 미정"
-    except Exception:
-        price_fmt = price or "가격 미정"
-
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-    # 이미지 HTML
-    images_html = ""
-    for i, url in enumerate(images):
-        images_html += f'<img src="{url}" style="max-width:100%;border-radius:8px;margin:6px 0;display:block" alt="상품이미지{i+1}"><br>\n'
-
-    # SEO 제목 HTML
-    title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
-    titles_html_inner = ""
-    colors = ["#4A90E2","#7B68EE","#20B2AA","#FF8C00","#DC143C"]
-    for i, line in enumerate(title_lines[:5]):
-        clean = re.sub(r"^[1-5][.)]\s*", "", line).strip()
-        color = colors[i] if i < len(colors) else "#333"
-        titles_html_inner += f'<div style="margin-bottom:10px"><span style="background:{color};color:white;padding:2px 8px;border-radius:8px;font-size:11px;margin-right:6px">{i+1}번</span><strong>{clean}</strong></div>\n'
-
-    # 본문 줄바꿈 → HTML
-    body_html = post_body.replace("\n", "<br>\n")
-
-    # 해시태그 HTML
-    tags_html = f'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">{hashtags}</div>' if hashtags else ""
-
-    # 브랜드커넥트 or 쇼핑커넥트 링크 안내
-    if bc_product:
-        bc_url   = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
-        bc_rate  = bc_product.get("commissionRate", 0)
-        bc_name  = bc_product.get("productName", name)
-        bc_price = bc_product.get("salePrice", 0)
-        bc_rv    = bc_product.get("reviewInfo", {})
-        bc_cnt   = bc_rv.get("totalReviewCount", 0)
-        bc_score = bc_rv.get("averageReviewScore", 0)
-        try:
-            bc_price_fmt = f"{int(bc_price):,}원"
-        except Exception:
-            bc_price_fmt = str(bc_price)
-        link_guide = f"""
-<div style="background:#e8f5e9;border:1px solid #4caf50;padding:15px;border-radius:8px;margin:20px 0">
-  <strong>✅ 브랜드커넥트 상품 발견! (링크 바로 사용 가능)</strong><br><br>
-  <table style="width:100%;border-collapse:collapse">
-    <tr><td style="padding:4px 0;color:#555;width:80px">상품명</td><td><strong>{bc_name}</strong></td></tr>
-    <tr><td style="padding:4px 0;color:#555">판매가</td><td><strong>{bc_price_fmt}</strong></td></tr>
-    <tr><td style="padding:4px 0;color:#555">수수료율</td><td><strong style="color:#e53935">{bc_rate}%</strong></td></tr>
-    <tr><td style="padding:4px 0;color:#555">리뷰</td><td>⭐ {bc_score} ({bc_cnt:,}개)</td></tr>
-  </table>
-  <br>
-  본문의 <strong>[쇼핑링크]</strong> 두 곳을 아래 URL로 교체하세요:<br><br>
-  <a href="{bc_url}" style="color:#0066cc;word-break:break-all">{bc_url}</a>
-</div>
-"""
-    elif link:
-        link_guide = f"""
-<div style="background:#fff3cd;border:1px solid #ffc107;padding:15px;border-radius:8px;margin:20px 0">
-  <strong>🔗 쇼핑커넥트 링크 만들기 (5분 소요)</strong><br><br>
-  아래 URL을 쇼핑커넥트에 등록하세요:<br><br>
-  <a href="{link}" style="color:#0066cc;word-break:break-all">{link}</a><br><br>
-  링크 만들고 본문의 <strong>[쇼핑링크]</strong> 두 곳에 붙여넣으세요.
-</div>
-"""
-    else:
-        link_guide = ""
-
-    email_html = f"""
-<html><body style="font-family:맑은고딕,sans-serif;max-width:700px;margin:0 auto;padding:20px">
-
-<div style="background:#f0f7ff;border-left:4px solid #4A90E2;padding:15px;margin-bottom:20px;border-radius:4px">
-  <h2 style="margin:0 0 8px 0;color:#333">🛒 쇼핑커넥트 발행용</h2>
-  <p style="margin:0;color:#666">{now_str} | 카테고리: {category['name']}</p>
-</div>
-
-<div style="background:#e8f5e9;border:1px solid #4caf50;padding:15px;border-radius:8px;margin-bottom:20px">
-  <strong>📦 오늘의 추천 상품</strong><br><br>
-  <strong>상품명:</strong> {name}<br>
-  <strong>브랜드:</strong> {brand or "정보 없음"}<br>
-  <strong>최저가:</strong> {price_fmt}
-</div>
-
-{link_guide}
-
-<div style="background:#f8f8f8;border:1px solid #ddd;padding:15px;border-radius:6px;margin-bottom:20px">
-  <strong>📌 SEO 제목 5가지 (하나 선택하세요)</strong><br><br>
-  {titles_html_inner}
-</div>
-
-<div style="background:#fff;border:1px solid #ddd;padding:12px;border-radius:4px;margin-bottom:20px">
-  <strong>📋 사용 방법</strong><br>
-  1️⃣ 위 URL로 쇼핑커넥트 링크 생성<br>
-  2️⃣ 제목 5개 중 1개 선택<br>
-  3️⃣ 본문 [쇼핑링크] 두 곳에 링크 교체<br>
-  4️⃣ 네이버 블로그 복붙 + 이미지 첨부
-</div>
-
-<hr style="border:2px solid #333;margin:20px 0">
-<h2 style="font-size:18px">✍️ 본문 (복붙용)</h2>
-<hr style="border:1px solid #ddd;margin:15px 0">
-
-<div style="margin-bottom:15px">
-<strong>📸 상품 이미지 ({len(images)}장)</strong><br>
-{images_html}
-</div>
-
-<div style="background:#fffbe6;border:1px solid #ffe082;padding:10px;border-radius:4px;margin-bottom:15px;font-size:13px">
-  이 포스팅은 제휴 마케팅 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다.
-</div>
-
-<div style="line-height:1.9;font-size:15px;color:#222">
-{body_html}
-</div>
-
-{tags_html}
-
-<hr style="border:2px solid #333;margin:30px 0">
-<p style="font-size:12px;color:#999;text-align:center">쇼핑 자동화 · {now_str}</p>
-</body></html>
-"""
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"[쇼핑발행용] {name[:30]}"
-    msg["From"]    = GMAIL_ADDRESS
-    msg["To"]      = EMAIL_RECIPIENT
-    msg.attach(MIMEText(email_html, "html", "utf-8"))
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-        server.sendmail(GMAIL_ADDRESS, EMAIL_RECIPIENT, msg.as_string())
-
-    print(f"✅ 이메일 발송 완료 → {EMAIL_RECIPIENT}")
 
 
 # ── 메인 ──────────────────────────────────────────
@@ -841,18 +667,31 @@ def main():
             print(f"⚠️ [{i+1}번] 글 작성 실패, 스킵")
             continue
 
-        # ── 4. 발행 기록 저장 ──
+        # ── 4. [쇼핑링크] 자동 교체 ──
+        if bc_product:
+            shopping_url = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
+        else:
+            shopping_url = product.get("link", "")
+        if shopping_url:
+            post_body = post_body.replace("[쇼핑링크]", shopping_url)
+
+        # ── 5. 발행 기록 저장 ──
         if product_id:
             save_published_product(product_id, product_name)
 
+        pub_times    = ["06:00", "09:00", "12:00", "15:00", "18:00"]
+        pub_time_str = pub_times[i] if i < len(pub_times) else f"{6 + i*3:02d}:00"
+
         email_items.append({
-            "category":   category,
-            "product":    product,
-            "bc_product": bc_product,
-            "images":     images,
-            "seo_titles": seo_titles,
-            "post_body":  post_body,
-            "hashtags":   hashtags,
+            "category":     category,
+            "product":      product,
+            "bc_product":   bc_product,
+            "images":       images,
+            "seo_titles":   seo_titles,
+            "post_body":    post_body,
+            "hashtags":     hashtags,
+            "shopping_url": shopping_url,
+            "pub_time_str": pub_time_str,
         })
 
     # ── 6. 이메일 1통으로 발송 ──
