@@ -22,7 +22,7 @@ jobs:
           python-version: '3.11'
 
       - name: 패키지 설치
-        run: pip install anthropic requests google-auth google-auth-oauthlib google-api-python-client
+        run: pip install anthropic requests
 
       - name: 쇼핑 자동화 실행
         env:
@@ -34,10 +34,6 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           EMAIL_RECIPIENT: "duatkdtn@gmail.com"
-          BLOG_ID: ${{ secrets.BLOG_ID }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
         run: python shopping_automation.py
 
       - name: 발행 기록 저장 (published_products.txt 커밋)
