@@ -26,6 +26,8 @@ CLAUDE_MODEL        = _get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 GMAIL_ADDRESS       = _get("GMAIL_ADDRESS")
 GMAIL_APP_PASSWORD  = _get("GMAIL_APP_PASSWORD")
 EMAIL_RECIPIENT     = _get("EMAIL_RECIPIENT", "duatkdtn@gmail.com")
+NAVER_COOKIE        = _get("NAVER_COOKIE", "")
+NAVER_SPACE_ID      = _get("NAVER_SPACE_ID", "962414636778176")
 
 PUBLISHED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "published_products.txt")
 NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
@@ -158,8 +160,8 @@ def save_published_product(product_id, product_name):
 
 def find_new_product():
     """
-    데이터랩 인기 카테고리 → 쇼핑 검색 → 아직 발행 안 한 상품 반환
-    반환: (category, product) 또는 (None, None)
+    데이터랩 인기 카테고리 → 쇼핑 검색 → 브랜드커넥트 우선 선택
+    반환: (category, product, bc_product) 또는 (None, None, None)
     """
     published_ids = load_published_ids()
     print(f"📋 발행된 상품 수: {len(published_ids)}개")
@@ -173,16 +175,114 @@ def find_new_product():
         print(f"🔍 카테고리 검색: {category['name']}")
         products = get_top_product(category)
 
+        # 미발행 상품만 필터링
+        new_products = []
         for product in products:
             pid = str(product.get("productId", ""))
             if pid and pid not in published_ids:
-                print(f"✅ 새 상품: {product['title']}")
-                return category, product
+                new_products.append(product)
             else:
-                print(f"   └ 이미 발행됨, 다음으로")
+                print(f"   └ 이미 발행됨: {product.get('title','')[:20]}")
+
+        if not new_products:
+            continue
+
+        print(f"   └ 미발행 상품 {len(new_products)}개 → 브랜드커넥트 검색 중...")
+
+        # 브랜드커넥트 우선 선택
+        if NAVER_COOKIE:
+            bc_product, bc_info = find_best_brandconnect(new_products)
+            if bc_product:
+                print(f"✅ 브랜드커넥트 상품 선택: {bc_product['title'][:30]}")
+                return category, bc_product, bc_info
+
+        # 브랜드커넥트 없으면 첫 번째 미발행 상품
+        product = new_products[0]
+        print(f"✅ 일반 상품 선택: {product['title'][:30]}")
+        return category, product, None
 
     print("⚠️ 새 상품 없음")
-    return None, None
+    return None, None, None
+
+
+# ── 3.5단계: 브랜드커넥트 상품 검색 ────────────────
+
+def check_brandconnect(product_name):
+    """
+    브랜드커넥트 내부 API로 상품 검색
+    반환: 수수료율 가장 높은 상품 dict 또는 None
+    """
+    cookie = NAVER_COOKIE
+    if not cookie:
+        print("   ℹ️ NAVER_COOKIE 없음 - 브랜드커넥트 스킵")
+        return None
+
+    headers = {
+        "Cookie": cookie,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        "Referer": "https://brandconnect.naver.com/",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://brandconnect.naver.com",
+        "x-space-id": NAVER_SPACE_ID,
+    }
+
+    try:
+        res = requests.get(
+            "https://gw-brandconnect.naver.com/affiliate/query/affiliate-products/search-by-query",
+            headers=headers,
+            params={"query": product_name, "limit": 100},
+            timeout=10
+        )
+        if res.status_code == 401:
+            print("   ⚠️ 브랜드커넥트 쿠키 만료 (재로그인 필요)")
+            return None
+        res.raise_for_status()
+
+        data = res.json().get("data", [])
+        if not data:
+            print(f"   └ 브랜드커넥트 결과 없음")
+            return None
+
+        # 가중치 점수로 최적 상품 선택 (수수료 50% + 리뷰수 30% + 별점 20%)
+        def bc_score(p):
+            rate     = float(p.get("commissionRate", 0))
+            review   = p.get("reviewInfo", {})
+            cnt      = min(float(review.get("totalReviewCount", 0)), 10000) / 10000
+            score_rv = float(review.get("averageReviewScore", 0)) / 5.0
+            return rate * 0.5 + cnt * 30 * 0.3 + score_rv * 100 * 0.2
+
+        best = max(data, key=bc_score)
+        rate   = float(best.get("commissionRate", 0))
+        review = best.get("reviewInfo", {})
+        cnt    = review.get("totalReviewCount", 0)
+        score  = review.get("averageReviewScore", 0)
+        print(f"   └ ✅ 브랜드커넥트 발견: {best.get('productName','')[:30]}")
+        print(f"      수수료 {rate}% | 리뷰 {cnt}개 | 별점 {score}")
+        return best
+
+    except Exception as e:
+        print(f"   ⚠️ 브랜드커넥트 오류: {e}")
+        return None
+
+
+def find_best_brandconnect(products):
+    """
+    상품 리스트에서 브랜드커넥트에 있는 것 중 수수료율 가장 높은 것 반환
+    반환: (product, bc_product) 또는 (None, None)
+    """
+    best_pair = None
+    best_rate = -1
+
+    for product in products:
+        name = product.get("title", "")
+        bc = check_brandconnect(name)
+        if bc:
+            rate = float(bc.get("commissionRate", 0))
+            if rate > best_rate:
+                best_rate = rate
+                best_pair = (product, bc)
+
+    return best_pair if best_pair else (None, None)
 
 
 # ── 4단계: 이미지 수집 (최대 4장) ────────────────
@@ -351,7 +451,7 @@ def generate_shopping_post(category, product):
 
 # ── 6단계: 이메일 발송 ───────────────────────────
 
-def send_shopping_email(category, product, images, seo_titles, post_body, hashtags):
+def send_shopping_email(category, product, images, seo_titles, post_body, hashtags, bc_product=None):
     if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
         print("⚠️ Gmail 환경변수 없음")
         return
@@ -388,15 +488,44 @@ def send_shopping_email(category, product, images, seo_titles, post_body, hashta
     # 해시태그 HTML
     tags_html = f'<div style="background:#f0f0f0;padding:12px;border-radius:6px;margin-top:20px;font-size:14px;color:#555">{hashtags}</div>' if hashtags else ""
 
-    # 쇼핑커넥트 링크 안내
-    link_guide = f"""
+    # 브랜드커넥트 or 쇼핑커넥트 링크 안내
+    if bc_product:
+        bc_url   = bc_product.get("shortUrl", "") or bc_product.get("productUrl", "")
+        bc_rate  = bc_product.get("commissionRate", 0)
+        bc_name  = bc_product.get("productName", name)
+        bc_price = bc_product.get("salePrice", 0)
+        bc_rv    = bc_product.get("reviewInfo", {})
+        bc_cnt   = bc_rv.get("totalReviewCount", 0)
+        bc_score = bc_rv.get("averageReviewScore", 0)
+        try:
+            bc_price_fmt = f"{int(bc_price):,}원"
+        except Exception:
+            bc_price_fmt = str(bc_price)
+        link_guide = f"""
+<div style="background:#e8f5e9;border:1px solid #4caf50;padding:15px;border-radius:8px;margin:20px 0">
+  <strong>✅ 브랜드커넥트 상품 발견! (링크 바로 사용 가능)</strong><br><br>
+  <table style="width:100%;border-collapse:collapse">
+    <tr><td style="padding:4px 0;color:#555;width:80px">상품명</td><td><strong>{bc_name}</strong></td></tr>
+    <tr><td style="padding:4px 0;color:#555">판매가</td><td><strong>{bc_price_fmt}</strong></td></tr>
+    <tr><td style="padding:4px 0;color:#555">수수료율</td><td><strong style="color:#e53935">{bc_rate}%</strong></td></tr>
+    <tr><td style="padding:4px 0;color:#555">리뷰</td><td>⭐ {bc_score} ({bc_cnt:,}개)</td></tr>
+  </table>
+  <br>
+  본문의 <strong>[쇼핑링크]</strong> 두 곳을 아래 URL로 교체하세요:<br><br>
+  <a href="{bc_url}" style="color:#0066cc;word-break:break-all">{bc_url}</a>
+</div>
+"""
+    elif link:
+        link_guide = f"""
 <div style="background:#fff3cd;border:1px solid #ffc107;padding:15px;border-radius:8px;margin:20px 0">
   <strong>🔗 쇼핑커넥트 링크 만들기 (5분 소요)</strong><br><br>
   아래 URL을 쇼핑커넥트에 등록하세요:<br><br>
   <a href="{link}" style="color:#0066cc;word-break:break-all">{link}</a><br><br>
   링크 만들고 본문의 <strong>[쇼핑링크]</strong> 두 곳에 붙여넣으세요.
 </div>
-""" if link else ""
+"""
+    else:
+        link_guide = ""
 
     email_html = f"""
 <html><body style="font-family:맑은고딕,sans-serif;max-width:700px;margin:0 auto;padding:20px">
@@ -473,10 +602,13 @@ def main():
     print("=" * 50)
 
     # 1. 새 상품 찾기
-    category, product = find_new_product()
+    category, product, bc_product = find_new_product()
     if not product:
         print("❌ 새 상품 없음. 종료.")
         sys.exit(0)
+
+    if bc_product:
+        print(f"💰 브랜드커넥트 수수료: {bc_product.get('commissionRate', 0)}%")
 
     product_id   = str(product.get("productId", ""))
     product_name = product.get("title", "")
@@ -494,7 +626,7 @@ def main():
 
     # 4. 이메일 발송
     print(f"\n📧 이메일 발송 중...")
-    send_shopping_email(category, product, images, seo_titles, post_body, hashtags)
+    send_shopping_email(category, product, images, seo_titles, post_body, hashtags, bc_product)
 
     # 5. 발행 기록 저장
     if product_id:
