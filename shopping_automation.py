@@ -369,6 +369,9 @@ def check_brandconnect(product_name):
         if res.status_code == 401:
             print("   ⚠️ 브랜드커넥트 쿠키 만료 (재로그인 필요)")
             return None
+        if res.status_code == 403:
+            print("   ℹ️ 브랜드커넥트 접근 불가 (해외 IP 차단) - 스킵")
+            return None
         res.raise_for_status()
 
         data = res.json().get("data", [])
@@ -889,8 +892,9 @@ def main():
     print("🛒 쇼핑커넥트 자동화 v3 시작 (5개 상품)")
     print("=" * 55)
 
-    # ── 기준 시간: 실행 시각 기준으로 발행 시간 계산 ──
-    now = datetime.now()
+    # ── 기준 시간: UTC → KST 변환 (+9시간) ──
+    now = datetime.utcnow() + timedelta(hours=9)
+    print(f"🕐 현재 KST 시간: {now.strftime('%Y-%m-%d %H:%M')}")
     # 발행 시간: +4h, +7h, +10h, +13h, +16h (3시간 간격)
     publish_offsets = [4, 7, 10, 13, 16]
 
