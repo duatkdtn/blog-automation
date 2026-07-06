@@ -270,6 +270,9 @@ def generate_shopping_post(category, product):
 - 예) "섭취 시" → "먹으면"
 - ~더라고요, ~이에요, ~해요 톤 유지
 - 문장은 짧고 명확하게
+- **볼드** 마크다운 절대 사용 금지 (별표 ** 사용하지 말 것)
+- [소제목1:], [소제목2:] 같은 대괄호 태그 절대 사용 금지
+- 마크다운 기호 (#, ##, **, *, ---, ===) 절대 사용 금지
 
 아래 형식을 정확히 지켜서 써줘:
 
@@ -290,13 +293,13 @@ def generate_shopping_post(category, product):
 
 ━━━━━━━━━━━━━━━━━━
 
-[소제목1: (첫 번째 소제목 내용에 맞게 작성)]
+✅ (첫 번째 소제목을 여기에 직접 텍스트로 작성 - 대괄호 없이)
 (2~3문단)
 
-[소제목2: (두 번째 소제목)]
+✅ (두 번째 소제목을 여기에 직접 텍스트로 작성 - 대괄호 없이)
 (2~3문단)
 
-[소제목3: (세 번째 소제목)]
+✅ (세 번째 소제목을 여기에 직접 텍스트로 작성 - 대괄호 없이)
 (2~3문단)
 
 ━━━━━━━━━━━━━━━━━━
@@ -329,6 +332,13 @@ def generate_shopping_post(category, product):
         # 본문 파싱
         body_match = re.search(r"---BODY_START---(.+?)---BODY_END---", raw, re.DOTALL)
         post_body = body_match.group(1).strip() if body_match else raw
+
+        # 본문 클린업: 마크다운·태그 자동 제거
+        post_body = re.sub(r'\*\*(.+?)\*\*', r'\1', post_body)          # **볼드** → 볼드
+        post_body = re.sub(r'\[소제목\d+\s*:\s*([^\]]+)\]', r'\1', post_body)  # [소제목1: 내용] → 내용만
+        post_body = re.sub(r'✅\s*\([^)]+\)', '', post_body)              # ✅ (안내문구) 제거
+        post_body = re.sub(r'^#+\s*', '', post_body, flags=re.MULTILINE)    # # 마크다운 제거
+        post_body = re.sub(r'\n{3,}', '\n\n', post_body).strip()
 
         # 해시태그 파싱
         tags_match = re.search(r"---TAGS_START---(.+?)---TAGS_END---", raw, re.DOTALL)
