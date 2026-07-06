@@ -430,26 +430,26 @@ def generate_shopping_post(category, product):
 - 카테고리: {cat1} > {cat2}
 
 글쓰기 규칙:
-- 너무 어려운 전문 용어나 한자어는 쉬운 말로 바꿀 것
-- 예) "A/S 인프라" → "고장 나도 수리받기 쉬워요"
-- 예) "섭취 시" → "먹으면"
-- ~더라고요, ~이에요, ~해요 톤 유지
-- 문장은 짧고 명확하게
-- **볼드** 마크다운 절대 사용 금지 (별표 ** 사용하지 말 것)
-- [소제목1:], [소제목2:] 같은 대괄호 태그 절대 사용 금지
+- ~더라고요, ~이에요, ~해요 톤 유지 (친근하고 자연스럽게)
 - 마크다운 기호 (#, ##, **, *, ---, ===) 절대 사용 금지
+- [소제목1:] 같은 대괄호 태그 절대 사용 금지
+- 소제목은 이모지 없이 텍스트만 작성
+- 소제목 아래 내용은 반드시 3문단으로 작성
+- 각 문단은 3~4문장으로 충분히 상세하게 작성
 
 아래 형식을 정확히 지켜서 써줘:
 
 ---SEO_TITLES_START---
-1. (정보 검색형 제목 - 카테고리 키워드 중심)
-2. (제품명 직접 검색형 - 구매 의도 높은 유저 타겟)
-3. (가격/가성비형)
-4. (후기/경험형)
-5. (감성/공감형)
+1. [구매확률↑↑] (제품명 직접 검색형 - 구매 결정 직전 유저 타겟, 제품명+구매/추천/필독 포함)
+2. [구매확률↑] (가격/가성비 비교형 - 최저가·가성비 키워드 포함)
+3. [후기형] (사용 후기/경험형 - 실사용 느낌·솔직한 후기 키워드)
+4. [정보형] (정보 탐색형 - 카테고리 키워드 중심, 유입량 높음)
+5. [감성형] (감성/공감형 - 생활 공감 스토리 키워드)
 ---SEO_TITLES_END---
 
 ---BODY_START---
+이 포스팅은 제휴 마케팅 활동의 일환으로, 판매 발생 시 수수료를 제공받습니다.
+
 (공감형 도입부: 이 상품이 왜 필요한지 생활 속 불편함 공감으로 시작, 2~3문단)
 
 가격은 시기에 따라 변동될 수 있습니다.
@@ -458,18 +458,18 @@ def generate_shopping_post(category, product):
 
 ━━━━━━━━━━━━━━━━━━
 
-✅ (첫 번째 소제목을 여기에 직접 텍스트로 작성 - 대괄호 없이)
-(2~3문단)
+(첫 번째 소제목 텍스트만 - 이모지/대괄호 없이)
+(3문단, 각 문단 3~4문장)
 
-✅ (두 번째 소제목을 여기에 직접 텍스트로 작성 - 대괄호 없이)
-(2~3문단)
+(두 번째 소제목 텍스트만 - 이모지/대괄호 없이)
+(3문단, 각 문단 3~4문장)
 
-✅ (세 번째 소제목을 여기에 직접 텍스트로 작성 - 대괄호 없이)
-(2~3문단)
+(세 번째 소제목 텍스트만 - 이모지/대괄호 없이)
+(3문단, 각 문단 3~4문장)
 
 ━━━━━━━━━━━━━━━━━━
 
-(마무리: 어떤 사람에게 추천하는지, 1~2문단)
+(마무리: 어떤 사람에게 추천하는지 구체적으로, 1~2문단)
 
 재고와 할인 여부는 아래에서 확인할 수 있습니다.
 👇 오늘 최저가 확인하기
@@ -571,7 +571,10 @@ def send_shopping_email_bulk(items):
             link_badge = '<span style="background:#fce4ec;color:#b71c1c;border:1px solid #ef9a9a;padding:3px 10px;border-radius:20px;font-size:12px">⚠️ 링크 없음</span>'
 
         link_line = f'<div style="margin:6px 0;font-size:12px;color:#555">쇼핑링크(본문삽입완료): <a href="{shopping_url}" style="color:#1565c0;word-break:break-all">{shopping_url}</a></div>' if shopping_url else ""
-        img_html  = f'<img src="{images[0]}" style="max-width:100%;max-height:160px;border-radius:6px;margin:8px 0;display:block" alt="상품이미지">' if images else ""
+        img_parts = []
+        for img_url in images[:4]:
+            img_parts.append(f'<img src="{img_url}" style="width:calc(50% - 4px);max-height:130px;object-fit:cover;border-radius:6px;display:inline-block;vertical-align:top" alt="상품이미지">')
+        img_html = f'<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px">{" ".join(img_parts)}</div>' if img_parts else ""
 
         cards_html += f"""
 <div style="border-left:4px solid {color};background:#fff;margin:14px 0;overflow:hidden;border:1px solid #e0e0e0;border-left:4px solid {color}">
