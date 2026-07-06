@@ -482,7 +482,7 @@ def generate_shopping_post(category, product):
         client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
         msg = client.messages.create(
             model=CLAUDE_MODEL,
-            max_tokens=2500,
+            max_tokens=4000,
             messages=[{"role": "user", "content": prompt}]
         )
         raw = msg.content[0].text.strip()
@@ -503,6 +503,9 @@ def generate_shopping_post(category, product):
         post_body = re.sub(r'✅\s*\([^)]+\)', '', post_body)              # ✅ (안내문구) 제거
         post_body = re.sub(r'^#+\s*', '', post_body, flags=re.MULTILINE)    # # 마크다운 제거
         post_body = re.sub(r'\n{3,}', '\n\n', post_body).strip()
+
+        if not post_body:
+            print(f"⚠️ 파싱 실패 - raw 앞부분: {raw[:300]}")
 
         # 해시태그 파싱
         tags_match = re.search(r"---TAGS_START---(.+?)---TAGS_END---", raw, re.DOTALL)
@@ -660,7 +663,6 @@ def main():
 
         pub_times    = ["06:00", "09:00", "12:00", "15:00", "18:00"]
         pub_time_str = pub_times[i] if i < len(pub_times) else f"{6 + i*3:02d}:00"
-
         email_items.append({
             "category":     category,
             "product":      product,
@@ -671,14 +673,10 @@ def main():
             "hashtags":     hashtags,
             "pub_time_str": pub_time_str,
         })
-
-    # ── 6. 이메일 1통으로 발송 ──
     if email_items:
         print(f"\n📧 이메일 발송 중... ({len(email_items)}개 상품)")
         send_shopping_email_bulk(email_items)
-
     print(f"\n✅ 완료! {len(email_items)}개 상품 처리")
-
 
 if __name__ == "__main__":
     main()
