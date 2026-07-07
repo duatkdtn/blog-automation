@@ -550,7 +550,7 @@ def send_shopping_email_bulk(items):
         except Exception:
             price_fmt = price or "가격 미정"
 
-        post_body_html = "".join(f"<p style='margin:0 0 12px 0'>{line}</p>" for line in post_body.split("\n") if line.strip())
+        post_body_html = "".join(f"<div style='margin:0 0 12px 0'>{line}</div>" for line in post_body.split("\n") if line.strip())
         title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
         titles_html = ""
         for j, line in enumerate(title_lines[:5]):
