@@ -219,13 +219,13 @@ def generate_hook_text(keyword, title):
 조건:
 - 15자 이내
 - 짧고 강렬하게
-- 숫자 포함하면 더 좋음 (예: 3가지, 30만원)
+- 제목에 숫자(5가지, 3개월 등)가 있으면 반드시 그 숫자 그대로 사용
 - 궁금증 유발 (예: 모르면 손해, 이것만 알면)
 - 문구만 출력, 다른 말 없이"""
             }]
         )
         hook = message.content[0].text.strip().strip('"').strip("'")
-        return hook[:20] if hook else title
+        return hook[:15] if hook else title[:15]
     except:
         return title
 
