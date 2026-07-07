@@ -43,6 +43,8 @@ CATEGORIES = [
     {"name": "스포츠/레저", "id": "50000006"},
     {"name": "생활/건강",   "id": "50000007"},
     {"name": "여가/생활편의","id": "50000008"},
+    {"name": "출산/육아",   "id": "50000009"},
+    {"name": "도서",        "id": "50000010"},
 ]
 
 NAVER_HEADERS = lambda: {
@@ -210,7 +212,7 @@ def find_new_product():
     return None, None, None
 
 
-def find_new_products(count=5):
+def find_new_products(count=9):
     """
     여러 카테고리에서 미발행 상품 최대 count개 반환
     반환: list of (category, product, bc_product)
@@ -414,11 +416,6 @@ def generate_shopping_post(category, product):
     cat1  = product.get("category1", category["name"])
     cat2  = product.get("category2", "")
 
-    try:
-        price_fmt = f"{int(price):,}원" if price else "가격 미정"
-    except Exception:
-        price_fmt = price or "가격 미정"
-
     brand_info = brand or maker or "브랜드 미상"
 
     prompt = f"""너는 네이버 쇼핑 블로그에 제휴 마케팅 상품 추천 글을 쓰는 전문 작가야.
@@ -426,7 +423,6 @@ def generate_shopping_post(category, product):
 상품 정보:
 - 상품명: {name}
 - 브랜드: {brand_info}
-- 최저가: {price_fmt}
 - 카테고리: {cat1} > {cat2}
 
 글쓰기 규칙:
@@ -532,7 +528,7 @@ def send_shopping_email_bulk(items):
     kst       = datetime.utcnow() + timedelta(hours=9)
     today_str = kst.strftime("%Y년 %m월 %d일")
     now_str   = kst.strftime("%Y-%m-%d %H:%M")
-    colors    = ["#3F51B5", "#7B1FA2", "#00796B", "#E65100", "#C62828"]
+    colors    = ["#3F51B5", "#7B1FA2", "#00796B", "#E65100", "#C62828", "#1565C0", "#558B2F", "#6A1B9A", "#AD1457"]
 
     cards_html = ""
     for i, item in enumerate(items):
@@ -554,6 +550,7 @@ def send_shopping_email_bulk(items):
         except Exception:
             price_fmt = price or "가격 미정"
 
+        post_body_html = "".join(f"<p style='margin:0 0 12px 0'>{line}</p>" for line in post_body.split("\n") if line.strip())
         title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
         titles_html = ""
         for j, line in enumerate(title_lines[:5]):
@@ -583,7 +580,7 @@ def send_shopping_email_bulk(items):
     </div>
     <details style="margin-top:10px">
       <summary style="cursor:pointer;font-size:13px;color:{color};font-weight:bold;padding:4px 0">✍️ 본문 펼치기 (복붙용)</summary>
-      <div style="background:#fafafa;border:1px solid #eee;padding:12px;border-radius:4px;margin-top:8px;font-size:13px;line-height:1.9;white-space:pre-line">{post_body}</div>
+      <div style="background:#fafafa;border:1px solid #eee;padding:12px;border-radius:4px;margin-top:8px;font-size:13px;line-height:1.9">{post_body_html}</div>
       <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#888">{hashtags}</div>
     </details>
   </div>
@@ -631,7 +628,7 @@ def main():
     print("=" * 55)
 
     # ── 1. 5개 상품 선택 ──
-    selected = find_new_products(count=5)
+    selected = find_new_products(count=len(CATEGORIES))
     if not selected:
         print("❌ 발행할 상품 없음. 종료.")
         sys.exit(0)
@@ -661,7 +658,7 @@ def main():
         if product_id:
             save_published_product(product_id, product_name)
 
-        pub_times    = ["06:00", "09:00", "12:00", "15:00", "18:00"]
+        pub_times    = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"]
         pub_time_str = pub_times[i] if i < len(pub_times) else f"{6 + i*3:02d}:00"
         email_items.append({
             "category":     category,
