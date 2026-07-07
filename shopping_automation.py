@@ -675,7 +675,11 @@ def send_shopping_email_bulk(items):
     <details style="margin-top:10px">
       <summary style="cursor:pointer;font-size:13px;color:{color};font-weight:bold;padding:4px 0">✍️ 본문 펼치기 (복붙용)</summary>
       <div style="background:#fafafa;border:1px solid #eee;padding:12px;border-radius:4px;margin-top:8px;font-size:15px;line-height:1.9">{post_body_html}</div>
-      <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#888">{hashtags}</div>
+      <div style="margin-top:10px">
+        <div style="font-size:12px;color:#555;font-weight:bold;margin-bottom:4px">📋 네이버 복붙용 (클릭 후 Ctrl+A → Ctrl+C → 네이버에 붙여넣기)</div>
+        <textarea onclick="this.select()" readonly style="width:100%;height:220px;font-size:14px;line-height:1.9;font-family:맑은고딕,sans-serif;border:2px solid {color};border-radius:4px;padding:10px;box-sizing:border-box;resize:vertical;background:#fff">{post_body}</textarea>
+        <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#888">{hashtags}</div>
+      </div>
     </details>
   </div>
 </div>
