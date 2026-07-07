@@ -197,10 +197,15 @@ def generate_naver_content(keyword, title, content, blogspot_url, related_keywor
         body = body_match.group(1).strip() if body_match else ""
         tags = tags_match.group(1).strip() if tags_match else ""
 
-        # 제목 섹션에서 번호 붙은 줄만 추출 (Claude가 앞에 설명글 붙여도 무시)
+        # 제목 섹션 파싱: 번호 있으면 추출, 없으면 비어있지 않은 줄 그대로 사용
         if titles_raw:
             title_lines = re.findall(r'^[1-3][.)]\s*.+', titles_raw, re.MULTILINE)
-            titles = "\n".join(title_lines[:3])
+            if title_lines:
+                titles = "\n".join(title_lines[:3])
+            else:
+                # 번호 없이 줄로만 돼있는 경우 → 비어있지 않은 줄 3개 사용
+                raw_lines = [l.strip() for l in titles_raw.split("\n") if l.strip() and len(l.strip()) > 5]
+                titles = "\n".join(raw_lines[:3])
         else:
             titles = ""
 
