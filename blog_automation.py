@@ -637,74 +637,99 @@ def insert_images_into_content(content, image_urls, keyword):
 
 # 외부링크 카테고리별 공식 사이트 목록
 # 지도형 카테고리: URL에 KEYWORD_PLACEHOLDER 포함 → 실제 키워드로 치환됨
-MAP_CATEGORIES = {"먹거리/맛집", "여행", "반려동물", "레저/공공시설", "지역정보"}
+MAP_CATEGORIES = {"맛집/음식점", "여행", "반려동물", "레저"}
 
 EXTERNAL_LINKS = {
-    "먹거리/맛집": [
+    # ── 지도형 ──────────────────────────────────────────────
+    "맛집/음식점": [
         ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
         ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
-    "보험": [
-        ("국민건강보험 공식사이트", "https://www.nhis.or.kr"),
-        ("금융감독원", "https://www.fss.or.kr"),
-        ("건강보험심사평가원", "https://www.hira.or.kr"),
+    "여행": [
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+        ("한국관광공사", "https://www.visitkorea.or.kr"),
     ],
-    "취업/직장": [
-        ("고용노동부", "https://www.moel.go.kr"),
-        ("워크넷", "https://www.work.go.kr"),
-        ("고용24", "https://www.고용24.kr"),
+    "반려동물": [
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
-    "부동산/청약": [
-        ("청약홈", "https://www.applyhome.co.kr"),
-        ("국토교통부", "https://www.molit.go.kr"),
-        ("부동산공시가격알리미", "https://www.realtyprice.kr"),
+    "레저": [
+        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
+        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
     ],
+    # ── 건강/생활 ────────────────────────────────────────────
     "의료/건강": [
         ("국민건강보험", "https://www.nhis.or.kr"),
         ("질병관리청", "https://www.kdca.go.kr"),
         ("건강보험심사평가원", "https://www.hira.or.kr"),
     ],
-    "정부지원/복지": [
-        ("복지로", "https://www.bokjiro.go.kr"),
-        ("정부24", "https://www.gov.kr"),
-        ("국민비서", "https://www.ips.go.kr"),
+    "다이어트/운동": [
+        ("국민체력100", "https://nfa.kspo.or.kr"),
+        ("식품안전나라", "https://www.foodsafetykorea.go.kr"),
+        ("보건복지부", "https://www.mohw.go.kr"),
     ],
-    "세금/법률": [
-        ("국세청 홈택스", "https://www.hometax.go.kr"),
-        ("법제처", "https://www.law.go.kr"),
-        ("대한법률구조공단", "https://www.klac.or.kr"),
-    ],
-    "육아/교육": [
-        ("교육부", "https://www.moe.go.kr"),
-        ("임신육아종합포털", "https://www.childcare.go.kr"),
-        ("EBS", "https://www.ebs.co.kr"),
-    ],
-    "경제/금융": [
-        ("한국은행", "https://www.bok.or.kr"),
-        ("금융위원회", "https://www.fsc.go.kr"),
-        ("금융감독원", "https://www.fss.or.kr"),
-    ],
-    "자동차": [
-        ("한국교통안전공단", "https://www.kotsa.or.kr"),
-        ("국토교통부", "https://www.molit.go.kr"),
-        ("자동차민원 대국민포털", "https://www.ecar.go.kr"),
+    "뷰티/미용": [
+        ("식품의약품안전처", "https://www.mfds.go.kr"),
+        ("식품안전나라", "https://www.foodsafetykorea.go.kr"),
     ],
     "환경/날씨": [
         ("기상청", "https://www.weather.go.kr"),
         ("환경부", "https://www.me.go.kr"),
         ("에어코리아", "https://www.airkorea.or.kr"),
     ],
-    "여행": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+    # ── 경제/금융/권리 ────────────────────────────────────────
+    "경제/금융": [
+        ("한국은행", "https://www.bok.or.kr"),
+        ("금융위원회", "https://www.fsc.go.kr"),
+        ("금융감독원", "https://www.fss.or.kr"),
     ],
-    "반려동물": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+    "보험": [
+        ("국민건강보험", "https://www.nhis.or.kr"),
+        ("금융감독원", "https://www.fss.or.kr"),
+        ("건강보험심사평가원", "https://www.hira.or.kr"),
     ],
-    "뷰티/식품": [
-        ("식품의약품안전처", "https://www.mfds.go.kr"),
-        ("식품안전나라", "https://www.foodsafetykorea.go.kr"),
+    "부동산/청약": [
+        ("청약홈", "https://www.applyhome.co.kr"),
+        ("국토교통부", "https://www.molit.go.kr"),
+        ("부동산공시가격알리미", "https://www.realtyprice.kr"),
+    ],
+    "세금": [
+        ("국세청 홈택스", "https://www.hometax.go.kr"),
+        ("국세청", "https://www.nts.go.kr"),
+        ("재정정보공개시스템", "https://www.openfiscaldata.go.kr"),
+    ],
+    "법률/권리": [
+        ("법제처", "https://www.law.go.kr"),
+        ("대한법률구조공단", "https://www.klac.or.kr"),
+        ("국민신문고", "https://www.epeople.go.kr"),
+    ],
+    "소비자보호": [
+        ("공정거래위원회", "https://www.ftc.go.kr"),
+        ("한국소비자원", "https://www.kca.go.kr"),
+        ("소비자24", "https://www.consumer.go.kr"),
+    ],
+    # ── 복지/취업 ────────────────────────────────────────────
+    "정부지원/복지": [
+        ("복지로", "https://www.bokjiro.go.kr"),
+        ("정부24", "https://www.gov.kr"),
+        ("국민비서", "https://www.ips.go.kr"),
+    ],
+    "취업/직장": [
+        ("고용노동부", "https://www.moel.go.kr"),
+        ("워크넷", "https://www.work.go.kr"),
+        ("고용24", "https://www.work24.go.kr"),
+    ],
+    "육아/교육": [
+        ("교육부", "https://www.moe.go.kr"),
+        ("임신육아종합포털", "https://www.childcare.go.kr"),
+        ("EBS", "https://www.ebs.co.kr"),
+    ],
+    # ── 기타 ─────────────────────────────────────────────────
+    "자동차": [
+        ("한국교통안전공단", "https://www.kotsa.or.kr"),
+        ("국토교통부", "https://www.molit.go.kr"),
+        ("자동차민원 대국민포털", "https://www.ecar.go.kr"),
     ],
     "IT/전자": [
         ("과학기술정보통신부", "https://www.msit.go.kr"),
@@ -714,14 +739,6 @@ EXTERNAL_LINKS = {
         ("대한체육회", "https://www.sports.or.kr"),
         ("한국콘텐츠진흥원", "https://www.kocca.kr"),
     ],
-    "레저/공공시설": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
-    ],
-    "지역정보": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
-    ],
 }
 
 
@@ -730,9 +747,21 @@ def get_external_links_for_keyword(keyword):
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
     categories = list(EXTERNAL_LINKS.keys())
     prompt = f"""키워드: "{keyword}"
-이 키워드가 아래 카테고리 중 어디에 해당하는지 1개만 골라주세요. 카테고리 이름만 정확히 출력하세요.
+아래 카테고리 중 이 키워드와 명확하게 일치하는 것 1개만 골라서 카테고리 이름만 출력하세요.
+
 카테고리: {', '.join(categories)}
-해당 없으면 "없음"이라고만 출력하세요."""
+
+판단 기준:
+- 맛집/음식점: 음식점, 카페, 식당 등 장소 검색이 목적인 경우만
+- 다이어트/운동: 체중감량, 식단관리, 운동법 등 (음식점 검색 아님)
+- 세금: 소득세, 부가세, 연말정산 등 세금 납부/신고
+- 법률/권리: 소송, 계약, 법률상담 등
+- 소비자보호: 담합, 소비자 피해, 환불, 불량품 등
+- 레저: 캠핑, 스키장, 수영장 등 레저 장소 검색
+- 여행: 관광지, 여행지 검색
+- 정부지원/복지: 지원금, 보조금, 민원, 공공서비스
+
+확실하지 않으면 반드시 "없음"만 출력하세요."""
 
     try:
         message = client.messages.create(
