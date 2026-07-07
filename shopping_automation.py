@@ -4,7 +4,7 @@
 #       → 이메일 1통 (네이버 블로그 복붙용)
 # ================================================
 
-import os, re, sys, json, requests, smtplib
+import os, re, sys, json, random, requests, smtplib
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -34,17 +34,44 @@ NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
 
 
 
-# ── 네이버 데이터랩 쇼핑 카테고리 (대분류 고정) ──
+# ── 네이버 데이터랩 쇼핑 카테고리 + 세부 키워드 ──
 CATEGORIES = [
-    {"name": "화장품/미용", "id": "50000002"},
-    {"name": "디지털/가전", "id": "50000003"},
-    {"name": "가구/인테리어","id": "50000004"},
-    {"name": "식품",        "id": "50000005"},
-    {"name": "스포츠/레저", "id": "50000006"},
-    {"name": "생활/건강",   "id": "50000007"},
-    {"name": "여가/생활편의","id": "50000008"},
-    {"name": "출산/육아",   "id": "50000009"},
-    {"name": "도서",        "id": "50000010"},
+    {"name": "화장품/미용", "id": "50000002", "keywords": [
+        "선크림", "토너패드", "쿠션팩트", "마스카라", "세럼", "클렌징폼",
+        "립틴트", "아이크림", "파운데이션", "미스트", "에센스", "립밤", "자외선차단제"
+    ]},
+    {"name": "디지털/가전", "id": "50000003", "keywords": [
+        "무선이어폰", "공기청정기", "로봇청소기", "블루투스스피커", "스마트워치",
+        "전동칫솔", "가습기", "선풍기", "전기면도기", "태블릿", "게이밍마우스", "웹캠"
+    ]},
+    {"name": "가구/인테리어", "id": "50000004", "keywords": [
+        "식탁의자", "수납장", "커튼", "카펫", "조명", "책상", "소파",
+        "선반", "화분", "무드등", "방향제", "침구세트", "벽시계"
+    ]},
+    {"name": "식품", "id": "50000005", "keywords": [
+        "단백질쉐이크", "견과류", "홍삼", "유산균", "냉동식품", "즉석밥",
+        "커피믹스", "비타민", "오메가3", "콜라겐", "프로틴바", "그래놀라"
+    ]},
+    {"name": "스포츠/레저", "id": "50000006", "keywords": [
+        "등산스틱", "요가매트", "헬스글러브", "수영복", "자전거헬멧",
+        "등산화", "골프장갑", "캠핑의자", "낚시대", "배드민턴라켓", "폼롤러", "점프줄"
+    ]},
+    {"name": "생활/건강", "id": "50000007", "keywords": [
+        "안마기", "칫솔", "핸드크림", "발열내복", "압박스타킹",
+        "체중계", "혈압계", "발마사지기", "족욕기", "허리보호대", "무릎보호대", "냉찜질팩"
+    ]},
+    {"name": "여가/생활편의", "id": "50000008", "keywords": [
+        "여행가방", "우산", "보조배터리", "텀블러", "에코백",
+        "파우치", "독서대", "자동차방향제", "차량용충전기", "접이식테이블", "캐리어"
+    ]},
+    {"name": "출산/육아", "id": "50000009", "keywords": [
+        "기저귀", "아기물티슈", "유아매트", "아기띠", "이유식",
+        "아기욕조", "장난감", "아기침대", "젖병", "유모차", "아기로션", "치발기"
+    ]},
+    {"name": "도서", "id": "50000010", "keywords": [
+        "자기계발서", "소설", "경제경영서", "어린이책", "영어원서",
+        "역사책", "요리책", "그림책", "수험서", "에세이", "만화책"
+    ]},
 ]
 
 NAVER_HEADERS = lambda: {
@@ -110,13 +137,70 @@ def get_trending_category():
         return None
 
 
-# ── 2단계: 네이버 쇼핑 API로 1위 상품 가져오기 ──
+# ── 2단계: 네이버 쇼핑 API로 상품 가져오기 ──────
+
+def get_trending_keywords_from_datalab(category):
+    """
+    DataLab 쇼핑인사이트에서 카테고리 인기 검색어 TOP 10 크롤링
+    반환: list of keyword strings, 또는 [] (실패 시)
+    """
+    today = datetime.now()
+    end   = (today - timedelta(days=1)).strftime("%Y%m%d")
+    start = (today - timedelta(days=7)).strftime("%Y%m%d")
+
+    try:
+        res = requests.post(
+            "https://datalab.naver.com/shoppingInsight/getKeywordRank.naver",
+            headers={
+                "Referer":          "https://datalab.naver.com/shoppingInsight/sCategory.naver",
+                "User-Agent":       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+                "Content-Type":     "application/x-www-form-urlencoded; charset=UTF-8",
+                "Accept":           "application/json, text/javascript, */*; q=0.01",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            data={
+                "cid":       category["id"],
+                "timeUnit":  "date",
+                "startDate": start,
+                "endDate":   end,
+                "age":       "",
+                "sex":       "",
+                "device":    "",
+                "topN":      "10",
+            },
+            timeout=10,
+        )
+        if res.status_code == 200:
+            result = res.json().get("result", [])
+            keywords = [item.get("keyword", "") for item in result if item.get("keyword")]
+            if keywords:
+                print(f"   📊 DataLab 인기 키워드 {len(keywords)}개 수집")
+                return keywords
+    except Exception as e:
+        print(f"   ℹ️ DataLab 크롤링 실패: {e}")
+
+    return []
+
 
 def get_top_product(category):
     """
-    카테고리 이름으로 네이버 쇼핑 검색 → 인기 상품 상위 10개 반환
+    키워드 선택 순서:
+      1순위: DataLab 인기 키워드 TOP 10 중 랜덤
+      2순위(fallback): 하드코딩 keywords 중 랜덤
+    → 네이버 쇼핑 검색 → 20개 수집 → reviewCount 기준 상위 반환
     반환: list of product dict
     """
+    # 키워드 결정
+    datalab_kws = get_trending_keywords_from_datalab(category)
+    if datalab_kws:
+        query = random.choice(datalab_kws[:5])  # 상위 5개 중 랜덤
+    else:
+        fallback_kws = category.get("keywords", [category["name"]])
+        query = random.choice(fallback_kws)
+        print(f"   🔀 Fallback 키워드: {query}")
+
+    print(f"   🔍 검색 키워드: {query}")
+
     try:
         res = requests.get(
             "https://openapi.naver.com/v1/search/shop.json",
@@ -124,15 +208,25 @@ def get_top_product(category):
                 "X-Naver-Client-Id":     NAVER_CLIENT_ID,
                 "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
             },
-            params={"query": category["name"], "display": 10, "sort": "sim"},
-            timeout=10
+            params={"query": query, "display": 20, "sort": "sim"},
+            timeout=10,
         )
         res.raise_for_status()
         items = res.json().get("items", [])
+
         # HTML 태그 제거
         for item in items:
             item["title"] = re.sub(r"<[^>]+>", "", item.get("title", ""))
+
+        # 네이버 쇼핑 기본 API는 reviewCount 미제공
+        # → 정확도(sim) 상위 10개를 섞어서 반환: 실행마다 다른 상품 선택
+        if len(items) > 10:
+            pool = items[:10]
+            random.shuffle(pool)
+            items = pool + items[10:]
+
         return items
+
     except Exception as e:
         print(f"⚠️ 쇼핑 API 오류: {e}")
         return []
