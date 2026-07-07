@@ -580,7 +580,7 @@ def send_shopping_email_bulk(items):
     </div>
     <details style="margin-top:10px">
       <summary style="cursor:pointer;font-size:13px;color:{color};font-weight:bold;padding:4px 0">✍️ 본문 펼치기 (복붙용)</summary>
-      <div style="background:#fafafa;border:1px solid #eee;padding:12px;border-radius:4px;margin-top:8px;font-size:13px;line-height:1.9">{post_body_html}</div>
+      <div style="background:#fafafa;border:1px solid #eee;padding:12px;border-radius:4px;margin-top:8px;font-size:15px;line-height:1.9">{post_body_html}</div>
       <div style="background:#f5f5f5;padding:8px;border-radius:4px;margin-top:6px;font-size:12px;color:#888">{hashtags}</div>
     </details>
   </div>
