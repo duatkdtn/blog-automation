@@ -776,43 +776,6 @@ def get_external_links_for_keyword(keyword):
         return "없음", []
 
 
-# ── 우리 기능형 페이지 URL 매핑 ────────────────────────────────
-OUR_CALC_PAGES = {
-    "salary": {
-        "keywords": ["연봉", "실수령", "월급", "급여", "세후", "세전", "임금", "연봉계산", "월급계산", "소득세"],
-        "label": "💰 연봉 실수령액 계산기",
-        "url": "https://www.hijanee.com/p/blog-page.html"
-    },
-    "retirement": {
-        "keywords": ["퇴직금", "퇴직급여", "퇴직연금"],
-        "label": "💼 퇴직금 계산기",
-        "url": "https://www.hijanee.com/p/retirement-calculator.html"
-    },
-    "unemployment": {
-        "keywords": ["실업급여", "구직급여"],
-        "label": "📋 실업급여 계산기",
-        "url": "https://www.hijanee.com/p/unemployment-calculator.html"
-    },
-    "realestate": {
-        "keywords": ["취득세", "부동산세금", "주택취득"],
-        "label": "🏠 취득세 계산기",
-        "url": "https://www.hijanee.com/p/realestate-calculator.html"
-    },
-    "bmi": {
-        "keywords": ["BMI", "체질량", "비만도", "체중"],
-        "label": "⚖️ BMI 계산기",
-        "url": "https://www.hijanee.com/p/bmi-calculator.html"
-    },
-}
-
-def get_our_calculator(keyword):
-    """키워드에 맞는 우리 계산기 페이지 반환"""
-    for calc in OUR_CALC_PAGES.values():
-        for kw in calc["keywords"]:
-            if kw in keyword:
-                return calc["label"], calc["url"]
-    return None, None
-
 def add_external_links(content, keyword, map_keyword=None, place_links=None):
     """글 하단에 외부링크 버튼 추가"""
     from urllib.parse import quote
@@ -821,12 +784,6 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
         return content
 
     is_map = category in MAP_CATEGORIES
-
-    # 우리 계산기 페이지 버튼 (있으면 최상단에 추가)
-    calc_label, calc_url = get_our_calculator(keyword)
-    calc_btn = ""
-    if calc_label and calc_url:
-        calc_btn = f'''<a href="{calc_url}" target="_blank" rel="noopener" style="display:inline-block;background:#4a6cf7;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">{calc_label}</a>\n'''
 
     buttons_html = ""
     if is_map:
@@ -858,7 +815,7 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
     external_section = f'''
 <div style="background:#fff8f8;border:1px solid #ffcccc;border-radius:8px;padding:20px;margin:30px 0">
 <p style="font-weight:bold;color:#c0392b;margin:0 0 12px">{section_title}</p>
-{calc_btn}{buttons_html}</div>'''
+{buttons_html}</div>'''
 
     # 면책문구 바로 앞에 삽입
     if '<p style="background:#f8f9fa' in content:
@@ -927,4 +884,62 @@ def add_internal_links(content, keyword, blog_id):
                     title = parts[0].strip()
                     url = parts[1].strip()
                     if url.startswith("http"):
-                        related.a
+                        related.append((title, url))
+
+        if not related:
+            return content
+
+        # 내부링크 섹션 생성
+        links_html = ""
+        for title, url in related[:2]:
+            links_html += f'<li style="margin:8px 0"><a href="{url}" style="color:#2980b9;text-decoration:none">👉 {title}</a></li>\n'
+
+        internal_section = f'''
+<div style="background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:20px;margin:30px 0">
+<p style="font-weight:bold;color:#1a5276;margin:0 0 12px;font-size:17px">📚 함께 읽으면 좋은 글</p>
+<ul style="padding-left:20px;margin:0;font-size:16px;line-height:1.8">
+{links_html}</ul></div>'''
+
+        # 면책문구 바로 앞에 삽입
+        if '<p style="background:#f8f9fa' in content:
+            content = content.replace('<p style="background:#f8f9fa', internal_section + '\n<p style="background:#f8f9fa', 1)
+        else:
+            content += internal_section
+
+        print(f"✅ 내부링크 {len(related)}개 추가 완료!")
+        return content
+
+    except Exception as e:
+        print(f"⚠️ 내부링크 추가 실패 (발행은 계속): {e}")
+        return content
+
+
+def publish_to_blogger(title, content):
+    """Blogger에 글 발행"""
+    print(f"\n📤 블로그에 발행 중...")
+
+    creds = get_google_credentials()
+    service = build('blogger', 'v3', credentials=creds)
+
+    post = {
+        'title': title,
+        'content': content
+    }
+
+    result = service.posts().insert(
+        blogId=BLOG_ID,
+        body=post
+    ).execute()
+
+    print(f"✅ 발행 완료!")
+    print(f"🔗 URL: {result.get('url', '확인 불가')}")
+    return result
+
+
+def main():
+    print("=" * 50)
+    print("   BlogMaster - 블로그 자동화 프로그램")
+    print("=" * 50)
+
+    keyword = input("\n📌 키워드를 입력하세요: ")
+
