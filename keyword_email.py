@@ -402,6 +402,23 @@ def parse_keywords_and_best6(raw_text):
         best6_indices = list(range(min(6, len(keywords))))
 
     best6 = [keywords[i] for i in best6_indices[:6]]
+
+    # 경쟁강도 필터: 높음 제외, 낮음 우선 정렬
+    def competition_score(kw):
+        comp = kw.get("competition", "중간")
+        if "낮음" in comp: return 0
+        if "중간" in comp: return 1
+        return 2  # 높음
+
+    best6_sorted = sorted(best6, key=competition_score)
+    # 높음 경쟁강도 키워드 제외 (낮음+중간만 유지, 최소 3개 보장)
+    filtered = [kw for kw in best6_sorted if competition_score(kw) < 2]
+    if len(filtered) >= 3:
+        best6 = filtered[:6]
+    else:
+        best6 = best6_sorted[:6]  # 필터 후 3개 미만이면 그냥 정렬만
+
+    print(f"   📊 경쟁강도 필터 적용: {[kw.get('keyword','') + '(' + kw.get('competition','?') + ')' for kw in best6]}")
     return keywords, best6
 
 

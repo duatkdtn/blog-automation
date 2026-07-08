@@ -105,9 +105,9 @@ def generate_images_with_vertex(keyword, count=3):
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     prompts = [
-        f"Realistic photo of Korean people in a scene related to '{keyword}'. Indoor Korean setting, natural daylight, warm atmosphere. IMPORTANT: zero text, zero letters, zero words, zero numbers, zero signs, zero banners, zero watermarks anywhere in the entire image. Pure photographic scene only.",
-        f"A Korean person in a moment related to '{keyword}'. Modern Korean interior background. IMPORTANT: absolutely no text, no letters, no words, no numbers, no signs, no banners, no labels, no watermarks of any kind visible anywhere in the image.",
-        f"Korean lifestyle photo about '{keyword}'. Korean people, Korean style surroundings. IMPORTANT: strictly no text, no writing, no letters, no numbers, no signs, no banners anywhere in the image whatsoever.",
+        f"Candid lifestyle photo of an ordinary Korean person in everyday life related to '{keyword}'. Natural imperfect lighting, real home or neighborhood setting, not staged. No models, no stock photo feel. Slightly casual composition. IMPORTANT: zero text, zero letters, zero words, zero numbers, zero signs, zero banners, zero watermarks anywhere in the entire image.",
+        f"Documentary-style photo of a real Korean person going about daily life related to '{keyword}'. Authentic Korean apartment or street, natural expressions, not posed. Warm and relatable atmosphere. IMPORTANT: absolutely no text, no letters, no words, no numbers, no signs, no banners, no labels, no watermarks of any kind visible anywhere.",
+        f"Warm slice-of-life photo related to '{keyword}'. Real Korean everyday scene, natural light, human presence, lived-in environment. Avoid futuristic, tech-heavy or overly clean aesthetic. IMPORTANT: strictly no text, no writing, no letters, no numbers, no signs, no banners anywhere in the image whatsoever.",
     ]
 
     image_url_list = []
@@ -470,9 +470,10 @@ def generate_blog_post(keyword):
 첫 줄에 반드시 "제목: [제목내용]" 형식으로 작성
 
 [2. 도입부] - <p> 태그 3~4개 (충분히 길게)
-- 검색한 사람이 원하는 정보가 바로 있다는 확신을 주는 첫 문장
-- 예: "2026년 건강검진 항목 정리해드립니다. 특히 30대 직장인이 꼭 알아야 할 핵심만 뽑았습니다."
-- 경험담 2~3줄: "저도 처음엔 어디까지 무료인지 몰라서 헤맸는데요. 이 글 하나로 다 정리하실 수 있게 준비했습니다."
+- 첫 문장에 반드시 핵심 결론/수치/답변을 바로 제시할 것 (독자가 더 이상 다른 글 찾을 필요 없게)
+- 나쁜 예: "에어컨 청소에 대해 알아보겠습니다." (서론형, 금지)
+- 좋은 예: "에어컨 벽걸이 청소 비용은 보통 5~15만원 사이입니다. 추가 비용이 생기는 경우와 주의사항을 아래서 확인하세요."
+- 두 번째 문장부터: 경험담 2~3줄 ("저도 처음엔 몰라서 헤맸는데요~")
 - 이 글에서 다룰 내용 미리보기 (독자가 끝까지 읽게 유도)
 
 [3. 본문] - h2 섹션 4~5개 (각 섹션 충분히 길게 작성)
