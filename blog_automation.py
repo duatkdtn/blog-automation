@@ -179,7 +179,7 @@ def add_text_to_thumbnail(img_bytes, title):
         # 제목 텍스트 (최대 16자 줄바꿈)
         lines = textwrap.wrap(title, width=9)[:3]  # 최대 3줄 (한국어 2배 너비 보정)
         total_h = len(lines) * (font_size + 12)
-        y = h - total_h - 50
+        y = h - total_h - 120
 
         for line in lines:
             bbox = draw.textbbox((0, 0), line, font=font)
