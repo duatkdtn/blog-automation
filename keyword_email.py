@@ -419,6 +419,10 @@ def parse_keywords_and_best6(raw_text):
         best6 = best6_sorted[:6]  # 필터 후 3개 미만이면 그냥 정렬만
 
     print(f"   📊 경쟁강도 필터 적용: {[kw.get('keyword','') + '(' + kw.get('competition','?') + ')' for kw in best6]}")
+
+    # 이메일 표시 순서(keywords 리스트 순서)대로 발행시간 배정되도록 정렬
+    keyword_order = {kw.get("keyword"): i for i, kw in enumerate(keywords)}
+    best6 = sorted(best6, key=lambda kw: keyword_order.get(kw.get("keyword"), 999))
     return keywords, best6
 
 
@@ -457,6 +461,65 @@ def enrich_keywords_with_titles(keywords, best6):
         time.sleep(0.3)
 
     return keywords, best6
+
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 정부지원금 키워드 생성 (중복 방지)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def generate_gov_keyword():
+    """매일 새로운 정부지원금 키워드 1개 생성 (중복 방지)"""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    used_path = os.path.join(base_dir, "used_gov_keywords.txt")
+
+    # 기존 사용 목록 읽기
+    used = []
+    if os.path.exists(used_path):
+        with open(used_path, "r", encoding="utf-8") as f:
+            used = [line.strip() for line in f if line.strip()]
+
+    used_list_str = "\n".join(used[-60:]) if used else "없음"  # 최근 60개만 전달
+
+    try:
+        client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+        prompt = f"""오늘 날짜: {now_kst().strftime("%Y년 %m월 %d일")}
+
+대한민국 정부지원금/복지혜택 중에서 블로그 글 키워드로 좋은 것 1개를 추천해줘.
+
+조건:
+- 구체적인 지원금 이름 (예: "청년월세지원금 신청 방법 2026", "소상공인 전기요금 지원 신청")
+- 검색량 있고 실용적인 정보성 키워드
+- 아래 이미 사용한 목록에 없는 것
+- 키워드만 한 줄로 출력 (설명 없이)
+
+이미 사용한 키워드:
+{used_list_str}"""
+
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=100,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        gov_kw = message.content[0].text.strip().strip('"').strip("'")
+
+        # 사용 목록에 추가
+        used.append(gov_kw)
+        with open(used_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(used))
+
+        print(f"   🏛️ 정부지원금 키워드: {gov_kw}")
+        return {
+            "keyword": gov_kw,
+            "type": "정보형",
+            "competition": "낮음",
+            "ad_price": "높음",
+            "related": [],
+            "reason": "정부지원금 고정 슬롯"
+        }
+    except Exception as e:
+        print(f"   ⚠️ 정부지원금 키워드 생성 실패: {e}")
+        return None
 
 
 def save_today_keywords(keywords, best6):
@@ -518,6 +581,9 @@ def build_email_html(keywords, best6, today_str):
         related_text = " · ".join(related[:3]) if related else ""
 
         time_badge = ""
+        gov_badge = ""
+        if kw.get("reason") == "정부지원금 고정 슬롯":
+            gov_badge = '<span style="background:#e67e22; color:white; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold; margin-left:6px;">🏛️ 정부지원금</span>'
         if is_best:
             from datetime import timedelta
             slot_time = best6_time[kw_name]
@@ -536,7 +602,7 @@ def build_email_html(keywords, best6, today_str):
             <td style="padding:10px 12px; font-weight:bold; color:#333; width:25px; vertical-align:top;">{i}</td>
             <td style="padding:10px 12px;">
                 <span style="background:{color}; color:white; padding:2px 7px; border-radius:10px; font-size:11px;">{emoji} {kw_type}</span>
-                {comp_badge}{ad_badge}{time_badge}<br>
+                {comp_badge}{ad_badge}{gov_badge}{time_badge}<br>
                 <strong style="font-size:15px; color:#222;">{kw_name}</strong><br>
                 <span style="color:#555; font-size:13px;">🌐 블로그스팟: {kw.get('title', '')}</span><br>
                 {naver_row}
@@ -635,18 +701,21 @@ def main():
     print("\n🔍 제목 생성 중 (블로그스팟용 + 네이버용)...")
     keywords, best6 = enrich_keywords_with_titles(keywords, best6)
 
-    # 5. JSON 저장
+    # 5. 정부지원금 키워드를 마지막 슬롯(20:00)에 고정
+    print("\n🏛️ 정부지원금 키워드 생성 중...")
+    gov_kw = generate_gov_keyword()
+    if gov_kw:
+        if len(best6) >= 6:
+            best6[5] = gov_kw  # 마지막 슬롯(20:00) 교체
+        else:
+            best6.append(gov_kw)
+        # keywords 목록에도 추가 (이메일 표시용)
+        if not any(kw.get("keyword") == gov_kw["keyword"] for kw in keywords):
+            keywords.append(gov_kw)
+
+    # 6. JSON 저장
     print("\n💾 오늘의 발행 스케줄 저장 중...")
     save_today_keywords(keywords, best6)
 
     # 6. 이메일 발송
-    html = build_email_html(keywords, best6, today_str)
-    subject = f"📊 [{today_short}] 키워드 추천 10개 + 오늘 자동발행 6개"
-    print(f"\n📧 이메일 발송 중... → {EMAIL_RECIPIENT}")
-    send_email(subject, html)
-
-    print("\n🎉 완료!")
-
-
-if __name__ == "__main__":
-    main()
+    html = build_ema
