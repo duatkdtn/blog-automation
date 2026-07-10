@@ -202,7 +202,7 @@ def add_text_to_thumbnail(img_bytes, title):
 
 
 def generate_hook_text(keyword, title):
-    """Claude API로 썸네일용 후킹 문구 생성 (15자 이내)"""
+    """Claude API로 썸네일용 후킹 문구 생성 (10자 이내)"""
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
@@ -217,7 +217,7 @@ def generate_hook_text(keyword, title):
 키워드: {keyword}
 
 조건:
-- 15자 이내
+- 10자 이내
 - 짧고 강렬하게
 - 제목에 숫자(5가지, 3개월 등)가 있으면 반드시 그 숫자 그대로 사용
 - 궁금증 유발 (예: 모르면 손해, 이것만 알면)
@@ -225,7 +225,7 @@ def generate_hook_text(keyword, title):
             }]
         )
         hook = message.content[0].text.strip().strip('"').strip("'")
-        return hook[:15] if hook else title[:15]
+        return hook[:10] if hook else title[:10]
     except:
         return title
 
