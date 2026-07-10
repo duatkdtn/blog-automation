@@ -39,6 +39,6 @@ jobs:
         run: |
           git config user.email "duatkdtn@gmail.com"
           git config user.name "duatkdtn"
-          git add today_keywords.json used_gov_keywords.txt
+          git add today_keywords.json used_gov_keywords.txt used_policy_keywords.txt
           git diff --staged --quiet || git commit -m "오늘의 키워드 스케줄 업데이트"
           git push
