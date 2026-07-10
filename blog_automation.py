@@ -828,8 +828,8 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
 
 # 계산기 페이지 URL 매핑 (키워드에 포함된 단어로 매칭)
 CALCULATOR_PAGES = {
-    "근로장려금": ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/earned-income-calculator.html"),
-    "장려금":    ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/earned-income-calculator.html"),
+    "근로장려금": ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/blog-page_10.html"),
+    "장려금":    ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/blog-page_10.html"),
     "연봉":      ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
     "실수령":    ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
     "월급":      ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
