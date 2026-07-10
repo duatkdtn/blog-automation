@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 근로장려금 계산기 - 가구유형별 지원금액 즉시 확인</title>
+<meta name="description" content="2026년 근로장려금 계산기. 가구유형(단독/홑벌이/맞벌이)과 소득을 입력하면 예상 지원금액을 즉시 계산해드립니다.">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #f5f6fa; color: #333; }
+.container { max-width: 720px; margin: 0 auto; padding: 20px 16px; }
+h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+.subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
+.card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.card-title { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+.input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.input-row label { font-size: 14px; color: #555; min-width: 110px; }
+.input-row input[type=number] { flex: 1; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; outline: none; transition: border 0.2s; }
+.input-row input:focus { border-color: #27ae60; }
+.input-row .unit { font-size: 14px; color: #888; min-width: 28px; }
+.hint { font-size: 12px; color: #aaa; margin-top: -8px; margin-bottom: 6px; margin-left: 120px; }
+.input-preview { font-size: 13px; color: #27ae60; font-weight: 600; margin-bottom: 14px; margin-left: 120px; min-height: 18px; }
+.type-group { display: flex; gap: 10px; flex: 1; }
+.type-btn { flex: 1; padding: 10px 6px; border: 2px solid #e0e0e0; border-radius: 10px; background: #fff; font-size: 13px; cursor: pointer; text-align: center; transition: all 0.2s; color: #555; }
+.type-btn.active { border-color: #27ae60; background: #f0faf3; color: #27ae60; font-weight: 700; }
+.type-btn:hover { border-color: #27ae60; }
+.btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #27ae60, #1e8449); color: #fff; border: none; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.99); }
+#result-section { display: none; }
+.result-main { background: linear-gradient(135deg, #27ae60, #1e8449); border-radius: 14px; padding: 28px; text-align: center; color: #fff; margin-bottom: 16px; }
+.result-main .label { font-size: 14px; opacity: 0.85; margin-bottom: 8px; }
+.result-main .amount { font-size: 38px; font-weight: 800; margin-bottom: 6px; }
+.result-main .sub { font-size: 13px; opacity: 0.75; }
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.result-box { background: #f8f9ff; border-radius: 12px; padding: 16px; text-align: center; }
+.result-box .rlabel { font-size: 12px; color: #888; margin-bottom: 6px; }
+.result-box .rvalue { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.bar-wrap { background: #f0f0f0; border-radius: 99px; height: 12px; margin: 12px 0 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #27ae60, #52c97e); transition: width 0.6s ease; }
+.bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #aaa; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.info-table tr { border-bottom: 1px solid #f0f0f0; }
+.info-table tr:last-child { border-bottom: none; }
+.info-table td { padding: 10px 4px; }
+.info-table td:first-child { color: #666; }
+.info-table td:last-child { text-align: right; font-weight: 600; color: #1a1a2e; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; margin-left: 6px; }
+.badge-green { background: #e8f8ef; color: #27ae60; }
+.badge-red { background: #fef0f0; color: #e74c3c; }
+.badge-orange { background: #fff8e1; color: #f39c12; }
+.notice { font-size: 12px; color: #aaa; margin-top: 16px; line-height: 1.6; padding: 12px; background: #f9f9f9; border-radius: 8px; }
+.guide-card { background: #f0faf3; border: 1px solid #c8e6c9; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+.guide-card h3 { font-size: 15px; font-weight: 700; color: #1e8449; margin-bottom: 12px; }
+.guide-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.guide-table th { background: #1e8449; color: #fff; padding: 8px 6px; text-align: center; }
+.guide-table td { padding: 8px 6px; text-align: center; border-bottom: 1px solid #e0e0e0; }
+.guide-table tr:last-child td { border-bottom: none; }
+.guide-table tr:nth-child(even) td { background: #f8fdf9; }
+.seo-content { font-size: 14px; line-height: 1.8; color: #444; }
+.seo-content h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; color: #1a1a2e; }
+.seo-content p { margin-bottom: 12px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag { background: #f0faf3; color: #27ae60; font-size: 12px; padding: 4px 10px; border-radius: 99px; cursor: pointer; }
+.tag:hover { background: #27ae60; color: #fff; }
+.ineligible { background: #fef0f0; border: 1px solid #f5c6cb; border-radius: 12px; padding: 20px; text-align: center; color: #e74c3c; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌿 2026 근로장려금 계산기</h1>
+  <p class="subtitle">가구유형과 총소득을 입력하면 예상 지원금액을 바로 확인할 수 있어요</p>
+
+  <!-- 기준표 -->
+  <div class="guide-card">
+    <h3>📋 2026년 근로장려금 지원 기준</h3>
+    <table class="guide-table">
+      <tr><th>가구유형</th><th>최대 지원금액</th><th>소득 기준</th></tr>
+      <tr><td>단독가구</td><td><strong>165만원</strong></td><td>2,200만원 미만</td></tr>
+      <tr><td>홑벌이가구</td><td><strong>285만원</strong></td><td>3,200만원 미만</td></tr>
+      <tr><td>맞벌이가구</td><td><strong>330만원</strong></td><td>3,800만원 미만</td></tr>
+    </table>
+    <p style="font-size:12px;color:#888;margin-top:10px;">※ 재산 합계 2억 4천만원 미만 요건 충족 시 / 국세청 기준</p>
+  </div>
+
+  <!-- 입력 카드 -->
+  <div class="card">
+    <div class="card-title">👥 가구 정보 입력</div>
+
+    <div class="input-row">
+      <label>가구유형</label>
+      <div class="type-group">
+        <button class="type-btn active" onclick="selectType('single', this)">단독가구</button>
+        <button class="type-btn" onclick="selectType('single_earn', this)">홑벌이</button>
+        <button class="type-btn" onclick="selectType('dual_earn', this)">맞벌이</button>
+      </div>
+    </div>
+    <div class="hint" id="type-hint">※ 배우자·부양가족 없이 혼자 사는 경우</div>
+
+    <div class="input-row" style="margin-top:8px;">
+      <label>총 소득</label>
+      <input type="number" id="income" placeholder="예: 1500" min="0" step="10"
+             oninput="updatePreview('income','income-preview','만원')">
+      <span class="unit">만원</span>
+    </div>
+    <div class="hint">※ 연간 근로소득 + 사업소득 합계 (만원 단위 입력)</div>
+    <div class="input-preview" id="income-preview"></div>
+
+    <button class="btn" onclick="calculate()">💰 지원금액 계산하기</button>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-section">
+    <div id="ineligible-box" class="ineligible" style="display:none">
+      <p>❌ 소득 기준 초과로 지원 대상이 아닙니다</p>
+      <p style="font-size:13px;font-weight:400;margin-top:8px;color:#c0392b" id="ineligible-msg"></p>
+    </div>
+
+    <div id="eligible-box">
+      <div class="result-main">
+        <div class="label">예상 근로장려금</div>
+        <div class="amount" id="result-amount">0원</div>
+        <div class="sub" id="result-sub"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 소득 구간 분석</div>
+        <div style="margin-bottom:8px;font-size:13px;color:#555;">소득 구간: <strong id="income-zone"></strong></div>
+        <div class="bar-wrap">
+          <div class="bar-fill" id="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="bar-label">
+          <span>0원</span>
+          <span id="bar-max-label"></span>
+        </div>
+
+        <table class="info-table" style="margin-top:16px;">
+          <tr><td>가구유형</td><td id="r-type"></td></tr>
+          <tr><td>입력 소득</td><td id="r-income"></td></tr>
+          <tr><td>소득 기준 한도</td><td id="r-limit"></td></tr>
+          <tr><td>최대 지원금액</td><td id="r-max"></td></tr>
+          <tr><td>예상 지원금액</td><td id="r-result" style="color:#27ae60;font-size:16px;"></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📅 신청 방법 & 일정</div>
+        <table class="info-table">
+          <tr><td>정기 신청</td><td>매년 5월 1일 ~ 5월 31일</td></tr>
+          <tr><td>반기 신청</td><td>상반기 3월 / 하반기 9월</td></tr>
+          <tr><td>신청 방법</td><td>홈택스·손택스·ARS(1544-9944)</td></tr>
+          <tr><td>지급 시기</td><td>정기: 8~9월 / 반기: 6월·12월</td></tr>
+        </table>
+        <p class="notice">※ 본 계산기는 참고용이며 실제 지급액은 국세청 심사 결과에 따라 달라질 수 있습니다. 정확한 금액은 국세청 홈택스에서 확인하세요.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEO 설명 -->
+  <div class="card">
+    <div class="card-title">📖 근로장려금이란?</div>
+    <div class="seo-content">
+      <h3>근로장려금 (EITC)이란?</h3>
+      <p>근로장려금은 일은 하지만 소득이 적어 생활이 어려운 근로자·사업자 가구에 지원금을 지급하는 제도입니다. 국세청이 운영하며 별도 신청 없이도 지급받을 수 있는 경우도 있습니다.</p>
+
+      <h3>가구유형 구분 방법</h3>
+      <p><strong>단독가구</strong>: 배우자, 부양자녀, 70세 이상 직계존속이 없는 가구</p>
+      <p><strong>홑벌이가구</strong>: 배우자 또는 부양자녀·직계존속이 있는 가구 (배우자 소득 300만원 미만)</p>
+      <p><strong>맞벌이가구</strong>: 본인과 배우자 모두 소득이 있는 가구 (배우자 소득 300만원 이상)</p>
+
+      <h3>주의사항</h3>
+      <p>재산 합계 2억 4천만원 이상이면 지원 대상에서 제외됩니다. 재산에는 토지, 건물, 자동차, 금융자산, 전세보증금 등이 포함됩니다.</p>
+
+      <div class="tag-list">
+        <span class="tag" onclick="setTag('단독가구 근로장려금')">단독가구 근로장려금</span>
+        <span class="tag" onclick="setTag('홑벌이 근로장려금')">홑벌이 근로장려금</span>
+        <span class="tag" onclick="setTag('맞벌이 근로장려금')">맞벌이 근로장려금</span>
+        <span class="tag" onclick="setTag('근로장려금 신청 방법')">근로장려금 신청 방법</span>
+        <span class="tag" onclick="setTag('근로장려금 지급일')">근로장려금 지급일</span>
+        <span class="tag" onclick="setTag('근로장려금 자격')">근로장려금 자격</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedType = 'single';
+
+const TYPE_CONFIG = {
+  single:      { name: '단독가구',  max: 165, limit: 2200, inc_end: 900,  flat_end: 1400, hint: '배우자·부양가족 없이 혼자 사는 경우' },
+  single_earn: { name: '홑벌이가구', max: 285, limit: 3200, inc_end: 1400, flat_end: 1700, hint: '배우자 또는 부양자녀가 있는 가구 (배우자 소득 300만원 미만)' },
+  dual_earn:   { name: '맞벌이가구', max: 330, limit: 3800, inc_end: 1700, flat_end: 2000, hint: '본인과 배우자 모두 소득이 있는 가구 (배우자 소득 300만원 이상)' }
+};
+
+function selectType(type, el) {
+  selectedType = type;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('type-hint').textContent = '※ ' + TYPE_CONFIG[type].hint;
+}
+
+function updatePreview(inputId, previewId, unit) {
+  const val = parseFloat(document.getElementById(inputId).value);
+  const el = document.getElementById(previewId);
+  if (!val || val <= 0) { el.textContent = ''; return; }
+  if (val >= 10000) {
+    const uk = Math.floor(val / 10000);
+    const rest = val % 10000;
+    el.textContent = rest > 0 ? `→ ${uk}억 ${rest.toLocaleString()}만원` : `→ ${uk}억원`;
+  } else {
+    el.textContent = `→ ${val.toLocaleString()}만원`;
+  }
+}
+
+function calcAmount(income, cfg) {
+  const { max, limit, inc_end, flat_end } = cfg;
+  if (income >= limit) return -1; // 초과
+  if (income <= 0) return 0;
+  if (income <= inc_end) {
+    return Math.round(income * max / inc_end * 10000);
+  } else if (income <= flat_end) {
+    return max * 10000;
+  } else {
+    return Math.round(max * 10000 * (limit - income) / (limit - flat_end));
+  }
+}
+
+function wonFormat(n) {
+  if (n >= 10000) {
+    const man = Math.floor(n / 10000);
+    const rest = n % 10000;
+    return rest > 0 ? `${man}만 ${rest.toLocaleString()}원` : `${man}만원`;
+  }
+  return n.toLocaleString() + '원';
+}
+
+function calculate() {
+  const income = parseFloat(document.getElementById('income').value);
+  if (!income || income < 0) { alert('소득을 입력해주세요.'); return; }
+
+  const cfg = TYPE_CONFIG[selectedType];
+  const amount = calcAmount(income, cfg);
+
+  document.getElementById('result-section').style.display = 'block';
+
+  if (amount < 0) {
+    document.getElementById('ineligible-box').style.display = 'block';
+    document.getElementById('eligible-box').style.display = 'none';
+    document.getElementById('ineligible-msg').textContent =
+      `${cfg.name} 소득 기준: ${cfg.limit.toLocaleString()}만원 미만 (입력 소득: ${income.toLocaleString()}만원)`;
+    return;
+  }
+
+  document.getElementById('ineligible-box').style.display = 'none';
+  document.getElementById('eligible-box').style.display = 'block';
+
+  document.getElementById('result-amount').textContent = wonFormat(amount);
+
+  const pct = Math.min((income / cfg.limit) * 100, 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('bar-max-label').textContent = cfg.limit.toLocaleString() + '만원';
+
+  let zone = '';
+  if (income <= cfg.inc_end) zone = '📈 점증구간 (소득 증가할수록 지원금 증가)';
+  else if (income <= cfg.flat_end) zone = '✅ 평탄구간 (최대 지원금 지급)';
+  else zone = '📉 점감구간 (소득 증가할수록 지원금 감소)';
+
+  document.getElementById('income-zone').textContent = zone;
+  document.getElementById('r-type').textContent = cfg.name;
+  document.getElementById('r-income').textContent = income.toLocaleString() + '만원';
+  document.getElementById('r-limit').textContent = cfg.limit.toLocaleString() + '만원 미만';
+  document.getElementById('r-max').textContent = cfg.max.toLocaleString() + '만원';
+  document.getElementById('r-result').textContent = wonFormat(amount);
+  document.getElementById('result-sub').textContent = `${cfg.name} · 입력소득 ${income.toLocaleString()}만원 기준`;
+
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function setTag(text) {
+  document.getElementById('income').focus();
+}
+</script>
+</body>
+</html>

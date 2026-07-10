@@ -826,9 +826,24 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
     return content
 
 
+# 계산기 페이지 URL 매핑 (키워드에 포함된 단어로 매칭)
+CALCULATOR_PAGES = {
+    "근로장려금": ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/earned-income-calculator.html"),
+    "장려금":    ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/earned-income-calculator.html"),
+    "연봉":      ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
+    "실수령":    ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
+    "월급":      ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
+}
+
 def add_internal_links(content, keyword, blog_id):
     """Blogger API로 기존 글 목록 가져와서 연관 글 내부링크 추가"""
     try:
+        # 계산기 페이지 내부링크 먼저 체크
+        calc_link = None
+        for kw_match, (title, url) in CALCULATOR_PAGES.items():
+            if kw_match in keyword:
+                calc_link = (title, url)
+                break
         creds = get_google_credentials()
         service = build('blogger', 'v3', credentials=creds)
 
@@ -886,11 +901,15 @@ def add_internal_links(content, keyword, blog_id):
                     if url.startswith("http"):
                         related.append((title, url))
 
-        if not related:
+        if not related and not calc_link:
             return content
 
         # 내부링크 섹션 생성
         links_html = ""
+        # 계산기 페이지 링크 우선 삽입
+        if calc_link:
+            c_title, c_url = calc_link
+            links_html += f'<li style="margin:8px 0"><a href="{c_url}" style="color:#27ae60;text-decoration:none;font-weight:bold">🧮 {c_title}</a></li>\n'
         for title, url in related[:2]:
             links_html += f'<li style="margin:8px 0"><a href="{url}" style="color:#2980b9;text-decoration:none">👉 {title}</a></li>\n'
 
