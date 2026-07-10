@@ -618,8 +618,17 @@ def build_email_html(keywords, best6, today_str):
     for i, kw in enumerate(best6):
         best6_time[kw.get("keyword")] = PUBLISH_TIMES[i]
 
+    # 이메일 표시 순서: 베스트6 → 정부지원금(7번) → 정부정책자금(8번) → 나머지 추천
+    gov_kws = [kw for kw in keywords if kw.get("reason") == "정부지원금 고정 슬롯"]
+    policy_kws = [kw for kw in keywords if kw.get("reason") == "정부정책자금 고정 슬롯"]
+    gov_policy_names = {kw.get("keyword") for kw in gov_kws + policy_kws}
+    best6_names = {kw.get("keyword") for kw in best6}
+    regular_best6 = [kw for kw in best6 if kw.get("keyword") not in gov_policy_names][:6]
+    remaining = [kw for kw in keywords if kw.get("keyword") not in best6_names and kw.get("keyword") not in gov_policy_names]
+    display_order = regular_best6 + gov_kws + policy_kws + remaining
+
     all_rows = ""
-    for i, kw in enumerate(keywords, 1):
+    for i, kw in enumerate(display_order, 1):
         kw_type = kw.get("type", "")
         emoji = type_emoji.get(kw_type, "📌")
         color = type_color.get(kw_type, "#666")
