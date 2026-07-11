@@ -862,6 +862,9 @@ CALCULATOR_PAGES = {
     "퇴직금":    ("💼 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인", "https://www.hijanee.com/p/blog-page_11.html"),
     "퇴직":      ("💼 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인", "https://www.hijanee.com/p/blog-page_11.html"),
     "평균임금":   ("💼 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인", "https://www.hijanee.com/p/blog-page_11.html"),
+    "실업급여":   ("📋 실업급여 계산기 - 수령액 지급일수 바로 확인", "https://www.hijanee.com/p/blog-page_91.html"),
+    "구직급여":   ("📋 실업급여 계산기 - 수령액 지급일수 바로 확인", "https://www.hijanee.com/p/blog-page_91.html"),
+    "고용보험":   ("📋 실업급여 계산기 - 수령액 지급일수 바로 확인", "https://www.hijanee.com/p/blog-page_91.html"),
 }
 
 def add_internal_links(content, keyword, blog_id):
@@ -950,44 +953,4 @@ def add_internal_links(content, keyword, blog_id):
 
         # 면책문구 바로 앞에 삽입
         if '<p style="background:#f8f9fa' in content:
-            content = content.replace('<p style="background:#f8f9fa', internal_section + '\n<p style="background:#f8f9fa', 1)
-        else:
-            content += internal_section
-
-        print(f"✅ 내부링크 {len(related)}개 추가 완료!")
-        return content
-
-    except Exception as e:
-        print(f"⚠️ 내부링크 추가 실패 (발행은 계속): {e}")
-        return content
-
-
-def publish_to_blogger(title, content):
-    """Blogger에 글 발행"""
-    print(f"\n📤 블로그에 발행 중...")
-
-    creds = get_google_credentials()
-    service = build('blogger', 'v3', credentials=creds)
-
-    post = {
-        'title': title,
-        'content': content
-    }
-
-    result = service.posts().insert(
-        blogId=BLOG_ID,
-        body=post
-    ).execute()
-
-    print(f"✅ 발행 완료!")
-    print(f"🔗 URL: {result.get('url', '확인 불가')}")
-    return result
-
-
-def main():
-    print("=" * 50)
-    print("   BlogMaster - 블로그 자동화 프로그램")
-    print("=" * 50)
-
-    keyword = input("\n📌 키워드를 입력하세요: ")
-
+            content = content.replace('<p style="background:#f8f9fa', internal_section + '\n<p style="background:#f8f9fa',
