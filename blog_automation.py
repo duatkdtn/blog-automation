@@ -859,6 +859,9 @@ CALCULATOR_PAGES = {
     "연봉":      ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
     "실수령":    ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
     "월급":      ("📊 연봉 실수령액 계산기 - 세후 월급 바로 확인", "https://www.hijanee.com/p/blog-page.html"),
+    "퇴직금":    ("💼 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인", "https://www.hijanee.com/p/blog-page_11.html"),
+    "퇴직":      ("💼 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인", "https://www.hijanee.com/p/blog-page_11.html"),
+    "평균임금":   ("💼 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인", "https://www.hijanee.com/p/blog-page_11.html"),
 }
 
 def add_internal_links(content, keyword, blog_id):
