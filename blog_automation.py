@@ -897,6 +897,12 @@ CALCULATOR_PAGES = {
     "재개발":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
     "재건축":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
     "양도세":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
+    # 만나이
+    "만나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "세는나이":   ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "연나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "나이계산":   ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "내나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
     # BMI
     "BMI":        ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
     "비만":        ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
