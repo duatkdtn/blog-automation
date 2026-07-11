@@ -865,6 +865,9 @@ CALCULATOR_PAGES = {
     "실업급여":   ("📋 실업급여 계산기 - 수령액 지급일수 바로 확인", "https://www.hijanee.com/p/blog-page_91.html"),
     "구직급여":   ("📋 실업급여 계산기 - 수령액 지급일수 바로 확인", "https://www.hijanee.com/p/blog-page_91.html"),
     "고용보험":   ("📋 실업급여 계산기 - 수령액 지급일수 바로 확인", "https://www.hijanee.com/p/blog-page_91.html"),
+    "취득세":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
+    "부동산":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
+    "아파트":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
 }
 
 def add_internal_links(content, keyword, blog_id):
