@@ -245,6 +245,7 @@ def generate_hook_text(keyword, title):
             }]
         )
         hook = message.content[0].text.strip().strip('"').strip("'")
+        hook = hook.replace('\\n', '\n')  # literal \n → 실제 줄바꿈
         # 줄바꿈 없으면 공백 기준으로 분리
         if '\n' not in hook:
             words = hook.split()

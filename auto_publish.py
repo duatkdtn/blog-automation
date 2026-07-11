@@ -246,6 +246,13 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 
     gmail_address = os.environ.get("GMAIL_ADDRESS")
     gmail_password = os.environ.get("GMAIL_APP_PASSWORD")
+    if not gmail_address or not gmail_password:
+        try:
+            import config as _cfg
+            gmail_address = getattr(_cfg, 'GMAIL_ADDRESS', None)
+            gmail_password = getattr(_cfg, 'GMAIL_APP_PASSWORD', None)
+        except ImportError:
+            pass
 
     if not gmail_address or not gmail_password:
         print("⚠️ Gmail 환경변수 없음 - 이메일 전송 건너뜀")
@@ -454,6 +461,12 @@ def main():
     # 4-2. 내부링크 추가
     print(f"\n📚 내부링크 추가 중...")
     blog_id = os.environ.get("BLOG_ID")
+    if not blog_id:
+        try:
+            import config as _cfg2
+            blog_id = getattr(_cfg2, 'BLOG_ID', None)
+        except ImportError:
+            pass
     content = add_internal_links(content, keyword, blog_id)
 
     # 5. 블로그스팟 발행
