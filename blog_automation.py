@@ -165,10 +165,12 @@ def add_text_to_thumbnail(img_bytes, title):
             "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",       # Linux
             "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf",  # Linux 바른고딕
         ]
+        font_path = None
         for fp in font_paths:
             try:
                 font = ImageFont.truetype(fp, font_size)
                 small_font = ImageFont.truetype(fp, max(18, font_size // 2))
+                font_path = fp
                 break
             except:
                 continue
@@ -176,22 +178,39 @@ def add_text_to_thumbnail(img_bytes, title):
             font = ImageFont.load_default()
             small_font = font
 
-        # 제목 텍스트 (최대 16자 줄바꿈)
-        lines = textwrap.wrap(title, width=9)[:3]  # 최대 3줄 (한국어 2배 너비 보정)
+        # 후킹 문구 줄 분리 (\n 기준, 없으면 textwrap 폴백)
+        if '\n' in title:
+            lines = [l.strip() for l in title.split('\n') if l.strip()][:3]
+        else:
+            lines = textwrap.wrap(title, width=9)[:3]
         total_h = len(lines) * (font_size + 12)
         y = h - total_h - 120
 
         for line in lines:
-            bbox = draw.textbbox((0, 0), line, font=font)
+            # 이미지 너비 88% 안에 들어올 때까지 폰트 자동 축소
+            cur_size = font_size
+            cur_font = font
+            if font_path:
+                while cur_size > 18:
+                    bbox = draw.textbbox((0, 0), line, font=cur_font)
+                    if (bbox[2] - bbox[0]) <= w * 0.88:
+                        break
+                    cur_size -= 2
+                    try:
+                        cur_font = ImageFont.truetype(font_path, cur_size)
+                    except:
+                        break
+
+            bbox = draw.textbbox((0, 0), line, font=cur_font)
             text_w = bbox[2] - bbox[0]
-            x = (w - text_w) // 2
+            x = max(10, (w - text_w) // 2)
 
             # 텍스트 그림자 (여러 겹으로 선명하게)
             for dx, dy in [(-2, -2), (2, -2), (-2, 2), (2, 2), (0, 3)]:
-                draw.text((x + dx, y + dy), line, font=font, fill=(0, 0, 0, 180))
+                draw.text((x + dx, y + dy), line, font=cur_font, fill=(0, 0, 0, 180))
             # 흰색 메인 텍스트
-            draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
-            y += font_size + 12
+            draw.text((x, y), line, font=cur_font, fill=(255, 255, 255, 255))
+            y += cur_size + 12
 
         output = io.BytesIO()
         img.convert("RGB").save(output, format="JPEG", quality=88)
@@ -202,7 +221,7 @@ def add_text_to_thumbnail(img_bytes, title):
 
 
 def generate_hook_text(keyword, title):
-    """Claude API로 썸네일용 후킹 문구 생성 (10자 이내)"""
+    """Claude API로 썸네일용 후킹 문구 생성 (2줄, 각 줄 7자 이내)"""
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
@@ -211,21 +230,28 @@ def generate_hook_text(keyword, title):
             max_tokens=100,
             messages=[{
                 "role": "user",
-                "content": f"""아래 블로그 제목을 보고 썸네일에 들어갈 후킹 문구를 1개만 만들어줘.
+                "content": f"""아래 블로그 제목을 보고 썸네일에 들어갈 후킹 문구를 만들어줘.
 
 블로그 제목: {title}
 키워드: {keyword}
 
 조건:
-- 10자 이내
-- 짧고 강렬하게
-- 제목에 숫자(5가지, 3개월 등)가 있으면 반드시 그 숫자 그대로 사용
-- 궁금증 유발 (예: 모르면 손해, 이것만 알면)
-- 문구만 출력, 다른 말 없이"""
+- 반드시 2줄로 만들어줘 (줄바꿈 \\n 으로 구분)
+- 각 줄은 7자 이내 (공백 포함)
+- 짧고 강렬하게, 궁금증 유발
+- 제목에 숫자가 있으면 반드시 그 숫자 사용
+- 문구만 출력, 다른 말 없이
+예시: 모르면 손해\\n지금 확인해"""
             }]
         )
         hook = message.content[0].text.strip().strip('"').strip("'")
-        return hook[:10] if hook else title[:10]
+        # 줄바꿈 없으면 공백 기준으로 분리
+        if '\n' not in hook:
+            words = hook.split()
+            if len(words) >= 2:
+                mid = len(words) // 2
+                hook = ' '.join(words[:mid]) + '\n' + ' '.join(words[mid:])
+        return hook
     except:
         return title
 
