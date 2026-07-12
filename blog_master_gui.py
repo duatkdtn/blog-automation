@@ -2556,8 +2556,7 @@ class BlogMasterApp:
         self.shop_count_var = tk.IntVar(value=5)
         count_spin = tk.Spinbox(cfg_card, from_=1, to=10, textvariable=self.shop_count_var,
                                 width=5, font=("Arial",12,"bold"),
-                                bg=BG_DARK, fg=TEXT_LIGHT, insertbackground=TEXT_LIGHT,
-                                buttonbackground=BG_CARD, relief="flat")
+                                bg=BG_DARK, fg=TEXT_LIGHT, insertbackground=TEXT_LIGHT)
         count_spin.pack(anchor="w", pady=(2,12))
 
         # 이메일 발송 ON/OFF
