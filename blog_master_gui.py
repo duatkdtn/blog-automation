@@ -2559,11 +2559,7 @@ class BlogMasterApp:
                                 bg=BG_DARK, fg=TEXT_WHITE, insertbackground=TEXT_WHITE)
         count_spin.pack(anchor="w", pady=(2,12))
 
-        # 이메일 발송 ON/OFF
-        self.shop_email_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(cfg_card, text="이메일 발송", variable=self.shop_email_var,
-                       bg=BG_CARD, fg=TEXT_WHITE, selectcolor=BG_DARK,
-                       activebackground=BG_CARD, font=("Arial",10)).pack(anchor="w")
+
 
         # ── 상태 바 (마지막 실행 + DataLab 상태) ──
         status_bar = tk.Frame(frame, bg=BG_CARD, padx=14, pady=8)
@@ -2636,7 +2632,7 @@ class BlogMasterApp:
             return
 
         count = self.shop_count_var.get()
-        send_email = self.shop_email_var.get()
+        send_email = True  # 항상 이메일 발송
 
         self.shop_run_btn.config(state="disabled", text="⏳ 실행 중...")
         self.shop_log.config(state="normal")

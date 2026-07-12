@@ -748,7 +748,7 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
     force        : True면 오늘 이미 실행됐어도 강제 실행
     반환: {"success": bool, "count": int, "datalab_used": bool}
     """
-    from datetime import datetime as _dt
+    from datetime import datetime as _dt, timezone
     _tz = timezone(timedelta(hours=9))
 
     if not force and check_already_ran_today():
@@ -782,7 +782,6 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
     _self.get_trending_keywords_from_datalab = _tracked_datalab
 
     # 상품 선택 (카테고리 필터 적용)
-    # find_new_products 대신 직접 카테고리 루프
     selected = []
     _tried = set()
     for cat in cats * 3:  # 부족하면 반복
@@ -790,15 +789,22 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
             break
         if cat["name"] in _tried:
             continue
-        result = get_top_product(cat)
-        if result:
-            category, product, bc_product = result
-            pid = str(product.get("productId",""))
-            published = load_published_ids()
-            if pid and pid in published:
-                continue
-            selected.append(result)
+        products = get_top_product(cat)
+        if not products:
+            continue
+        published = load_published_ids()
+        new_products = [p for p in products if str(p.get("productId","")) not in published]
+        if not new_products:
             _tried.add(cat["name"])
+            continue
+        selected_product = new_products[0]
+        selected_bc = None
+        if NAVER_COOKIE:
+            bc_p, bc_i = find_best_brandconnect(new_products)
+            if bc_p:
+                selected_product, selected_bc = bc_p, bc_i
+        selected.append((cat, selected_product, selected_bc))
+        _tried.add(cat["name"])
 
     _self.get_trending_keywords_from_datalab = _orig_datalab  # 패치 복구
 
