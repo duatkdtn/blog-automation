@@ -439,7 +439,11 @@ def check_brandconnect(product_name):
             score_rv = float(review.get("averageReviewScore", 0)) / 5.0
             return rate * 0.5 + cnt * 30 * 0.3 + score_rv * 100 * 0.2
 
-        best = max(data, key=bc_score)
+        # 리뷰 1개 이상인 상품 우선 선택, 없으면 전체에서 선택
+        reviewed = [p for p in data if p.get("reviewInfo", {}).get("totalReviewCount", 0) > 0]
+        pool = reviewed if reviewed else data
+
+        best = max(pool, key=bc_score)
         rate   = float(best.get("commissionRate", 0))
         review = best.get("reviewInfo", {})
         cnt    = review.get("totalReviewCount", 0)
