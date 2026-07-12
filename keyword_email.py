@@ -625,7 +625,7 @@ def build_email_html(keywords, best6, today_str):
     best6_names = {kw.get("keyword") for kw in best6}
     regular_best6 = [kw for kw in best6 if kw.get("keyword") not in gov_policy_names][:6]
     remaining = [kw for kw in keywords if kw.get("keyword") not in best6_names and kw.get("keyword") not in gov_policy_names]
-    display_order = regular_best6 + gov_kws + policy_kws + remaining
+    display_order = gov_kws + policy_kws + regular_best6 + remaining
 
     all_rows = ""
     for i, kw in enumerate(display_order, 1):
@@ -769,7 +769,7 @@ def main():
     print("\n🏛️ 정부지원금 키워드 생성 중...")
     gov_kw = generate_gov_keyword()
     if gov_kw:
-        best6.append(gov_kw)  # 7번째 슬롯(18:00)
+        best6.insert(0, gov_kw)  # 1번째 슬롯(00:00)
         if not any(kw.get("keyword") == gov_kw["keyword"] for kw in keywords):
             keywords.append(gov_kw)
 
@@ -777,7 +777,7 @@ def main():
     print("\n💰 정부정책자금 키워드 생성 중...")
     policy_kw = generate_policy_keyword()
     if policy_kw:
-        best6.append(policy_kw)  # 8번째 슬롯(21:00)
+        best6.insert(1, policy_kw)  # 2번째 슬롯(03:00)
         if not any(kw.get("keyword") == policy_kw["keyword"] for kw in keywords):
             keywords.append(policy_kw)
 
