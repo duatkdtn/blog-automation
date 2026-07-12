@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4대보험 계산기 - 2026 국민연금 건강보험 고용보험 실수령액</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Apple SD Gothic Neo',sans-serif;background:#f0f4f8;color:#222;padding:16px}
+.wrap{max-width:520px;margin:0 auto}
+.card{background:#fff;border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+h1{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.sub{font-size:13px;color:#888;margin-bottom:20px}
+.badge{display:inline-block;background:#fef3e2;color:#e67e22;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+
+.tab-wrap{display:flex;gap:8px;margin-bottom:16px}
+.tab{flex:1;padding:10px;border:2px solid #ddd;border-radius:10px;background:#fafafa;font-size:14px;font-weight:600;cursor:pointer;text-align:center;color:#888;transition:.2s}
+.tab.on{border-color:#e67e22;background:#fef3e2;color:#e67e22}
+
+label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px}
+.input-row{position:relative}
+input[type=number]{width:100%;padding:12px 44px 12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:18px;font-weight:700;color:#222;background:#fafafa;outline:none;transition:.2s}
+input[type=number]:focus{border-color:#e67e22;background:#fff}
+.input-unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#999}
+
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#e67e22,#f39c12);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px}
+
+.result-area{display:none}
+.net-box{background:linear-gradient(135deg,#e67e22,#f39c12);border-radius:14px;padding:22px;text-align:center;color:#fff;margin-bottom:14px}
+.net-box .nl{font-size:13px;opacity:.85;margin-bottom:4px}
+.net-box .nv{font-size:48px;font-weight:800;line-height:1}
+.net-box .nu{font-size:16px;font-weight:600;opacity:.9}
+.net-box .nsub{font-size:12px;opacity:.8;margin-top:8px}
+
+.ins-table{width:100%;border-collapse:collapse;margin-bottom:14px}
+.ins-table th{background:#fff8f0;padding:10px 12px;text-align:left;font-size:12px;color:#e67e22;font-weight:700;border-bottom:2px solid #f39c12}
+.ins-table td{padding:11px 12px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#444}
+.ins-table td:last-child{text-align:right;font-weight:700;color:#2c3e50}
+.ins-table tr:last-child td{border-bottom:none;color:#e67e22;font-weight:800;font-size:15px}
+.ins-table .rate{font-size:11px;color:#aaa;font-weight:400;margin-left:4px}
+
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.s-box{background:#f8f9fa;border-radius:12px;padding:14px;text-align:center;border:1.5px solid #eee}
+.s-box .sl{font-size:11px;color:#888;margin-bottom:4px}
+.s-box .sv{font-size:20px;font-weight:700;color:#2c3e50}
+.s-box .su{font-size:11px;color:#aaa}
+.s-box.orange{background:#fff8f0;border-color:#f39c12}
+.s-box.orange .sv{color:#e67e22}
+
+.note{font-size:12px;color:#999;line-height:1.7;padding:12px 14px;background:#f9f9f9;border-radius:8px;border-left:3px solid #f39c12}
+.reset-btn{width:100%;padding:11px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="card">
+  <span class="badge">💼 2026년 요율 기준</span>
+  <h1>🏥 4대보험 계산기</h1>
+  <p class="sub">월급 또는 연봉 입력 → 국민연금·건강보험·고용보험·장기요양 한번에 계산!</p>
+
+  <div class="tab-wrap">
+    <div class="tab on" id="tab1" onclick="setTab(1)">월급 기준</div>
+    <div class="tab" id="tab2" onclick="setTab(2)">연봉 기준</div>
+  </div>
+
+  <label id="inputLabel">월 급여를 입력하세요</label>
+  <div class="input-row">
+    <input type="number" id="inputVal" placeholder="예: 3000000" min="0" step="10000">
+    <span class="input-unit">원</span>
+  </div>
+
+  <button class="btn" onclick="calc()">4대보험 계산하기</button>
+</div>
+
+<div class="result-area" id="resultArea">
+
+  <div class="net-box">
+    <div class="nl">💰 예상 실수령액 (월)</div>
+    <div><span class="nv" id="netPay">--</span> <span class="nu">원</span></div>
+    <div class="nsub" id="netSub"></div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="s-box">
+      <div class="sl">총 공제액 (4대보험)</div>
+      <div class="sv" id="totalDed">--</div>
+      <div class="su">원/월</div>
+    </div>
+    <div class="s-box orange">
+      <div class="sl">공제율 (합계)</div>
+      <div class="sv" id="totalRate">--</div>
+      <div class="su">%</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:16px">
+    <table class="ins-table">
+      <tr><th>보험 종류</th><th>요율</th><th>공제액</th></tr>
+      <tr>
+        <td>🔵 국민연금<span class="rate">(4.50%)</span></td>
+        <td style="font-size:12px;color:#aaa">4.50%</td>
+        <td id="pension">--</td>
+      </tr>
+      <tr>
+        <td>🟢 건강보험<span class="rate">(3.545%)</span></td>
+        <td style="font-size:12px;color:#aaa">3.545%</td>
+        <td id="health">--</td>
+      </tr>
+      <tr>
+        <td>🟡 장기요양보험<span class="rate">(건강보험×12.95%)</span></td>
+        <td style="font-size:12px;color:#aaa">0.459%</td>
+        <td id="care">--</td>
+      </tr>
+      <tr>
+        <td>🔴 고용보험<span class="rate">(0.90%)</span></td>
+        <td style="font-size:12px;color:#aaa">0.90%</td>
+        <td id="employ">--</td>
+      </tr>
+      <tr style="background:#fff8f0">
+        <td colspan="2"><strong>합계</strong></td>
+        <td id="totalSum">--</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card" style="padding:14px">
+    <p style="font-size:13px;font-weight:700;color:#444;margin-bottom:10px">📊 월급 구조 한눈에 보기</p>
+    <div style="background:#f5f5f5;border-radius:8px;overflow:hidden;height:28px;display:flex">
+      <div id="barNet" style="background:linear-gradient(90deg,#27ae60,#2ecc71);height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transition:.5s">실수령</div>
+      <div id="barDed" style="background:linear-gradient(90deg,#e67e22,#f39c12);height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transition:.5s">공제</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#888">
+      <span>🟢 실수령 <span id="netPct" style="font-weight:700;color:#27ae60"></span>%</span>
+      <span>🟠 4대보험 <span id="dedPct" style="font-weight:700;color:#e67e22"></span>%</span>
+    </div>
+    <p class="note" style="margin-top:10px">⚠️ 이 계산기는 <strong>4대보험만</strong> 계산합니다. 실제 실수령액은 소득세·지방소득세가 추가로 공제되어 더 낮을 수 있습니다. 2026년 적용 요율 기준이며 회사 규모·계약 형태에 따라 다를 수 있습니다.</p>
+  </div>
+
+  <button class="reset-btn" onclick="reset()">다시 계산하기</button>
+</div>
+
+</div>
+<script>
+// 2026년 4대보험 요율 (근로자 부담분)
+const PENSION_RATE   = 0.045;   // 국민연금 4.5%
+const HEALTH_RATE    = 0.03545; // 건강보험 3.545%
+const CARE_RATE      = 0.1295;  // 장기요양 = 건강보험료 × 12.95%
+const EMPLOY_RATE    = 0.009;   // 고용보험 0.9%
+
+let mode = 1; // 1=월급, 2=연봉
+
+function setTab(n){
+  mode = n;
+  document.getElementById('tab1').className = 'tab' + (n===1?' on':'');
+  document.getElementById('tab2').className = 'tab' + (n===2?' on':'');
+  document.getElementById('inputLabel').textContent = n===1 ? '월 급여를 입력하세요' : '연봉을 입력하세요';
+  document.getElementById('inputVal').placeholder = n===1 ? '예: 3000000' : '예: 36000000';
+  reset();
+}
+
+function fmt(n){ return Math.round(n).toLocaleString(); }
+
+function calc(){
+  const v = parseFloat(document.getElementById('inputVal').value);
+  if(isNaN(v)||v<=0){alert('금액을 입력해주세요!');return;}
+
+  const monthly = mode===1 ? v : v/12;
+
+  const pension = Math.floor(monthly * PENSION_RATE / 10) * 10;
+  const health  = Math.floor(monthly * HEALTH_RATE  / 10) * 10;
+  const care    = Math.floor(health  * CARE_RATE    / 10) * 10;
+  const employ  = Math.floor(monthly * EMPLOY_RATE  / 10) * 10;
+  const total   = pension + health + care + employ;
+  const net     = Math.round(monthly - total);
+  const totalPct = (total / monthly * 100).toFixed(2);
+  const netPct  = (net / monthly * 100).toFixed(1);
+  const dedPct  = (total / monthly * 100).toFixed(1);
+
+  document.getElementById('netPay').textContent   = fmt(net);
+  document.getElementById('netSub').textContent   = mode===2
+    ? `연봉 ${fmt(v)}원 기준 | 월 ${fmt(monthly)}원 → 실수령 ${fmt(net)}원`
+    : `월급 ${fmt(monthly)}원 → 공제 ${fmt(total)}원 → 실수령 ${fmt(net)}원`;
+  document.getElementById('totalDed').textContent = fmt(total);
+  document.getElementById('totalRate').textContent= totalPct;
+  document.getElementById('pension').textContent  = fmt(pension) + '원';
+  document.getElementById('health').textContent   = fmt(health)  + '원';
+  document.getElementById('care').textContent     = fmt(care)    + '원';
+  document.getElementById('employ').textContent   = fmt(employ)  + '원';
+  document.getElementById('totalSum').textContent = fmt(total)   + '원';
+
+  // 바 차트
+  document.getElementById('barNet').style.width = netPct + '%';
+  document.getElementById('barDed').style.width = dedPct + '%';
+  document.getElementById('barNet').textContent = netPct + '%';
+  document.getElementById('barDed').textContent = dedPct + '%';
+  document.getElementById('netPct').textContent = netPct;
+  document.getElementById('dedPct').textContent = dedPct;
+
+  document.getElementById('resultArea').style.display = 'block';
+  document.getElementById('resultArea').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function reset(){
+  document.getElementById('inputVal').value = '';
+  document.getElementById('resultArea').style.display = 'none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

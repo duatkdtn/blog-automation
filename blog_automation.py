@@ -855,6 +855,13 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
 
 # 계산기 페이지 URL 매핑 (키워드에 포함된 단어로 매칭)
 CALCULATOR_PAGES = {
+    # 4대보험
+    "4대보험":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
+    "국민연금":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
+    "건강보험":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
+    "장기요양":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
+    "사대보험":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
+    "급여공제":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
     # 평수 변환기
     "평수":      ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
     "전용면적":   ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
