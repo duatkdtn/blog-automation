@@ -170,6 +170,7 @@ class BlogMasterApp:
             ("keyword", "◎", "키워드 분석"),
             ("publish", "✎", "글 발행"),
             ("email", "📧", "이메일 발송"),
+            ("shopping", "🛍️", "쇼핑AI"),
         ]
 
         for item in menus:
@@ -300,6 +301,8 @@ class BlogMasterApp:
             self.build_keyword()
         elif page == "email":
             self.build_email()
+        elif page == "shopping":
+            self.build_shopping()
         elif page == "history":
             self.build_history()
         elif page == "settings":
@@ -2477,6 +2480,196 @@ class BlogMasterApp:
     # ================================================
     # \uc774\uba54\uc77c \ubc1c\uc1a1 \ud398\uc774\uc9c0
     # ================================================
+
+    def build_shopping(self):
+        """쇼핑AI 탭"""
+        for w in self.main_area.winfo_children():
+            w.destroy()
+
+        import sys, os, threading
+        from datetime import date
+
+        frame = tk.Frame(self.main_area, bg=BG_DARK)
+        frame.pack(fill="both", expand=True, padx=15, pady=15)
+
+        # ── 제목 ──
+        tk.Label(frame, text="🛍️ 쇼핑AI 이메일 자동화",
+                 font=("Arial", 15, "bold"), bg=BG_DARK, fg=TEXT_LIGHT).pack(anchor="w", pady=(0,12))
+
+        # ── 상단 카드 (카테고리 + 설정) ──
+        top = tk.Frame(frame, bg=BG_DARK)
+        top.pack(fill="x", pady=(0,10))
+
+        # 카테고리 선택 카드
+        cat_card = tk.Frame(top, bg=BG_CARD, padx=14, pady=12, relief="flat")
+        cat_card.pack(side="left", fill="both", expand=True, padx=(0,8))
+        tk.Label(cat_card, text="📦 카테고리 선택", font=("Arial",11,"bold"),
+                 bg=BG_CARD, fg=TEXT_LIGHT).pack(anchor="w", pady=(0,8))
+
+        CATEGORIES_GUI = [
+            ("화장품/미용",    "50000002"),
+            ("디지털/가전",    "50000003"),
+            ("가구/인테리어",  "50000004"),
+            ("식품",           "50000005"),
+            ("스포츠/레저",    "50000006"),
+            ("생활/건강",      "50000007"),
+            ("여가/생활편의",  "50000008"),
+            ("출산/육아",      "50000009"),
+            ("도서",           "50000010"),
+        ]
+
+        self.shop_cat_vars = {}
+        cat_grid = tk.Frame(cat_card, bg=BG_CARD)
+        cat_grid.pack(anchor="w")
+        for idx, (name, cid) in enumerate(CATEGORIES_GUI):
+            var = tk.BooleanVar(value=True)
+            self.shop_cat_vars[cid] = var
+            cb = tk.Checkbutton(cat_grid, text=name, variable=var,
+                                bg=BG_CARD, fg=TEXT_LIGHT, selectcolor=BG_DARK,
+                                activebackground=BG_CARD, activeforeground=TEXT_LIGHT,
+                                font=("Arial",10))
+            cb.grid(row=idx//3, column=idx%3, sticky="w", padx=6, pady=2)
+
+        # 전체선택 / 전체해제 버튼
+        btn_row = tk.Frame(cat_card, bg=BG_CARD)
+        btn_row.pack(anchor="w", pady=(6,0))
+        def select_all():
+            for v in self.shop_cat_vars.values(): v.set(True)
+        def deselect_all():
+            for v in self.shop_cat_vars.values(): v.set(False)
+        tk.Button(btn_row, text="전체선택", command=select_all,
+                  bg="#3a3a5c", fg=TEXT_LIGHT, font=("Arial",9),
+                  relief="flat", padx=8, pady=3).pack(side="left", padx=(0,4))
+        tk.Button(btn_row, text="전체해제", command=deselect_all,
+                  bg="#3a3a5c", fg=TEXT_LIGHT, font=("Arial",9),
+                  relief="flat", padx=8, pady=3).pack(side="left")
+
+        # 설정 카드 (오른쪽)
+        cfg_card = tk.Frame(top, bg=BG_CARD, padx=14, pady=12, relief="flat")
+        cfg_card.pack(side="left", fill="y", ipadx=10)
+        tk.Label(cfg_card, text="⚙️ 설정", font=("Arial",11,"bold"),
+                 bg=BG_CARD, fg=TEXT_LIGHT).pack(anchor="w", pady=(0,10))
+
+        # 상품 개수
+        tk.Label(cfg_card, text="상품 개수", bg=BG_CARD, fg=TEXT_GRAY,
+                 font=("Arial",10)).pack(anchor="w")
+        self.shop_count_var = tk.IntVar(value=5)
+        count_spin = tk.Spinbox(cfg_card, from_=1, to=10, textvariable=self.shop_count_var,
+                                width=5, font=("Arial",12,"bold"),
+                                bg=BG_DARK, fg=TEXT_LIGHT, insertbackground=TEXT_LIGHT,
+                                buttonbackground=BG_CARD, relief="flat")
+        count_spin.pack(anchor="w", pady=(2,12))
+
+        # 이메일 발송 ON/OFF
+        self.shop_email_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(cfg_card, text="이메일 발송", variable=self.shop_email_var,
+                       bg=BG_CARD, fg=TEXT_LIGHT, selectcolor=BG_DARK,
+                       activebackground=BG_CARD, font=("Arial",10)).pack(anchor="w")
+
+        # ── 상태 바 (마지막 실행 + DataLab 상태) ──
+        status_bar = tk.Frame(frame, bg=BG_CARD, padx=14, pady=8)
+        status_bar.pack(fill="x", pady=(0,8))
+
+        last_run_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shopping_last_run.txt")
+        try:
+            with open(last_run_path) as f:
+                last_run = f.read().strip()
+            if last_run == str(date.today()):
+                last_run_text = f"✅ 오늘({last_run}) 실행 완료"
+            else:
+                last_run_text = f"마지막 실행: {last_run}"
+        except:
+            last_run_text = "아직 실행 기록 없음"
+
+        self.shop_status_lbl = tk.Label(status_bar, text=last_run_text,
+                                        bg=BG_CARD, fg=TEXT_GRAY, font=("Arial",10))
+        self.shop_status_lbl.pack(side="left")
+
+        self.shop_datalab_lbl = tk.Label(status_bar, text="",
+                                         bg=BG_CARD, fg=SUCCESS, font=("Arial",10))
+        self.shop_datalab_lbl.pack(side="right")
+
+        # ── 실행 버튼 ──
+        btn_area = tk.Frame(frame, bg=BG_DARK)
+        btn_area.pack(fill="x", pady=(0,8))
+
+        self.shop_run_btn = tk.Button(btn_area, text="▶  지금 실행",
+                                      font=("Arial",12,"bold"),
+                                      bg=ACCENT, fg="white", relief="flat",
+                                      padx=20, pady=8,
+                                      command=self._run_shopping_task)
+        self.shop_run_btn.pack(side="left")
+
+        tk.Button(btn_area, text="강제 재실행 (오늘 이미 실행해도)",
+                  font=("Arial",10), bg="#3a3a5c", fg=TEXT_LIGHT,
+                  relief="flat", padx=12, pady=8,
+                  command=lambda: self._run_shopping_task(force=True)).pack(side="left", padx=(8,0))
+
+        # ── 로그창 ──
+        tk.Label(frame, text="실행 로그", bg=BG_DARK, fg=TEXT_GRAY,
+                 font=("Arial",10)).pack(anchor="w")
+        log_frame = tk.Frame(frame, bg=BG_CARD)
+        log_frame.pack(fill="both", expand=True)
+        self.shop_log = tk.Text(log_frame, bg="#0d0d1a", fg="#c8f7c5",
+                                font=("Consolas",10), relief="flat",
+                                state="disabled", wrap="word")
+        scroll = tk.Scrollbar(log_frame, command=self.shop_log.yview)
+        self.shop_log.config(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.shop_log.pack(fill="both", expand=True, padx=2, pady=2)
+
+    def _shop_log(self, msg):
+        """로그창에 메시지 출력"""
+        def _do():
+            self.shop_log.config(state="normal")
+            self.shop_log.insert("end", str(msg) + "\n")
+            self.shop_log.see("end")
+            self.shop_log.config(state="disabled")
+        self.root.after(0, _do)
+
+    def _run_shopping_task(self, force=False):
+        """쇼핑AI 실행 (별도 스레드)"""
+        import threading, sys, os
+
+        selected_ids = [cid for cid, var in self.shop_cat_vars.items() if var.get()]
+        if not selected_ids:
+            self._shop_log("⚠️ 카테고리를 하나 이상 선택해주세요.")
+            return
+
+        count = self.shop_count_var.get()
+        send_email = self.shop_email_var.get()
+
+        self.shop_run_btn.config(state="disabled", text="⏳ 실행 중...")
+        self.shop_log.config(state="normal")
+        self.shop_log.delete("1.0", "end")
+        self.shop_log.config(state="disabled")
+
+        def _task():
+            try:
+                sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+                import shopping_automation as sa
+                result = sa.run_shopping_task(
+                    category_ids=selected_ids,
+                    count=count,
+                    send_email_flag=send_email,
+                    log_fn=self._shop_log,
+                    force=force,
+                )
+                # 상태 라벨 업데이트
+                def _update():
+                    from datetime import date
+                    self.shop_status_lbl.config(
+                        text=f"✅ 오늘({date.today()}) 실행 완료" if result.get("success") else "실행 완료 (상품 없음)")
+                    dl = "DataLab ✅" if result.get("datalab_used") else "fallback ⚠️"
+                    self.shop_datalab_lbl.config(text=dl)
+                    self.shop_run_btn.config(state="normal", text="▶  지금 실행")
+                self.root.after(0, _update)
+            except Exception as e:
+                self._shop_log(f"❌ 오류: {e}")
+                self.root.after(0, lambda: self.shop_run_btn.config(state="normal", text="▶  지금 실행"))
+
+        threading.Thread(target=_task, daemon=True).start()
+
     def build_email(self):
         frame = tk.Frame(self.main_area, bg=BG_DARK)
         frame.pack(fill="both", expand=True, padx=25, pady=20)

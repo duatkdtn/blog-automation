@@ -30,6 +30,7 @@ NAVER_COOKIE        = _get("NAVER_COOKIE", "")
 NAVER_SPACE_ID      = _get("NAVER_SPACE_ID", "962414636778176")
 
 PUBLISHED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "published_products.txt")
+LAST_RUN_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shopping_last_run.txt")
 NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
 
 
@@ -233,6 +234,22 @@ def get_top_product(category):
 
 
 # ── 3단계: 중복 체크 ──────────────────────────────
+
+def check_already_ran_today():
+    """오늘 이미 실행됐는지 확인"""
+    from datetime import date
+    try:
+        with open(LAST_RUN_FILE, "r", encoding="utf-8") as f:
+            last = f.read().strip()
+        return last == str(date.today())
+    except:
+        return False
+
+def save_run_today():
+    """오늘 실행 기록 저장"""
+    from datetime import date
+    with open(LAST_RUN_FILE, "w", encoding="utf-8") as f:
+        f.write(str(date.today()))
 
 def load_published_ids():
     if not os.path.exists(PUBLISHED_FILE):
@@ -720,58 +737,121 @@ def send_shopping_email_bulk(items):
 
 # ── 메인 ──────────────────────────────────────────
 
-def main():
-    print("=" * 55)
-    print("🛒 쇼핑커넥트 자동화 v3 시작 (5개 상품)")
-    print("=" * 55)
+def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
+                      log_fn=print, force=False):
+    """
+    GUI / 자동실행 모두에서 호출 가능한 핵심 함수
+    category_ids : None이면 전체, 리스트면 해당 id만 사용
+    count        : 상품 개수 (1~10)
+    send_email_flag : False면 이메일 발송 생략
+    log_fn       : GUI 로그창 콜백 (기본=print)
+    force        : True면 오늘 이미 실행됐어도 강제 실행
+    반환: {"success": bool, "count": int, "datalab_used": bool}
+    """
+    from datetime import datetime as _dt
+    _tz = timezone(timedelta(hours=9))
 
-    # ── 1. 5개 상품 선택 ──
-    selected = find_new_products(count=len(CATEGORIES))
+    if not force and check_already_ran_today():
+        log_fn("⏭️  오늘 이미 실행됨. 건너뜀 (강제실행: force=True)")
+        return {"success": False, "count": 0, "datalab_used": False, "skipped": True}
+
+    log_fn("=" * 50)
+    log_fn(f"🛒 쇼핑AI 시작  [{_dt.now(_tz).strftime('%H:%M')}]")
+    log_fn("=" * 50)
+
+    # 카테고리 필터
+    cats = CATEGORIES
+    if category_ids:
+        cats = [c for c in CATEGORIES if c["id"] in category_ids]
+    if not cats:
+        cats = CATEGORIES
+
+    # DataLab 상태 추적
+    datalab_used = False
+    _orig_datalab = get_trending_keywords_from_datalab
+
+    def _tracked_datalab(cat):
+        nonlocal datalab_used
+        result = _orig_datalab(cat)
+        if result:
+            datalab_used = True
+        return result
+
+    # 임시로 패치
+    import shopping_automation as _self
+    _self.get_trending_keywords_from_datalab = _tracked_datalab
+
+    # 상품 선택 (카테고리 필터 적용)
+    # find_new_products 대신 직접 카테고리 루프
+    selected = []
+    _tried = set()
+    for cat in cats * 3:  # 부족하면 반복
+        if len(selected) >= count:
+            break
+        if cat["name"] in _tried:
+            continue
+        result = get_top_product(cat)
+        if result:
+            category, product, bc_product = result
+            pid = str(product.get("productId",""))
+            published = load_published_ids()
+            if pid and pid in published:
+                continue
+            selected.append(result)
+            _tried.add(cat["name"])
+
+    _self.get_trending_keywords_from_datalab = _orig_datalab  # 패치 복구
+
     if not selected:
-        print("❌ 발행할 상품 없음. 종료.")
-        sys.exit(0)
+        log_fn("❌ 발행할 상품 없음.")
+        return {"success": False, "count": 0, "datalab_used": datalab_used}
 
     email_items = []
+    pub_times = ["06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"]
 
     for i, (category, product, bc_product) in enumerate(selected):
-        print(f"\n{'='*55}")
-        print(f"[{i+1}/{len(selected)}] {product.get('title','')[:35]}")
-        print(f"{'='*55}")
+        log_fn(f"\n[{i+1}/{len(selected)}] {product.get('title','')[:40]}")
+        product_id   = str(product.get("productId",""))
+        product_name = product.get("title","")
 
-        product_id   = str(product.get("productId", ""))
-        product_name = product.get("title", "")
-
-        # ── 2. 이미지 수집 ──
-        print("🖼️ 이미지 수집 중...")
+        log_fn("  🖼️ 이미지 수집 중...")
         images = get_product_images(product)
 
-        # ── 3. 글 작성 ──
-        print("✍️ Claude 글 작성 중...")
+        log_fn("  ✍️ Claude 글 작성 중...")
         seo_titles, post_body, hashtags = generate_shopping_post(category, product)
         if not post_body:
-            print(f"⚠️ [{i+1}번] 글 작성 실패, 스킵")
+            log_fn(f"  ⚠️ 글 작성 실패, 스킵")
             continue
 
-        # ── 4. 발행 기록 저장 ──
         if product_id:
             save_published_product(product_id, product_name)
 
-        pub_times    = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"]
-        pub_time_str = pub_times[i] if i < len(pub_times) else f"{6 + i*3:02d}:00"
+        pub_time_str = pub_times[i] if i < len(pub_times) else f"{6+i*2:02d}:00"
         email_items.append({
-            "category":     category,
-            "product":      product,
-            "bc_product":   bc_product,
-            "images":       images,
-            "seo_titles":   seo_titles,
-            "post_body":    post_body,
-            "hashtags":     hashtags,
-            "pub_time_str": pub_time_str,
+            "category": category, "product": product, "bc_product": bc_product,
+            "images": images, "seo_titles": seo_titles, "post_body": post_body,
+            "hashtags": hashtags, "pub_time_str": pub_time_str,
         })
-    if email_items:
-        print(f"\n📧 이메일 발송 중... ({len(email_items)}개 상품)")
+
+    if email_items and send_email_flag:
+        log_fn(f"\n📧 이메일 발송 중... ({len(email_items)}개 상품)")
         send_shopping_email_bulk(email_items)
-    print(f"\n✅ 완료! {len(email_items)}개 상품 처리")
+        save_run_today()
+        log_fn(f"✅ 완료! {len(email_items)}개 상품 이메일 발송")
+    elif email_items:
+        log_fn(f"\n✅ 완료! {len(email_items)}개 상품 (이메일 발송 OFF)")
+    else:
+        log_fn("❌ 처리된 상품 없음.")
+
+    datalab_status = "DataLab ✅" if datalab_used else "fallback ⚠️"
+    log_fn(f"📊 키워드 소스: {datalab_status}")
+
+    return {"success": bool(email_items), "count": len(email_items),
+            "datalab_used": datalab_used}
+
+
+def main():
+    run_shopping_task(force=True)
 
 if __name__ == "__main__":
     main()

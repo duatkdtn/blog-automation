@@ -2,7 +2,7 @@ name: 쇼핑커넥트 자동화
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 매일 UTC 17:00 = 한국시간 02:00 새벽에 실행 (06시부터 순차 발행)
+    # - cron: '0 17 * * *'  # 비활성화 - 집 PC에서 비니 GUI로 실행
   workflow_dispatch:  # 수동 실행 버튼
 
 permissions:
