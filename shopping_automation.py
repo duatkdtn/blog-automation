@@ -150,15 +150,18 @@ def get_trending_keywords_from_datalab(category):
     start = (today - timedelta(days=7)).strftime("%Y%m%d")
 
     try:
+        _dl_headers = {
+            "Referer":          "https://datalab.naver.com/shoppingInsight/sCategory.naver",
+            "User-Agent":       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            "Content-Type":     "application/x-www-form-urlencoded; charset=UTF-8",
+            "Accept":           "application/json, text/javascript, */*; q=0.01",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+        if NAVER_COOKIE:
+            _dl_headers["Cookie"] = NAVER_COOKIE
         res = requests.post(
             "https://datalab.naver.com/shoppingInsight/getKeywordRank.naver",
-            headers={
-                "Referer":          "https://datalab.naver.com/shoppingInsight/sCategory.naver",
-                "User-Agent":       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-                "Content-Type":     "application/x-www-form-urlencoded; charset=UTF-8",
-                "Accept":           "application/json, text/javascript, */*; q=0.01",
-                "X-Requested-With": "XMLHttpRequest",
-            },
+            headers=_dl_headers,
             data={
                 "cid":       category["id"],
                 "timeUnit":  "date",
