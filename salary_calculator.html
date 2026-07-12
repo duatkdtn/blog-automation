@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 연봉 실수령액 계산기 - 세후 월급 즉시 계산</title>
+<meta name="description" content="2026년 연봉 실수령액 계산기. 연봉 입력하면 4대보험, 소득세 공제 후 실제 월 수령액을 즉시 계산해드립니다.">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #f5f6fa; color: #333; }
+.container { max-width: 720px; margin: 0 auto; padding: 20px 16px; }
+h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+.subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
+.card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.card-title { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+.input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.input-row label { font-size: 14px; color: #555; min-width: 110px; }
+.input-row input { flex: 1; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; outline: none; transition: border 0.2s; }
+.input-row input:focus { border-color: #4a6cf7; }
+.input-row .unit { font-size: 14px; color: #888; min-width: 28px; }
+.hint { font-size: 12px; color: #aaa; margin-top: -8px; margin-bottom: 6px; margin-left: 120px; }
+.input-preview { font-size: 13px; color: #4a6cf7; font-weight: 600; margin-bottom: 14px; margin-left: 120px; min-height: 18px; }
+.btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #4a6cf7, #6a3de8); color: #fff; border: none; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.99); }
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.result-box { background: #f8f9ff; border-radius: 12px; padding: 16px; text-align: center; }
+.result-box.main { background: linear-gradient(135deg, #4a6cf7, #6a3de8); color: #fff; grid-column: 1 / -1; }
+.result-box .label { font-size: 12px; opacity: 0.8; margin-bottom: 6px; }
+.result-box .value { font-size: 24px; font-weight: 700; }
+.result-box.main .value { font-size: 32px; }
+.result-box .sub { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+.result-box .label2 { font-size: 12px; color: #888; margin-bottom: 4px; }
+.result-box .value2 { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+.detail-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.detail-table tr { border-bottom: 1px solid #f0f0f0; }
+.detail-table tr:last-child { border-bottom: none; }
+.detail-table td { padding: 10px 4px; }
+.detail-table td:last-child { text-align: right; font-weight: 600; color: #e74c3c; }
+.detail-table tr.total td { font-weight: 700; color: #1a1a2e; font-size: 15px; border-top: 2px solid #e0e0e0; padding-top: 14px; }
+.detail-table tr.total td:last-child { color: #4a6cf7; }
+.notice { font-size: 12px; color: #aaa; margin-top: 16px; line-height: 1.6; padding: 12px; background: #f9f9f9; border-radius: 8px; }
+.seo-content { font-size: 14px; line-height: 1.8; color: #444; }
+.seo-content h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; color: #1a1a2e; }
+.seo-content p { margin-bottom: 12px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag { background: #f0f3ff; color: #4a6cf7; font-size: 12px; padding: 4px 10px; border-radius: 99px; cursor: pointer; }
+.tag:hover { background: #4a6cf7; color: #fff; }
+#result-section { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 2026 연봉 실수령액 계산기</h1>
+  <p class="subtitle">연봉 입력하면 4대보험·소득세 공제 후 실제 월 수령액을 바로 알 수 있어요</p>
+
+  <div class="card">
+    <div class="card-title">💰 연봉 정보 입력</div>
+    <div class="input-row">
+      <label>연봉</label>
+      <input type="number" id="salary" placeholder="예: 40000000" min="0" step="100000">
+      <span class="unit">원</span>
+    </div>
+    <div class="hint">※ 세전 연봉 금액을 입력하세요 (예: 4000만원 → 40000000)</div>
+    <div class="input-preview" id="salary-preview"></div>
+
+    <div class="input-row">
+      <label>부양가족 수</label>
+      <input type="number" id="dependents" value="1" min="1" max="10">
+      <span class="unit">명</span>
+    </div>
+    <div class="hint">※ 본인 포함 인원수 (기본: 1명)</div>
+
+    <div class="input-row">
+      <label>비과세액</label>
+      <input type="number" id="nontax" value="200000" min="0" step="10000">
+      <span class="unit">원/월</span>
+    </div>
+    <div class="hint">※ 식대 등 비과세 항목 (기본: 20만원)</div>
+    <div class="input-preview" id="nontax-preview">&#8594; 200,000원 (20만원)</div>
+
+    <button class="btn" onclick="calculate()">💡 실수령액 계산하기</button>
+  </div>
+
+  <div class="card" id="result-section">
+    <div class="card-title">📋 계산 결과</div>
+    <div class="result-grid">
+      <div class="result-box main">
+        <div class="label">월 실수령액 (세후)</div>
+        <div class="value" id="monthly-take-home">-</div>
+        <div class="sub" id="annual-take-home-sub">연간 실수령액: -</div>
+      </div>
+      <div class="result-box">
+        <div class="label2">월 세전 급여</div>
+        <div class="value2" id="monthly-gross">-</div>
+      </div>
+      <div class="result-box">
+        <div class="label2">월 총 공제액</div>
+        <div class="value2" style="color:#e74c3c" id="monthly-deduction">-</div>
+      </div>
+    </div>
+
+    <table class="detail-table">
+      <tr><td>국민연금 (4.5%)</td><td id="pension">-</td></tr>
+      <tr><td>건강보험 (3.545%)</td><td id="health">-</td></tr>
+      <tr><td>장기요양보험 (건보의 12.95%)</td><td id="care">-</td></tr>
+      <tr><td>고용보험 (0.9%)</td><td id="employ">-</td></tr>
+      <tr><td>소득세 (간이세액표 기준)</td><td id="income-tax">-</td></tr>
+      <tr><td>지방소득세 (소득세의 10%)</td><td id="local-tax">-</td></tr>
+      <tr class="total"><td>✅ 월 실수령액</td><td id="take-home-final">-</td></tr>
+    </table>
+    <p class="notice">※ 본 계산기는 2026년 기준 근사값이며 실제 급여와 다를 수 있습니다. 정확한 금액은 회사 급여명세서 또는 국세청 홈택스에서 확인하세요.</p>
+  </div>
+
+  <div class="card seo-content">
+    <h3>연봉 실수령액이란?</h3>
+    <p>연봉 실수령액은 세전 연봉에서 4대보험(국민연금, 건강보험, 장기요양보험, 고용보험)과 소득세, 지방소득세를 뺀 실제로 통장에 입금되는 금액이에요. 같은 연봉이라도 부양가족 수에 따라 소득세가 달라지기 때문에 실수령액도 달라져요.</p>
+    <h3>2026년 4대보험 요율</h3>
+    <p>국민연금 4.5%, 건강보험 3.545%, 장기요양보험(건강보험료의 12.95%), 고용보험 0.9%예요. 이 네 가지 합산 공제율은 월급의 약 9~10% 수준이에요.</p>
+    <h3>자주 묻는 연봉별 실수령액</h3>
+    <div class="tag-list">
+      <span class="tag" onclick="setAndCalc(30000000)">연봉 3000만원</span>
+      <span class="tag" onclick="setAndCalc(35000000)">연봉 3500만원</span>
+      <span class="tag" onclick="setAndCalc(40000000)">연봉 4000만원</span>
+      <span class="tag" onclick="setAndCalc(45000000)">연봉 4500만원</span>
+      <span class="tag" onclick="setAndCalc(50000000)">연봉 5000만원</span>
+      <span class="tag" onclick="setAndCalc(60000000)">연봉 6000만원</span>
+      <span class="tag" onclick="setAndCalc(70000000)">연봉 7000만원</span>
+      <span class="tag" onclick="setAndCalc(80000000)">연봉 8000만원</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function fmt(n) {
+  return Math.round(n).toLocaleString("ko-KR") + "원";
+}
+
+function fmtPreview(val, elId) {
+  var el = document.getElementById(elId);
+  if (!val || isNaN(val) || parseFloat(val) <= 0) { el.innerHTML = ""; return; }
+  var n = parseFloat(val);
+  var comma = Math.round(n).toLocaleString("ko-KR");
+  var unitStr = "";
+  if (n >= 100000000) {
+    var uk = Math.floor(n / 100000000);
+    var rest = n % 100000000;
+    var man = Math.floor(rest / 10000);
+    var rem = rest % 10000;
+    var s = uk + "억";
+    if (man > 0) s += " " + man.toLocaleString("ko-KR") + "만";
+    if (rem > 0) s += " " + rem.toLocaleString("ko-KR");
+    s += "원";
+    unitStr = " (" + s + ")";
+  } else if (n >= 10000) {
+    var man = Math.floor(n / 10000);
+    var rem = n % 10000;
+    if (rem > 0) {
+      unitStr = " (" + man.toLocaleString("ko-KR") + "만 " + rem.toLocaleString("ko-KR") + "원)";
+    } else {
+      unitStr = " (" + man.toLocaleString("ko-KR") + "만원)";
+    }
+  } else if (n >= 1000) {
+    var chun = Math.floor(n / 1000);
+    var rem = n % 1000;
+    if (rem > 0) {
+      unitStr = " (" + chun + "천 " + rem + "원)";
+    } else {
+      unitStr = " (" + chun + "천원)";
+    }
+  } else if (n >= 100) {
+    var baek = Math.floor(n / 100);
+    var rem = n % 100;
+    if (rem > 0) {
+      unitStr = " (" + baek + "백 " + rem + "원)";
+    } else {
+      unitStr = " (" + baek + "백원)";
+    }
+  }
+  el.innerHTML = "&#8594; " + comma + "원" + unitStr;
+}
+
+function getIncomeTax(monthlyTaxable, dependents) {
+  var d = Math.max(1, dependents);
+  var tax = 0;
+  var m = monthlyTaxable;
+  if (m <= 1060000) tax = 0;
+  else if (m <= 1500000) tax = Math.round((m - 1060000) * 0.06);
+  else if (m <= 3000000) tax = Math.round(26400 + (m - 1500000) * 0.15);
+  else if (m <= 4500000) tax = Math.round(251400 + (m - 3000000) * 0.24);
+  else if (m <= 8000000) tax = Math.round(611400 + (m - 4500000) * 0.35);
+  else if (m <= 15000000) tax = Math.round(1836400 + (m - 8000000) * 0.38);
+  else tax = Math.round(4496400 + (m - 15000000) * 0.40);
+  var deduction = (d - 1) * 12500;
+  return Math.max(0, tax - deduction);
+}
+
+function calculate() {
+  var annual = parseFloat(document.getElementById("salary").value) || 0;
+  var deps = parseInt(document.getElementById("dependents").value) || 1;
+  var nontax = parseFloat(document.getElementById("nontax").value) || 0;
+
+  if (annual <= 0) { alert("연봉을 입력해주세요."); return; }
+
+  var monthly = annual / 12;
+  var taxable = Math.max(0, monthly - nontax);
+
+  var pension = Math.round(monthly * 0.045);
+  var health = Math.round(monthly * 0.03545);
+  var care = Math.round(health * 0.1295);
+  var employ = Math.round(monthly * 0.009);
+  var incomeTax = getIncomeTax(taxable, deps);
+  var localTax = Math.round(incomeTax * 0.1);
+
+  var totalDeduction = pension + health + care + employ + incomeTax + localTax;
+  var takeHome = Math.round(monthly - totalDeduction);
+
+  document.getElementById("monthly-gross").textContent = fmt(monthly);
+  document.getElementById("monthly-deduction").textContent = "-" + fmt(totalDeduction);
+  document.getElementById("monthly-take-home").textContent = fmt(takeHome);
+  document.getElementById("annual-take-home-sub").textContent = "연간 실수령액: " + fmt(takeHome * 12);
+  document.getElementById("pension").textContent = "-" + fmt(pension);
+  document.getElementById("health").textContent = "-" + fmt(health);
+  document.getElementById("care").textContent = "-" + fmt(care);
+  document.getElementById("employ").textContent = "-" + fmt(employ);
+  document.getElementById("income-tax").textContent = "-" + fmt(incomeTax);
+  document.getElementById("local-tax").textContent = "-" + fmt(localTax);
+  document.getElementById("take-home-final").textContent = fmt(takeHome);
+
+  document.getElementById("result-section").style.display = "block";
+  document.getElementById("result-section").scrollIntoView({behavior: "smooth"});
+}
+
+function setAndCalc(val) {
+  document.getElementById("salary").value = val;
+  fmtPreview(val, "salary-preview");
+  calculate();
+}
+
+document.getElementById("salary").addEventListener("input", function() {
+  fmtPreview(this.value, "salary-preview");
+});
+document.getElementById("nontax").addEventListener("input", function() {
+  fmtPreview(this.value, "nontax-preview");
+});
+document.getElementById("salary").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") calculate();
+});
+</script>
+</body>
+</html>

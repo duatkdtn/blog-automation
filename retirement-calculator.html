@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 퇴직금 계산기 - 내 퇴직금 얼마인지 바로 확인</title>
+<meta name="description" content="2026년 퇴직금 계산기. 월급여와 근속기간 입력하면 퇴직금 예상액을 즉시 계산해드립니다. 1년 미만 지급 기준, 계산 공식 안내 포함.">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background: #f5f6fa; color: #333; }
+.container { max-width: 720px; margin: 0 auto; padding: 20px 16px; }
+h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+.subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
+.card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.card-title { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+.input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.input-row label { font-size: 14px; color: #555; min-width: 110px; }
+.input-row input, .input-row select { flex: 1; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; outline: none; transition: border 0.2s; background: #fff; }
+.input-row input:focus, .input-row select:focus { border-color: #2e86de; }
+.input-row .unit { font-size: 14px; color: #888; min-width: 28px; }
+.hint { font-size: 12px; color: #aaa; margin-top: -8px; margin-bottom: 6px; margin-left: 120px; }
+.input-preview { font-size: 13px; color: #2e86de; font-weight: 600; margin-bottom: 14px; margin-left: 120px; min-height: 18px; }
+.duration-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.duration-row label { font-size: 14px; color: #555; min-width: 110px; }
+.duration-row input { width: 80px; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; outline: none; transition: border 0.2s; }
+.duration-row input:focus { border-color: #2e86de; }
+.duration-row span { font-size: 14px; color: #888; }
+.btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #2e86de, #1464b4); color: #fff; border: none; border-radius: 12px; font-size: 17px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.99); }
+.result-main { background: linear-gradient(135deg, #2e86de, #1464b4); color: #fff; border-radius: 16px; padding: 28px 24px; text-align: center; margin-bottom: 12px; }
+.result-main .label { font-size: 14px; opacity: 0.85; margin-bottom: 8px; }
+.result-main .value { font-size: 36px; font-weight: 700; margin-bottom: 6px; }
+.result-main .sub { font-size: 13px; opacity: 0.75; }
+.result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.result-box { background: #f0f6ff; border-radius: 12px; padding: 16px; text-align: center; }
+.result-box .label2 { font-size: 12px; color: #888; margin-bottom: 4px; }
+.result-box .value2 { font-size: 20px; font-weight: 700; color: #1a1a2e; }
+.result-box .sub2 { font-size: 11px; color: #aaa; margin-top: 3px; }
+.detail-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.detail-table tr { border-bottom: 1px solid #f0f0f0; }
+.detail-table tr:last-child { border-bottom: none; }
+.detail-table td { padding: 10px 4px; }
+.detail-table td:last-child { text-align: right; font-weight: 600; color: #2e86de; }
+.detail-table tr.total td { font-weight: 700; color: #1a1a2e; font-size: 15px; border-top: 2px solid #e0e0e0; padding-top: 14px; }
+.detail-table tr.total td:last-child { color: #2e86de; }
+.notice { font-size: 12px; color: #aaa; margin-top: 16px; line-height: 1.6; padding: 12px; background: #f9f9f9; border-radius: 8px; }
+.alert-box { background: #fff8e1; border-left: 4px solid #ffc107; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 12px; font-size: 13px; color: #7a6000; line-height: 1.6; }
+.seo-content { font-size: 14px; line-height: 1.8; color: #444; }
+.seo-content h2 { font-size: 18px; font-weight: 700; margin: 24px 0 12px; color: #1a1a2e; }
+.seo-content h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; color: #2e86de; }
+.seo-content p { margin-bottom: 12px; }
+.seo-content ul { margin: 8px 0 12px 20px; }
+.seo-content ul li { margin-bottom: 6px; }
+.formula-box { background: #f0f6ff; border-radius: 12px; padding: 16px; margin: 12px 0; font-size: 14px; }
+.formula-box .formula { font-size: 15px; font-weight: 600; color: #2e86de; text-align: center; margin: 8px 0; line-height: 1.6; }
+.faq-item { border-bottom: 1px solid #f0f0f0; padding: 14px 0; }
+.faq-item:last-child { border-bottom: none; }
+.faq-q { font-weight: 600; color: #1a1a2e; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.faq-q::after { content: '▼'; font-size: 12px; color: #aaa; transition: transform 0.2s; }
+.faq-q.open::after { transform: rotate(180deg); }
+.faq-a { display: none; font-size: 13px; color: #666; margin-top: 8px; line-height: 1.7; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag { background: #f0f6ff; color: #2e86de; font-size: 12px; padding: 4px 10px; border-radius: 99px; cursor: pointer; }
+.tag:hover { background: #2e86de; color: #fff; }
+#result-section { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>💼 2026 퇴직금 계산기</h1>
+  <p class="subtitle">월급여와 근속기간을 입력하면 퇴직금 예상액을 바로 알 수 있어요</p>
+
+  <div class="card">
+    <div class="card-title">💰 급여 정보 입력</div>
+    <div class="input-row">
+      <label>월 기본급여</label>
+      <input type="number" id="monthly" placeholder="예: 3000000" min="0" step="10000">
+      <span class="unit">원</span>
+    </div>
+    <div class="hint">※ 세전 월급 금액 (기본급 + 고정수당)</div>
+    <div class="input-preview" id="monthly-preview"></div>
+
+    <div class="input-row">
+      <label>연간 상여금</label>
+      <input type="number" id="bonus" placeholder="없으면 0" min="0" step="100000" value="0">
+      <span class="unit">원</span>
+    </div>
+    <div class="hint">※ 연간 합계 (성과급, 명절상여금 등) / 없으면 0</div>
+    <div class="input-preview" id="bonus-preview"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📅 근속기간 입력</div>
+    <div class="duration-row">
+      <label>근속기간</label>
+      <input type="number" id="years" placeholder="0" min="0" max="50" value="0">
+      <span>년</span>
+      <input type="number" id="months" placeholder="0" min="0" max="11" value="0">
+      <span>개월</span>
+    </div>
+    <div class="hint" style="margin-left:120px;">※ 입사일부터 퇴직일까지 (예: 3년 6개월)</div>
+    <div class="alert-box" style="margin-top:14px;">
+      ⚠️ <strong>퇴직금은 1년 이상 근무</strong>해야 발생합니다. 1년 미만이면 퇴직금이 없습니다.
+    </div>
+
+    <button class="btn" onclick="calculate()">퇴직금 계산하기</button>
+  </div>
+
+  <div id="result-section">
+    <div class="card">
+      <div class="card-title">🧾 퇴직금 계산 결과</div>
+      <div class="result-main">
+        <div class="label">예상 퇴직금 (세전)</div>
+        <div class="value" id="res-total">0원</div>
+        <div class="sub" id="res-sub">근속기간을 입력하세요</div>
+      </div>
+      <div class="result-grid">
+        <div class="result-box">
+          <div class="label2">1일 평균임금</div>
+          <div class="value2" id="res-daily">-</div>
+          <div class="sub2">퇴직 전 3개월 기준</div>
+        </div>
+        <div class="result-box">
+          <div class="label2">근속일수</div>
+          <div class="value2" id="res-days">-</div>
+          <div class="sub2">총 재직일 기준</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 계산 상세 내역</div>
+      <table class="detail-table">
+        <tr><td>월 기본급여</td><td id="d-monthly">-</td></tr>
+        <tr><td>연간 상여금</td><td id="d-bonus">-</td></tr>
+        <tr><td>3개월 총급여 합산</td><td id="d-3month">-</td></tr>
+        <tr><td>1일 평균임금</td><td id="d-daily">-</td></tr>
+        <tr><td>근속일수</td><td id="d-days">-</td></tr>
+        <tr class="total"><td>퇴직금 (1일 평균임금 × 30 × 근속일수/365)</td><td id="d-total">-</td></tr>
+      </table>
+      <div class="notice">
+        ※ 이 계산기는 <strong>법정 퇴직금 최저 기준</strong>을 계산합니다.<br>
+        ※ 실제 퇴직금은 퇴직 전 3개월 급여 정확한 내역, 연차수당, 각종 수당에 따라 달라질 수 있습니다.<br>
+        ※ 퇴직소득세는 별도로 부과됩니다 (퇴직금 규모·근속연수에 따라 상이).<br>
+        ※ 정확한 금액은 <a href="https://www.moel.go.kr" target="_blank" rel="noopener">고용노동부</a> 또는 회사 인사팀에 문의하세요.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📖 퇴직금 계산 방법과 지급 조건</div>
+    <div class="seo-content">
+      <h2>퇴직금이란?</h2>
+      <p>퇴직금은 근로자가 일정 기간 이상 근무한 후 퇴직할 때 사용자가 지급해야 하는 법적 의무 급여입니다. <strong>근로자퇴직급여 보장법</strong>에 따라 1년 이상 근무한 모든 근로자에게 적용됩니다.</p>
+
+      <h3>퇴직금 계산 공식</h3>
+      <div class="formula-box">
+        <div class="formula">퇴직금 = 1일 평균임금 × 30일 × (재직일수 ÷ 365)</div>
+        <div style="text-align:center; font-size:13px; color:#666; margin-top:6px;">1일 평균임금 = 퇴직 전 3개월 총급여 합계 ÷ 91일</div>
+      </div>
+      <p>예시: 월급 300만원, 상여금 없음, 3년 근무 시<br>→ 1일 평균임금 = 900만원 ÷ 91일 ≈ 98,901원<br>→ 퇴직금 = 98,901원 × 30 × (1,095 ÷ 365) ≈ <strong>약 892만원</strong></p>
+
+      <h2>퇴직금 지급 조건</h2>
+      <ul>
+        <li><strong>근무기간 1년 이상</strong>: 퇴직금은 1년 이상 근무해야 발생합니다</li>
+        <li><strong>주 15시간 이상 근무</strong>: 4주 평균 주 15시간 이상 근무한 경우에만 해당</li>
+        <li><strong>퇴직 사유 무관</strong>: 자발적 퇴직, 권고사직, 해고 모두 해당</li>
+        <li><strong>지급 기한</strong>: 퇴직일로부터 14일 이내 지급이 원칙</li>
+      </ul>
+
+      <h3>퇴직금 vs IRP 계좌</h3>
+      <p>2022년 4월부터 퇴직금 300만원 초과 시 IRP(개인형 퇴직연금) 계좌로만 수령 가능합니다. IRP 계좌가 없다면 미리 개설해두세요.</p>
+
+      <h3>퇴직소득세</h3>
+      <p>퇴직금에는 퇴직소득세가 부과됩니다. 근속연수가 길수록 공제 혜택이 커져 세금 부담이 줄어듭니다. 일반적으로 퇴직금의 2~10% 수준이며, 정확한 세액은 <a href="https://www.hometax.go.kr" target="_blank" rel="noopener">국세청 홈택스</a>에서 확인하세요.</p>
+
+      <div class="tag-list">
+        <span class="tag">퇴직금 계산</span>
+        <span class="tag">퇴직금 지급 기준</span>
+        <span class="tag">1일 평균임금</span>
+        <span class="tag">퇴직소득세</span>
+        <span class="tag">IRP 계좌</span>
+        <span class="tag">퇴직금 1년 미만</span>
+        <span class="tag">퇴직금 공식</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">❓ 자주 묻는 질문 (FAQ)</div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">1년 미만 근무하면 퇴직금이 전혀 없나요?</div>
+      <div class="faq-a">네, 법정 퇴직금은 <strong>1년 이상 근무</strong>한 경우에만 발생합니다. 11개월 29일 근무해도 퇴직금이 없습니다. 단, 회사 내규에 따라 1년 미만도 지급하는 경우가 있으니 회사 규정을 확인하세요.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">알바(아르바이트)도 퇴직금을 받을 수 있나요?</div>
+      <div class="faq-a">네! 주 15시간 이상, 1년 이상 근무한 알바생도 퇴직금을 받을 수 있습니다. 고용 형태(정규직·계약직·알바)와 무관하게 근로기준법이 적용됩니다.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">회사가 퇴직금을 안 줄 때 어떻게 하나요?</div>
+      <div class="faq-a">퇴직 후 14일이 지나도 퇴직금을 받지 못하면 고용노동부에 진정을 제기할 수 있습니다. 고용노동부 민원 신청: <strong>1350</strong> (고용노동부 상담전화). 또는 임금체불 진정 온라인 신청: <a href="https://minwon.moel.go.kr" target="_blank" rel="noopener">minwon.moel.go.kr</a></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">퇴직금을 받으려면 IRP 계좌가 꼭 있어야 하나요?</div>
+      <div class="faq-a">퇴직금 <strong>300만원 초과 시</strong>에는 IRP 계좌로만 수령 가능합니다. 300만원 이하는 일반 계좌로 받을 수 있습니다. IRP 계좌는 은행·증권사·보험사에서 개설할 수 있으며, 개설 수수료는 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function fmt(n) {
+  return Math.round(n).toLocaleString('ko-KR') + '원';
+}
+function fmtShort(n) {
+  n = Math.round(n);
+  if (n >= 100000000) {
+    const eok = Math.floor(n / 100000000);
+    const rest = n % 100000000;
+    if (rest === 0) return eok + '억원';
+    const man = Math.floor(rest / 10000);
+    return eok + '억 ' + man.toLocaleString('ko-KR') + '만원';
+  } else if (n >= 10000) {
+    const man = Math.floor(n / 10000);
+    const rest = n % 10000;
+    if (rest === 0) return man.toLocaleString('ko-KR') + '만원';
+    return man.toLocaleString('ko-KR') + '만 ' + rest.toLocaleString('ko-KR') + '원';
+  }
+  return n.toLocaleString('ko-KR') + '원';
+}
+
+document.getElementById('monthly').addEventListener('input', function() {
+  const v = parseInt(this.value) || 0;
+  const el = document.getElementById('monthly-preview');
+  el.textContent = v > 0 ? '→ ' + fmt(v) + ' (' + fmtShort(v) + ')' : '';
+});
+document.getElementById('bonus').addEventListener('input', function() {
+  const v = parseInt(this.value) || 0;
+  const el = document.getElementById('bonus-preview');
+  el.textContent = v > 0 ? '→ 연간 ' + fmt(v) + ' (' + fmtShort(v) + ')' : '';
+});
+
+function calculate() {
+  const monthly = parseInt(document.getElementById('monthly').value) || 0;
+  const bonus = parseInt(document.getElementById('bonus').value) || 0;
+  const years = parseInt(document.getElementById('years').value) || 0;
+  const months_extra = parseInt(document.getElementById('months').value) || 0;
+
+  if (monthly <= 0) { alert('월 기본급여를 입력해주세요.'); return; }
+  if (years === 0 && months_extra === 0) { alert('근속기간을 입력해주세요.'); return; }
+
+  const totalMonths = years * 12 + months_extra;
+  const totalDays = Math.round(totalMonths * 30.4167);
+
+  if (totalDays < 365) {
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('res-total').textContent = '퇴직금 없음';
+    document.getElementById('res-sub').textContent = `근속일수 ${totalDays}일 — 1년(365일) 이상 근무해야 퇴직금이 발생합니다`;
+    document.getElementById('res-daily').textContent = '-';
+    document.getElementById('res-days').textContent = totalDays + '일';
+    document.getElementById('d-monthly').textContent = fmt(monthly);
+    document.getElementById('d-bonus').textContent = bonus > 0 ? fmt(bonus) : '없음';
+    document.getElementById('d-3month').textContent = '-';
+    document.getElementById('d-daily').textContent = '-';
+    document.getElementById('d-days').textContent = totalDays + '일';
+    document.getElementById('d-total').textContent = '해당 없음 (1년 미만)';
+    return;
+  }
+
+  // 퇴직 전 3개월 총급여 = 월급여×3 + 상여금×(3/12)
+  const threeMonthTotal = monthly * 3 + bonus * (3 / 12);
+  // 1일 평균임금 (3개월 = 91일 기준)
+  const dailyAvg = threeMonthTotal / 91;
+  // 퇴직금 = 1일 평균임금 × 30 × (재직일수 / 365)
+  const severance = dailyAvg * 30 * (totalDays / 365);
+
+  document.getElementById('result-section').style.display = 'block';
+  document.getElementById('res-total').textContent = fmt(severance);
+  document.getElementById('res-sub').textContent = `근속 ${years > 0 ? years + '년 ' : ''}${months_extra > 0 ? months_extra + '개월' : ''} (총 ${totalDays}일) 기준 예상 금액`;
+  document.getElementById('res-daily').textContent = Math.round(dailyAvg).toLocaleString('ko-KR') + '원';
+  document.getElementById('res-days').textContent = totalDays.toLocaleString('ko-KR') + '일';
+
+  document.getElementById('d-monthly').textContent = fmt(monthly);
+  document.getElementById('d-bonus').textContent = bonus > 0 ? '연 ' + fmt(bonus) : '없음 (0원)';
+  document.getElementById('d-3month').textContent = fmt(threeMonthTotal) + ' (3개월치)';
+  document.getElementById('d-daily').textContent = Math.round(dailyAvg).toLocaleString('ko-KR') + '원 (÷91일)';
+  document.getElementById('d-days').textContent = totalDays.toLocaleString('ko-KR') + '일';
+  document.getElementById('d-total').textContent = fmt(severance);
+}
+
+function toggleFaq(el) {
+  el.classList.toggle('open');
+  const answer = el.nextElementSibling;
+  answer.style.display = answer.style.display === 'block' ? 'none' : 'block';
+}
+</script>
+</body>
+</html>

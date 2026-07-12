@@ -1,0 +1,48 @@
+========================================
+작업일지 2026-07-09
+========================================
+
+■ 오늘 완료한 작업
+
+1. 연봉 실수령액 계산기 (salary_calculator.html) 미리보기 숫자 표시 수정
+   - 기존: 876,546원 → (87.7만원)  ← 반올림으로 금액 불일치
+   - 수정: 876,546원 → (87만 6,546원)  ← 정확하게 일치
+   - 억/만/천/백 단위 모두 나머지까지 정확히 표시
+   - Blogger 페이지 업로드 완료 (https://www.hijanee.com/p/blog-page.html)
+
+2. 썸네일 텍스트 잘림 버그 수정 (blog_automation.py)
+   - 기존: textwrap.wrap(title, width=16) → 한국어 글자가 이미지 밖으로 튀어나옴
+   - 수정: textwrap.wrap(title, width=9) → 이미지 안에 딱 맞게 들어옴
+   - GitHub 푸시 완료 (commit: 7aff816)
+
+
+■ 내일 해야 할 작업
+
+1. 기능형 페이지 제작 (A 선택)
+   - 퇴직금 계산기 → retirement-calculator.html 만들어서 Blogger 업로드
+   - 실업급여 계산기 → unemployment-calculator.html
+   - 취득세 계산기 → realestate-calculator.html
+   - BMI 계산기 → bmi-calculator.html
+   ※ 위 4개 페이지 없으면 blog_automation.py에서 링크 걸어도 404 뜸
+
+2. 비니 프로그램으로 "연봉" 키워드 글 써서 계산기 링크 자동 삽입 테스트
+
+
+■ 현재 blog_automation.py 계산기 URL 매핑 현황
+
+  연봉 계산기    → https://www.hijanee.com/p/blog-page.html           ✅ 완성
+  퇴직금 계산기  → https://www.hijanee.com/p/retirement-calculator.html  ❌ 페이지 없음
+  실업급여 계산기 → https://www.hijanee.com/p/unemployment-calculator.html ❌ 페이지 없음
+  취득세 계산기  → https://www.hijanee.com/p/realestate-calculator.html  ❌ 페이지 없음
+  BMI 계산기    → https://www.hijanee.com/p/bmi-calculator.html         ❌ 페이지 없음
+
+
+■ 클로드 주의사항 (꼭 지킬 것)
+
+⚠️ 허락없이 코드 수정/실행 절대 금지
+⚠️ 대화 중 갑자기 작업 진행하지 않기
+⚠️ 수정 전 반드시 "이렇게 바꿔도 될까요?" 먼저 말하고 허락 받기
+⚠️ 블로그 계정: duatkdtn@gmail.com (duatkdtn01 아님)
+⚠️ git 명령어는 클로드 직접 실행 금지 → 사용자 CMD에서 실행
+⚠️ 대용량 파일 수정은 반드시 Python 스크립트로만 수정
+
