@@ -857,7 +857,7 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
 
 
 def main():
-    run_shopping_task(force=True)
+    run_shopping_task(force=False)  # 하루 1회만 실행
 
 if __name__ == "__main__":
     main()
