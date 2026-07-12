@@ -2494,7 +2494,7 @@ class BlogMasterApp:
 
         # ── 제목 ──
         tk.Label(frame, text="🛍️ 쇼핑AI 이메일 자동화",
-                 font=("Arial", 15, "bold"), bg=BG_DARK, fg=TEXT_LIGHT).pack(anchor="w", pady=(0,12))
+                 font=("Arial", 15, "bold"), bg=BG_DARK, fg=TEXT_WHITE).pack(anchor="w", pady=(0,12))
 
         # ── 상단 카드 (카테고리 + 설정) ──
         top = tk.Frame(frame, bg=BG_DARK)
@@ -2504,7 +2504,7 @@ class BlogMasterApp:
         cat_card = tk.Frame(top, bg=BG_CARD, padx=14, pady=12, relief="flat")
         cat_card.pack(side="left", fill="both", expand=True, padx=(0,8))
         tk.Label(cat_card, text="📦 카테고리 선택", font=("Arial",11,"bold"),
-                 bg=BG_CARD, fg=TEXT_LIGHT).pack(anchor="w", pady=(0,8))
+                 bg=BG_CARD, fg=TEXT_WHITE).pack(anchor="w", pady=(0,8))
 
         CATEGORIES_GUI = [
             ("화장품/미용",    "50000002"),
@@ -2525,8 +2525,8 @@ class BlogMasterApp:
             var = tk.BooleanVar(value=True)
             self.shop_cat_vars[cid] = var
             cb = tk.Checkbutton(cat_grid, text=name, variable=var,
-                                bg=BG_CARD, fg=TEXT_LIGHT, selectcolor=BG_DARK,
-                                activebackground=BG_CARD, activeforeground=TEXT_LIGHT,
+                                bg=BG_CARD, fg=TEXT_WHITE, selectcolor=BG_DARK,
+                                activebackground=BG_CARD, activeforeground=TEXT_WHITE,
                                 font=("Arial",10))
             cb.grid(row=idx//3, column=idx%3, sticky="w", padx=6, pady=2)
 
@@ -2538,17 +2538,17 @@ class BlogMasterApp:
         def deselect_all():
             for v in self.shop_cat_vars.values(): v.set(False)
         tk.Button(btn_row, text="전체선택", command=select_all,
-                  bg="#3a3a5c", fg=TEXT_LIGHT, font=("Arial",9),
+                  bg="#3a3a5c", fg=TEXT_WHITE, font=("Arial",9),
                   relief="flat", padx=8, pady=3).pack(side="left", padx=(0,4))
         tk.Button(btn_row, text="전체해제", command=deselect_all,
-                  bg="#3a3a5c", fg=TEXT_LIGHT, font=("Arial",9),
+                  bg="#3a3a5c", fg=TEXT_WHITE, font=("Arial",9),
                   relief="flat", padx=8, pady=3).pack(side="left")
 
         # 설정 카드 (오른쪽)
         cfg_card = tk.Frame(top, bg=BG_CARD, padx=14, pady=12, relief="flat")
         cfg_card.pack(side="left", fill="y", ipadx=10)
         tk.Label(cfg_card, text="⚙️ 설정", font=("Arial",11,"bold"),
-                 bg=BG_CARD, fg=TEXT_LIGHT).pack(anchor="w", pady=(0,10))
+                 bg=BG_CARD, fg=TEXT_WHITE).pack(anchor="w", pady=(0,10))
 
         # 상품 개수
         tk.Label(cfg_card, text="상품 개수", bg=BG_CARD, fg=TEXT_GRAY,
@@ -2556,13 +2556,13 @@ class BlogMasterApp:
         self.shop_count_var = tk.IntVar(value=5)
         count_spin = tk.Spinbox(cfg_card, from_=1, to=10, textvariable=self.shop_count_var,
                                 width=5, font=("Arial",12,"bold"),
-                                bg=BG_DARK, fg=TEXT_LIGHT, insertbackground=TEXT_LIGHT)
+                                bg=BG_DARK, fg=TEXT_WHITE, insertbackground=TEXT_WHITE)
         count_spin.pack(anchor="w", pady=(2,12))
 
         # 이메일 발송 ON/OFF
         self.shop_email_var = tk.BooleanVar(value=True)
         tk.Checkbutton(cfg_card, text="이메일 발송", variable=self.shop_email_var,
-                       bg=BG_CARD, fg=TEXT_LIGHT, selectcolor=BG_DARK,
+                       bg=BG_CARD, fg=TEXT_WHITE, selectcolor=BG_DARK,
                        activebackground=BG_CARD, font=("Arial",10)).pack(anchor="w")
 
         # ── 상태 바 (마지막 실행 + DataLab 상태) ──
@@ -2600,7 +2600,7 @@ class BlogMasterApp:
         self.shop_run_btn.pack(side="left")
 
         tk.Button(btn_area, text="강제 재실행 (오늘 이미 실행해도)",
-                  font=("Arial",10), bg="#3a3a5c", fg=TEXT_LIGHT,
+                  font=("Arial",10), bg="#3a3a5c", fg=TEXT_WHITE,
                   relief="flat", padx=12, pady=8,
                   command=lambda: self._run_shopping_task(force=True)).pack(side="left", padx=(8,0))
 
