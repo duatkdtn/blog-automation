@@ -855,6 +855,19 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
 
 # 계산기 페이지 URL 매핑 (키워드에 포함된 단어로 매칭)
 CALCULATOR_PAGES = {
+    # 평수 변환기
+    "평수":      ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
+    "전용면적":   ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
+    "공급면적":   ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
+    "제곱미터":   ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
+    "평형":      ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
+    "분양면적":   ("📐 평수 계산기 - 평 m² ft² 면적 단위 변환", "https://www.hijanee.com/p/blog-page_92.html"),
+    # 만나이
+    "만나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "세는나이":   ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "연나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "나이계산":   ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
+    "내나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
     # 근로장려금
     "근로장려금": ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/blog-page_10.html"),
     "장려금":    ("🧮 근로장려금 계산기 - 내 지원금 바로 확인", "https://www.hijanee.com/p/blog-page_10.html"),
@@ -897,12 +910,6 @@ CALCULATOR_PAGES = {
     "재개발":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
     "재건축":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
     "양도세":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
-    # 만나이
-    "만나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
-    "세는나이":   ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
-    "연나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
-    "나이계산":   ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
-    "내나이":    ("🎂 만나이 계산기 - 세는나이 연나이 한번에 확인", "https://www.hijanee.com/p/blog-page_12.html"),
     # BMI
     "BMI":        ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
     "비만":        ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),

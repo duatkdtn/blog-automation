@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>평수 계산기 - 평 m² ft² 면적 단위 변환기</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Apple SD Gothic Neo',sans-serif;background:#f0f4f8;color:#222;padding:16px}
+.wrap{max-width:520px;margin:0 auto}
+.card{background:#fff;border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+h1{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.sub{font-size:13px;color:#888;margin-bottom:20px}
+.badge{display:inline-block;background:#e8f5e9;color:#27ae60;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+
+.tab-wrap{display:flex;gap:8px;margin-bottom:20px}
+.tab{flex:1;padding:10px;border:2px solid #ddd;border-radius:10px;background:#fafafa;font-size:14px;font-weight:600;cursor:pointer;text-align:center;color:#888;transition:.2s}
+.tab.on{border-color:#27ae60;background:#e8f5e9;color:#27ae60}
+
+label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px}
+.input-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+input[type=number]{flex:1;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:18px;font-weight:700;color:#222;background:#fafafa;outline:none;transition:.2s}
+input[type=number]:focus{border-color:#27ae60;background:#fff}
+.unit-label{font-size:15px;font-weight:700;color:#555;min-width:36px}
+
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px}
+
+.result-box{background:linear-gradient(135deg,#27ae60,#2ecc71);border-radius:14px;padding:24px;text-align:center;color:#fff;margin-bottom:14px;display:none}
+.result-box .rl{font-size:13px;opacity:.85;margin-bottom:6px}
+.result-box .rv{font-size:52px;font-weight:800;line-height:1}
+.result-box .ru{font-size:18px;font-weight:600;opacity:.9}
+.result-box .rsub{font-size:13px;opacity:.8;margin-top:10px}
+
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;display:none}
+.mini-box{background:#f8f9fa;border-radius:10px;padding:12px 8px;text-align:center;border:1.5px solid #eee}
+.mini-box .ml{font-size:11px;color:#888;margin-bottom:4px}
+.mini-box .mv{font-size:18px;font-weight:700;color:#2c3e50}
+.mini-box .mu{font-size:11px;color:#999}
+
+.ref-card{display:none}
+.ref-title{font-size:13px;font-weight:700;color:#444;margin-bottom:10px}
+.ref-table{width:100%;border-collapse:collapse;font-size:13px}
+.ref-table th{background:#f0f7f3;padding:8px 10px;text-align:center;color:#27ae60;font-weight:700;border-bottom:2px solid #27ae60}
+.ref-table td{padding:8px 10px;text-align:center;border-bottom:1px solid #f0f0f0;color:#444}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr.highlight td{background:#f0f7f3;font-weight:700;color:#27ae60}
+
+.note{font-size:12px;color:#999;line-height:1.6;padding:12px 14px;background:#f9f9f9;border-radius:8px;border-left:3px solid #27ae60;margin-top:14px}
+.reset-btn{width:100%;padding:11px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="card">
+  <span class="badge">🏠 부동산 면적 단위 변환</span>
+  <h1>📐 평수 계산기</h1>
+  <p class="sub">평 ↔ m² ↔ ft² 면적 단위를 즉시 변환해드려요!</p>
+
+  <div class="tab-wrap">
+    <div class="tab on" id="tab1" onclick="setTab(1)">평 → m²·ft²</div>
+    <div class="tab" id="tab2" onclick="setTab(2)">m² → 평·ft²</div>
+    <div class="tab" id="tab3" onclick="setTab(3)">ft² → 평·m²</div>
+  </div>
+
+  <div id="inputArea">
+    <label id="inputLabel">평수를 입력하세요</label>
+    <div class="input-row">
+      <input type="number" id="inputVal" placeholder="예: 33" min="0" step="0.01">
+      <span class="unit-label" id="unitLabel">평</span>
+    </div>
+  </div>
+
+  <button class="btn" onclick="calc()">변환하기</button>
+</div>
+
+<div class="result-box" id="resultBox">
+  <div class="rl" id="resLabel">변환 결과</div>
+  <div><span class="rv" id="resVal">--</span> <span class="ru" id="resUnit"></span></div>
+  <div class="rsub" id="resSub"></div>
+</div>
+
+<div class="grid3" id="grid3">
+  <div class="mini-box">
+    <div class="ml" id="g1l">평</div>
+    <div class="mv" id="g1v">--</div>
+    <div class="mu">평</div>
+  </div>
+  <div class="mini-box">
+    <div class="ml">제곱미터</div>
+    <div class="mv" id="g2v">--</div>
+    <div class="mu">㎡</div>
+  </div>
+  <div class="mini-box">
+    <div class="ml">제곱피트</div>
+    <div class="mv" id="g3v">--</div>
+    <div class="mu">ft²</div>
+  </div>
+</div>
+
+<div class="card ref-card" id="refCard">
+  <p class="ref-title">📊 아파트 평형별 실면적 참고표</p>
+  <table class="ref-table">
+    <tr><th>평형</th><th>전용면적(㎡)</th><th>공급면적(㎡)</th><th>통상 구조</th></tr>
+    <tr><td>10평대</td><td>약 33~49</td><td>약 49~66</td><td>원룸·1~2룸</td></tr>
+    <tr><td>20평대</td><td>약 49~66</td><td>약 66~85</td><td>2룸·소형</td></tr>
+    <tr class="highlight"><td>30평대</td><td>약 84~99</td><td>약 99~115</td><td>3룸 국민평형</td></tr>
+    <tr><td>33평</td><td>약 84</td><td>약 109</td><td>3룸 표준형</td></tr>
+    <tr><td>34평</td><td>약 84~91</td><td>약 112</td><td>3룸 일반형</td></tr>
+    <tr><td>40평대</td><td>약 115~132</td><td>약 132~149</td><td>4룸 중형</td></tr>
+    <tr><td>50평대 이상</td><td>약 148~</td><td>약 165~</td><td>4룸 이상 대형</td></tr>
+  </table>
+  <p class="note">⚠️ <strong>전용면적</strong>은 실제 사용 면적, <strong>공급면적</strong>은 복도·계단 등 공용부분 포함. 분양 광고의 '몇 평'은 보통 <strong>공급면적 기준</strong>입니다. 전용면적이 실제 내 집 크기예요!</p>
+</div>
+
+<button class="reset-btn" id="resetBtn" onclick="reset()">다시 계산하기</button>
+
+</div>
+<script>
+// 1평 = 3.30579 m², 1ft² = 0.092903 m²
+const P2M = 3.30579;
+const M2P = 1 / P2M;
+const F2M = 0.092903;
+const M2F = 1 / F2M;
+
+let mode = 1;
+
+function setTab(n){
+  mode = n;
+  [1,2,3].forEach(i=>{
+    document.getElementById('tab'+i).className='tab'+(i===n?' on':'');
+  });
+  const labels = ['평수를 입력하세요','면적(㎡)을 입력하세요','면적(ft²)을 입력하세요'];
+  const units = ['평','㎡','ft²'];
+  document.getElementById('inputLabel').textContent = labels[n-1];
+  document.getElementById('unitLabel').textContent = units[n-1];
+  document.getElementById('inputVal').placeholder = n===1?'예: 33':n===2?'예: 84':'예: 904';
+  reset();
+}
+
+function calc(){
+  const v = parseFloat(document.getElementById('inputVal').value);
+  if(isNaN(v)||v<=0){alert('면적을 입력해주세요!');return;}
+
+  let pyeong, sqm, sqft;
+  if(mode===1){
+    pyeong=v; sqm=v*P2M; sqft=sqm*M2F;
+  } else if(mode===2){
+    sqm=v; pyeong=v*M2P; sqft=v*M2F;
+  } else {
+    sqft=v; sqm=v*F2M; pyeong=sqm*M2P;
+  }
+
+  const mainLabels=['m² (제곱미터)','평','ft² (제곱피트)'];
+  const mainVals=[sqm,pyeong,sqft];
+  const mainUnits=['㎡','평','ft²'];
+  const otherIdx=mode-1;
+
+  // 주 결과
+  document.getElementById('resLabel').textContent = '변환 결과';
+  document.getElementById('resVal').textContent = fmt(mainVals[otherIdx]);
+  document.getElementById('resUnit').textContent = mainUnits[otherIdx];
+
+  // 서브 텍스트
+  const parts=[];
+  if(mode!==1) parts.push(`${fmt(pyeong)}평`);
+  if(mode!==2) parts.push(`${fmt(sqm)}㎡`);
+  if(mode!==3) parts.push(`${fmt(sqft)}ft²`);
+  document.getElementById('resSub').textContent = parts.join(' = ');
+
+  // 3개 박스
+  document.getElementById('g1v').textContent = fmt(pyeong);
+  document.getElementById('g2v').textContent = fmt(sqm);
+  document.getElementById('g3v').textContent = fmt(sqft);
+
+  document.getElementById('resultBox').style.display='block';
+  document.getElementById('grid3').style.display='grid';
+  document.getElementById('refCard').style.display='block';
+  document.getElementById('resetBtn').style.display='block';
+  document.getElementById('resultBox').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function fmt(n){
+  if(n>=100) return Math.round(n).toLocaleString();
+  return parseFloat(n.toFixed(2)).toString();
+}
+
+function reset(){
+  document.getElementById('inputVal').value='';
+  document.getElementById('resultBox').style.display='none';
+  document.getElementById('grid3').style.display='none';
+  document.getElementById('refCard').style.display='none';
+  document.getElementById('resetBtn').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
