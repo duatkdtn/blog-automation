@@ -174,12 +174,21 @@ def get_trending_keywords_from_datalab(category):
             },
             timeout=10,
         )
+        print(f"   ℹ️ DataLab 응답코드: {res.status_code}")
         if res.status_code == 200:
-            result = res.json().get("result", [])
-            keywords = [item.get("keyword", "") for item in result if item.get("keyword")]
-            if keywords:
-                print(f"   📊 DataLab 인기 키워드 {len(keywords)}개 수집")
-                return keywords
+            try:
+                data = res.json()
+                print(f"   ℹ️ DataLab 응답키: {list(data.keys())}")
+                result = data.get("result", [])
+                print(f"   ℹ️ DataLab result 개수: {len(result)}")
+                keywords = [item.get("keyword", "") for item in result if item.get("keyword")]
+                if keywords:
+                    print(f"   📊 DataLab 인기 키워드 {len(keywords)}개 수집")
+                    return keywords
+            except Exception as je:
+                print(f"   ℹ️ DataLab JSON 파싱 실패: {je} / 응답: {res.text[:200]}")
+        else:
+            print(f"   ℹ️ DataLab 응답 내용: {res.text[:200]}")
     except Exception as e:
         print(f"   ℹ️ DataLab 크롤링 실패: {e}")
 
