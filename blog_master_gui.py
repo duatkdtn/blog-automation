@@ -887,7 +887,7 @@ class BlogMasterApp:
         self.make_button(input_row, "발행 시작", self.run_manual_publish, ACCENT).pack(side="left")
         self.naver_mail_btn = self.make_button(input_row, "📧 네이버 메일발송", self.send_naver_mail_manual, "#00838F")
         self.naver_mail_btn.pack(side="left", padx=(10, 0))
-        self.naver_mail_btn.config(state="disabled")
+        # 항상 활성화 (클릭 시 발행 여부 체크)
 
         # 진행 단계 표시
         step_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=14)
@@ -2432,7 +2432,7 @@ class BlogMasterApp:
             try:
                 p = self._last_publish
                 self.log("\n📧 네이버 백링크 메일 발송 중...")
-                self.naver_mail_btn.config(state="disabled")
+                # 항상 활성화 (클릭 시 발행 여부 체크)
                 from auto_publish import send_naver_email
                 send_naver_email(
                     p["keyword"], p["title"], p["content"],
@@ -2442,7 +2442,7 @@ class BlogMasterApp:
             except Exception as e:
                 self.log(f"❌ 메일 발송 실패: {e}")
             finally:
-                self.naver_mail_btn.config(state="normal")
+                pass
         threading.Thread(target=_send, daemon=True).start()
 
     def run_manual_publish(self):
@@ -2507,8 +2507,7 @@ class BlogMasterApp:
                     "url": post_url,
                     "published_at": datetime.now().strftime("%Y-%m-%d %H:%M")
                 }
-                if hasattr(self, 'naver_mail_btn'):
-                    self.naver_mail_btn.config(state="normal")
+                pass  # 버튼 항상 활성화 상태 유지
             else:
                 self.log("\u274c \ubc1c\ud589 \uc2e4\ud328")
         except Exception as e:
