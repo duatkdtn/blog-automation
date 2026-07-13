@@ -191,6 +191,8 @@ def get_trending_keywords_from_datalab(category):
     return []
 
 
+_last_keyword_info = {"keyword": None, "rank": None, "source": "fallback ⚠️"}
+
 def get_top_product(category):
     """
     키워드 선택 순서:
@@ -200,12 +202,16 @@ def get_top_product(category):
     반환: list of product dict
     """
     # 키워드 결정
+    global _last_keyword_info
     datalab_kws = get_trending_keywords_from_datalab(category)
     if datalab_kws:
-        query = random.choice(datalab_kws[:5])  # 상위 5개 중 랜덤
+        idx = random.randint(0, min(4, len(datalab_kws)-1))
+        query = datalab_kws[idx]
+        _last_keyword_info = {"keyword": query, "rank": idx + 1, "source": "DataLab ✅"}
     else:
         fallback_kws = category.get("keywords", [category["name"]])
         query = random.choice(fallback_kws)
+        _last_keyword_info = {"keyword": query, "rank": None, "source": "fallback ⚠️"}
         print(f"   🔀 Fallback 키워드: {query}")
 
     print(f"   🔍 검색 키워드: {query}")
@@ -680,6 +686,12 @@ def send_shopping_email_bulk(items):
             clean = re.sub(r"^[1-5][.)\s]+", "", line).strip()
             titles_html += f'<div style="margin:4px 0;padding:5px 10px;background:#f8f8f8;border-radius:4px;font-size:13px">{j+1}. {clean}</div>'
 
+        kw_info      = item.get("keyword_info", {})
+        kw_source    = kw_info.get("source", "")
+        kw_keyword   = kw_info.get("keyword", "")
+        kw_rank      = kw_info.get("rank", None)
+        kw_str       = f"{kw_source} {kw_rank}위 · {kw_keyword}" if kw_rank else f"{kw_source} · {kw_keyword}"
+
         img_parts = []
         for img_url in images[:4]:
             img_parts.append(f'<img src="{img_url}" style="width:calc(50% - 4px);max-height:130px;object-fit:cover;border-radius:6px;display:inline-block;vertical-align:top" alt="상품이미지">')
@@ -696,7 +708,7 @@ def send_shopping_email_bulk(items):
   </div>
   <div style="padding:12px 16px">
     {img_html}
-    <div style="font-size:12px;color:#777;margin-bottom:8px">카테고리: {cat['name']} | 최저가: {price_fmt}</div>
+    <div style="font-size:12px;color:#777;margin-bottom:8px">카테고리: {cat['name']} &nbsp;|&nbsp; {kw_str} &nbsp;|&nbsp; 최저가: {price_fmt}</div>
     <div style="margin:10px 0">
       <div style="font-size:12px;font-weight:bold;color:#333;margin-bottom:5px">📌 SEO 제목 (하나 선택)</div>
       {titles_html}
@@ -815,7 +827,8 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
             bc_p, bc_i = find_best_brandconnect(new_products)
             if bc_p:
                 selected_product, selected_bc = bc_p, bc_i
-        selected.append((cat, selected_product, selected_bc))
+        kw_info = dict(_last_keyword_info)  # 상품 선택 시점의 키워드 정보 복사
+        selected.append((cat, selected_product, selected_bc, kw_info))
         _tried.add(cat["name"])
 
     _self.get_trending_keywords_from_datalab = _orig_datalab  # 패치 복구
@@ -827,7 +840,7 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
     email_items = []
     pub_times = ["06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"]
 
-    for i, (category, product, bc_product) in enumerate(selected):
+    for i, (category, product, bc_product, kw_info) in enumerate(selected):
         log_fn(f"\n[{i+1}/{len(selected)}] {product.get('title','')[:40]}")
         product_id   = str(product.get("productId",""))
         product_name = product.get("title","")
@@ -849,6 +862,7 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
             "category": category, "product": product, "bc_product": bc_product,
             "images": images, "seo_titles": seo_titles, "post_body": post_body,
             "hashtags": hashtags, "pub_time_str": pub_time_str,
+            "keyword_info": kw_info,
         })
 
     if email_items and send_email_flag:
