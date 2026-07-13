@@ -886,6 +886,12 @@ class BlogMasterApp:
 
         self.make_button(input_row, "발행 시작", self.run_manual_publish, ACCENT).pack(side="left")
 
+        self.chk_naver_mail = tk.BooleanVar(value=True)
+        tk.Checkbutton(input_row, text="네이버 메일발송", variable=self.chk_naver_mail,
+                       font=("Malgun Gothic", 10), bg=BG_CARD, fg=TEXT_WHITE,
+                       selectcolor=BG_CARD, activebackground=BG_CARD,
+                       activeforeground=TEXT_WHITE).pack(side="left", padx=(14, 0))
+
 
         # 진행 단계 표시
         step_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=14)
@@ -2474,11 +2480,12 @@ class BlogMasterApp:
                     from datetime import datetime
                     naver_result = generate_naver_post(keyword, title, content_body, all_images, post_url)
                     self.log(f"\u2705 \ub124\uc774\ubc84\uc6a9 \ud30c\uc77c \uc800\uc7a5: {naver_result['html_path']}")
-                    self.log("\ud3b8 \ub124\uc774\ubc84 \uba54\uc77c \ubc1c\uc1a1 \uc911...")
-                    from auto_publish import send_naver_email
-                    published_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-                    send_naver_email(keyword, title, content_body, all_images, post_url, published_at)
-                    self.log("\u2705 \ub124\uc774\ubc84 \uba54\uc77c \ubc1c\uc1a1 \uc644\ub8cc!")
+                    if self.chk_naver_mail.get():
+                        self.log("\ud3b8 \ub124\uc774\ubc84 \uba54\uc77c \ubc1c\uc1a1 \uc911...")
+                        from auto_publish import send_naver_email
+                        published_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        send_naver_email(keyword, title, content_body, all_images, post_url, published_at)
+                        self.log("\u2705 \ub124\uc774\ubc84 \uba54\uc77c \ubc1c\uc1a1 \uc644\ub8cc!")
             else:
                 self.log("\u274c \ubc1c\ud589 \uc2e4\ud328")
         except Exception as e:
