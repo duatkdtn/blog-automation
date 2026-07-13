@@ -885,6 +885,9 @@ class BlogMasterApp:
         self.keyword_entry.pack(side="left", ipady=6, padx=(0, 10))
 
         self.make_button(input_row, "발행 시작", self.run_manual_publish, ACCENT).pack(side="left")
+        self.naver_mail_btn = self.make_button(input_row, "📧 네이버 메일발송", self.send_naver_mail_manual, "#00838F")
+        self.naver_mail_btn.pack(side="left", padx=(10, 0))
+        self.naver_mail_btn.config(state="disabled")
 
         # 진행 단계 표시
         step_card = tk.Frame(frame, bg=BG_CARD, padx=20, pady=14)
@@ -2418,6 +2421,30 @@ class BlogMasterApp:
         except Exception as e:
             self.log(f"❌ 오류: {e}")
 
+    def send_naver_mail_manual(self):
+        """발행 완료된 글을 네이버 메일로 발송"""
+        import threading
+        if not hasattr(self, '_last_publish') or not self._last_publish:
+            import tkinter.messagebox as mb
+            mb.showwarning("알림", "먼저 발행 시작을 눌러 글을 발행해주세요.")
+            return
+        def _send():
+            try:
+                p = self._last_publish
+                self.log("\n📧 네이버 백링크 메일 발송 중...")
+                self.naver_mail_btn.config(state="disabled")
+                from auto_publish import send_naver_email
+                send_naver_email(
+                    p["keyword"], p["title"], p["content"],
+                    p["images"], p["url"], p["published_at"]
+                )
+                self.log("✅ 네이버 백링크 메일 발송 완료!")
+            except Exception as e:
+                self.log(f"❌ 메일 발송 실패: {e}")
+            finally:
+                self.naver_mail_btn.config(state="normal")
+        threading.Thread(target=_send, daemon=True).start()
+
     def run_manual_publish(self):
         keyword = self.keyword_entry.get().strip()
         if not keyword:
@@ -2472,6 +2499,16 @@ class BlogMasterApp:
                     from naver_post_generator import generate_naver_post
                     naver_result = generate_naver_post(keyword, title, content_body, all_images, post_url)
                     self.log(f"\u2705 \ub124\uc774\ubc84\uc6a9 \ud30c\uc77c \uc800\uc7a5: {naver_result['html_path']}")
+                # 마지막 발행 정보 저장 (네이버 메일 재발송용)
+                from datetime import datetime
+                self._last_publish = {
+                    "keyword": keyword, "title": title,
+                    "content": content_body, "images": all_images,
+                    "url": post_url,
+                    "published_at": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                if hasattr(self, 'naver_mail_btn'):
+                    self.naver_mail_btn.config(state="normal")
             else:
                 self.log("\u274c \ubc1c\ud589 \uc2e4\ud328")
         except Exception as e:
