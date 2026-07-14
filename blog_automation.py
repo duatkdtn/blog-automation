@@ -1025,15 +1025,11 @@ def add_internal_links(content, keyword, blog_id):
                     if url.startswith("http"):
                         related.append((title, url))
 
-        if not related and not calc_link:
+        if not related:
             return content
 
-        # 내부링크 섹션 생성
+        # 내부링크 섹션 생성 (계산기는 외부링크 버튼으로 이미 표시됨)
         links_html = ""
-        # 계산기 페이지 링크 우선 삽입
-        if calc_link:
-            c_title, c_url = calc_link
-            links_html += f'<li style="margin:8px 0"><a href="{c_url}" style="color:#27ae60;text-decoration:none;font-weight:bold">🧮 {c_title}</a></li>\n'
         for title, url in related[:2]:
             links_html += f'<li style="margin:8px 0"><a href="{url}" style="color:#2980b9;text-decoration:none">👉 {title}</a></li>\n'
 
