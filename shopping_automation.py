@@ -868,7 +868,8 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
     if email_items and send_email_flag:
         log_fn(f"\n📧 이메일 발송 중... ({len(email_items)}개 상품)")
         send_shopping_email_bulk(email_items)
-        save_run_today()
+        if not force:
+            save_run_today()
         log_fn(f"✅ 완료! {len(email_items)}개 상품 이메일 발송")
     elif email_items:
         log_fn(f"\n✅ 완료! {len(email_items)}개 상품 (이메일 발송 OFF)")
