@@ -827,15 +827,35 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
             buttons_html += f'''<a href="https://map.naver.com/v5/search/{encoded_short}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ 네이버 지도 바로가기</a>\n'''
             buttons_html += f'''<a href="https://map.kakao.com/?q={encoded_short}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ 카카오맵 바로가기</a>\n'''
     else:
-        # 공식 사이트 링크 (기존 방식)
-        encoded_keyword = quote(keyword)
-        for name, url in links[:2]:
-            actual_url = url.replace("KEYWORD_PLACEHOLDER", encoded_keyword)
-            buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
+        # 계산기 페이지 매칭 먼저 확인
+        calc_match = None
+        for kw_match, (calc_title, calc_url) in CALCULATOR_PAGES.items():
+            if kw_match in keyword:
+                calc_match = (calc_title, calc_url)
+                break
+
+        if calc_match:
+            # 우리 계산기 버튼으로 대체 (외부링크 대신)
+            _ctitle, _curl = calc_match
+            _parts = _ctitle.split(' - ')[0].strip().split()
+            btn_name = ' '.join(_parts[1:]) if len(_parts) > 1 else _parts[0]
+            buttons_html += f'''<a href="{_curl}" target="_blank" rel="noopener" style="display:block;background:#e74c3c;color:white;padding:14px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 0;font-size:15px;text-align:center">▶ {btn_name} 바로가기</a>\n'''
+            # 연관 계산기 버튼 추가
+            if _curl in CALC_RELATED:
+                _r_name, _r_url = CALC_RELATED[_curl]
+                buttons_html += f'''<a href="{_r_url}" target="_blank" rel="noopener" style="display:block;background:#e74c3c;color:white;padding:14px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 0;font-size:15px;text-align:center">▶ {_r_name} 바로가기</a>\n'''
+        else:
+            # 공식 사이트 링크 (기존 방식)
+            encoded_keyword = quote(keyword)
+            for name, url in links[:2]:
+                actual_url = url.replace("KEYWORD_PLACEHOLDER", encoded_keyword)
+                buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
 
     # 카테고리에 따라 섹션 제목 변경
     if is_map:
         section_title = "📍 네이버·카카오 지도에서 위치 확인하세요"
+    elif not is_map and 'calc_match' in dir() and calc_match:
+        section_title = "🧮 직접 계산해보세요"
     else:
         section_title = "📌 공식 사이트에서 정확한 정보를 확인하세요"
 
@@ -926,6 +946,17 @@ CALCULATOR_PAGES = {
     "표준체중":   ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
     "뱃살":      ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
     "체지방":     ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
+}
+
+# 계산기 연관 계산기 매핑 (계산기 URL → 연관 계산기)
+CALC_RELATED = {
+    "https://www.hijanee.com/p/blog-page_11.html": ("실업급여 계산기", "https://www.hijanee.com/p/blog-page_91.html"),  # 퇴직금 → 실업급여
+    "https://www.hijanee.com/p/blog-page_91.html": ("퇴직금 계산기",   "https://www.hijanee.com/p/blog-page_11.html"),  # 실업급여 → 퇴직금
+    "https://www.hijanee.com/p/blog-page.html":    ("4대보험 계산기",   "https://www.hijanee.com/p/4.html"),             # 연봉 → 4대보험
+    "https://www.hijanee.com/p/4.html":            ("연봉 실수령액 계산기", "https://www.hijanee.com/p/blog-page.html"), # 4대보험 → 연봉
+    "https://www.hijanee.com/p/blog-page_758.html":("평수 계산기",     "https://www.hijanee.com/p/blog-page_92.html"),  # 취득세 → 평수
+    "https://www.hijanee.com/p/blog-page_92.html": ("취득세 계산기",   "https://www.hijanee.com/p/blog-page_758.html"), # 평수 → 취득세
+    "https://www.hijanee.com/p/blog-page_10.html": ("연봉 실수령액 계산기", "https://www.hijanee.com/p/blog-page.html"),# 근로장려금 → 연봉
 }
 
 def add_internal_links(content, keyword, blog_id):
