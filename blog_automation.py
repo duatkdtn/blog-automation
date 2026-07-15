@@ -877,7 +877,6 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
 CALCULATOR_PAGES = {
     # 4대보험
     "4대보험":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
-    "국민연금":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
     "건강보험":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
     "장기요양":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
     "사대보험":   ("🏥 4대보험 계산기 - 국민연금 건강보험 실수령액 계산", "https://www.hijanee.com/p/4.html"),
@@ -937,6 +936,14 @@ CALCULATOR_PAGES = {
     "재개발":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
     "재건축":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
     "양도세":     ("🏠 취득세 계산기 - 주택 부동산 취득세 바로 계산", "https://www.hijanee.com/p/blog-page_758.html"),
+    # 국민연금 예상수령액
+    "국민연금":      ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
+    "노령연금":      ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
+    "연금수령":      ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
+    "국민연금수령":   ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
+    "예상연금":      ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
+    "연금계산":      ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
+    "국민연금예상":   ("📊 국민연금 예상수령액 계산기 - 내 연금 얼마나 받을까", "https://www.hijanee.com/p/blog-page_15.html"),
     # BMI
     "BMI":        ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
     "비만":        ("⚖️ BMI 계산기 - 체질량지수 비만도 바로 확인", "https://www.hijanee.com/p/bmi.html"),
@@ -957,6 +964,7 @@ CALC_RELATED = {
     "https://www.hijanee.com/p/blog-page_758.html":("평수 계산기",     "https://www.hijanee.com/p/blog-page_92.html"),  # 취득세 → 평수
     "https://www.hijanee.com/p/blog-page_92.html": ("취득세 계산기",   "https://www.hijanee.com/p/blog-page_758.html"), # 평수 → 취득세
     "https://www.hijanee.com/p/blog-page_10.html": ("연봉 실수령액 계산기", "https://www.hijanee.com/p/blog-page.html"),# 근로장려금 → 연봉
+    "https://www.hijanee.com/p/blog-page_15.html": ("연봉 실수령액 계산기", "https://www.hijanee.com/p/blog-page.html"),  # 국민연금 → 연봉
 }
 
 def add_internal_links(content, keyword, blog_id):
