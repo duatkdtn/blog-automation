@@ -368,7 +368,7 @@ def send_naver_email(keyword, title, content, image_urls, blogspot_url, publishe
 
 
 def main():
-    restore_token()
+    # restore_token() - blog_automation.py의 get_google_credentials()가 GOOGLE_TOKEN 환경변수 직접 처리
     setup_env()
     # 현재 시간 확인 (한국시간 기준 - GitHub Actions는 UTC이므로 +9)
     now_utc = datetime.utcnow()
