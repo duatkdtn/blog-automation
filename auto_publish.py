@@ -35,6 +35,8 @@ def setup_env():
         "CLOUDINARY_API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
         "NAVER_CLIENT_ID": os.environ.get("NAVER_CLIENT_ID"),
         "NAVER_CLIENT_SECRET": os.environ.get("NAVER_CLIENT_SECRET"),
+        "GOOGLE_CLIENT_ID": os.environ.get("GOOGLE_CLIENT_ID"),
+        "GOOGLE_CLIENT_SECRET": os.environ.get("GOOGLE_CLIENT_SECRET"),
     }
     # config.py가 없으면 임시 생성
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
