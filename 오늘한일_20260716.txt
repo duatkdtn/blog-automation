@@ -1,0 +1,105 @@
+========================================
+작업 일지 - 2026년 07월 16일
+========================================
+
+[ 1. 국민연금 예상수령액 계산기 업로드 완료 ]
+- 파일: pension-calculator.html
+- 업로드 URL: https://www.hijanee.com/p/blog-page_15.html
+- 기능: 직장인/자영업자 탭, 수령나이 60~70세 비교표, 조기/연기수령 반영
+- 업로드 스크립트: upload_pension.py
+
+[ 2. blog_automation.py - 국민연금 키워드 추가 ]
+- CALCULATOR_PAGES에 추가된 키워드 (→ 국민연금 예상수령액 계산기):
+  국민연금, 노령연금, 연금수령, 국민연금수령, 예상연금, 연금계산, 국민연금예상
+- CALC_RELATED: 국민연금 ↔ 연봉 실수령액 계산기
+- 주의: 기존 "국민연금" 키워드가 4대보험 계산기에 연결되어 있었으나
+  → 국민연금 전용 계산기로 변경함 (중복 적용 시 최신 적용)
+
+[ 3. GitHub Actions 인증 방식 전면 개선 ]
+문제: token.pickle이 만료/충돌되어 GitHub Actions 발행 실패 반복
+원인: get_google_credentials()가 token.pickle만 사용, GOOGLE_TOKEN 환경변수 무시
+
+해결:
+- get_google_credentials() 수정
+  → GOOGLE_TOKEN 환경변수 있으면 refresh_token으로 직접 인증
+  → 없으면 기존 token.pickle 방식 유지 (로컬 사용 시)
+- auto_publish.py restore_token() 제거
+  → 기존: base64로 token.pickle 복원 시도 → 실패
+  → 변경: get_google_credentials()가 직접 처리하므로 불필요
+- auto_publish.py setup_env()에 GOOGLE_CLIENT_ID/SECRET 추가
+- auto_publish.yml에 환경변수 추가:
+  GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+
+GitHub Secrets 추가 목록:
+  GOOGLE_TOKEN       ← refresh_token 값 (get_refresh_token.py로 추출)
+  GOOGLE_CLIENT_ID   ← Google OAuth 클라이언트 ID
+  GOOGLE_CLIENT_SECRET ← Google OAuth 클라이언트 시크릿
+
+[ 4. 유틸 스크립트 생성 ]
+- get_refresh_token.py: token.pickle에서 refresh_token 추출 출력
+  사용법: py get_refresh_token.py → 나온 값을 GitHub Secret GOOGLE_TOKEN에 저장
+
+[ 5. 앞으로 token.pickle 만료 시 대처법 ]
+1) py get_refresh_token.py 실행 → 오류 나면 token.pickle 삭제 후 재실행
+2) 나온 값을 GitHub Secret GOOGLE_TOKEN 업데이트
+3) 끝 (git push 불필요)
+
+========================================
+현재 GitHub Secrets 목록 (전체)
+========================================
+BLOG_ID
+CLAUDE_API_KEY
+CLAUDE_MODEL
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+CLOUDINARY_CLOUD_NAME
+GEMINI_API_KEY
+GMAIL_ADDRESS
+GMAIL_APP_PASSWORD
+GOOGLE_CLIENT_ID      ← 오늘 추가
+GOOGLE_CLIENT_SECRET  ← 오늘 추가
+GOOGLE_TOKEN          ← 오늘 추가 (refresh_token 값)
+NAVER_CLIENT_ID
+NAVER_CLIENT_SECRET
+NAVER_COOKIE
+
+========================================
+계산기 페이지 전체 목록 (최신)
+========================================
+4대보험     → https://www.hijanee.com/p/4.html
+연봉실수령액 → https://www.hijanee.com/p/blog-page.html
+퇴직금      → https://www.hijanee.com/p/blog-page_11.html
+실업급여    → https://www.hijanee.com/p/blog-page_91.html
+근로장려금  → https://www.hijanee.com/p/blog-page_10.html
+만나이      → https://www.hijanee.com/p/blog-page_12.html
+평수변환    → https://www.hijanee.com/p/blog-page_92.html
+취득세      → https://www.hijanee.com/p/blog-page_758.html
+BMI         → https://www.hijanee.com/p/bmi.html
+국민연금    → https://www.hijanee.com/p/blog-page_15.html  ← 오늘 추가
+
+========================================
+추가 작업 - 2026년 07월 22일
+========================================
+
+[ 6. Claude API 비용 절감 - Haiku 모델로 교체 ]
+
+배경:
+- claude-sonnet-4-6: 입력 $3/백만토큰, 출력 $15/백만토큰 (비쌈)
+- claude-haiku-4-5-20251001: 입력 $0.80/백만토큰, 출력 $4/백만토큰 (약 75% 저렴)
+
+변경 사항 (blog_automation.py):
+- translate_keyword() (줄 110): CLAUDE_MODEL → claude-haiku-4-5-20251001
+  이유: 키워드를 영어로 번역하는 단순 작업, 고성능 모델 불필요
+- get_external_links_for_keyword() (줄 813): CLAUDE_MODEL → claude-haiku-4-5-20251001
+  이유: 외부 링크 추천, max_tokens=50짜리 단순 작업
+- add_internal_links() (줄 1032): CLAUDE_MODEL → claude-haiku-4-5-20251001
+  이유: 내부 링크 삽입, max_tokens=300짜리 작업
+
+유지된 Sonnet 함수:
+- generate_blog_post() (줄 562): 블로그 본문 생성 → 품질 중요 → Sonnet 유지
+- generate_seo_metadata() (줄 614): SEO 메타데이터 → Sonnet 유지
+
+예상 절감 효과:
+- 기존: 포스트당 ~19,000 토큰 → 약 $30/월
+- 변경 후: 단순작업 3개 Haiku로 교체 → 약 $10~15/월 절감 예상
+

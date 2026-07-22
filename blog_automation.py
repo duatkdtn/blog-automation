@@ -107,7 +107,7 @@ def translate_keyword(keyword):
     """Claude로 키워드를 영어로 번역"""
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
     message = client.messages.create(
-        model=CLAUDE_MODEL,
+        model="claude-haiku-4-5-20251001",
         max_tokens=100,
         messages=[{"role": "user", "content": f"다음 한국어 키워드를 이미지 검색에 적합한 영어 단어 1~3개로만 번역해주세요. 번역 결과만 출력하세요: {keyword}"}]
     )
@@ -810,7 +810,7 @@ def get_external_links_for_keyword(keyword):
 
     try:
         message = client.messages.create(
-            model=CLAUDE_MODEL,
+            model="claude-haiku-4-5-20251001",
             max_tokens=50,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -1029,7 +1029,7 @@ def add_internal_links(content, keyword, blog_id):
 해당 없으면 "없음"이라고만 출력하세요."""
 
         message = client.messages.create(
-            model=CLAUDE_MODEL,
+            model="claude-haiku-4-5-20251001",
             max_tokens=300,
             messages=[{"role": "user", "content": prompt}]
         )
