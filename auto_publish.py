@@ -489,6 +489,18 @@ def main():
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(f"💾 today_keywords.json 업데이트 완료 (published: true)")
 
+        # used_main_keywords.txt 저장 (60일 중복 방지)
+        used_main_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "used_main_keywords.txt")
+        used_main = []
+        if os.path.exists(used_main_path):
+            with open(used_main_path, "r", encoding="utf-8") as f:
+                used_main = [line.strip() for line in f if line.strip()]
+        used_main.append(f"{now_kst.strftime('%Y-%m-%d')}|{keyword}")
+        used_main = used_main[-240:]  # 최대 240개 유지 (하루 4개 × 60일)
+        with open(used_main_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(used_main))
+        print(f"💾 used_main_keywords.txt 업데이트 완료 ({keyword})")
+
         # 네이버용 이메일 발송
         naver_title = target.get("naver_title", "")
         related_keywords = target.get("related_keywords", [])

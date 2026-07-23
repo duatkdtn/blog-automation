@@ -2,16 +2,12 @@ name: 자동 블로그 발행 (3시간 간격)
 
 on:
   schedule:
-    # KST 기준: 0시, 3시, 6시, 9시, 12시, 15시, 18시, 21시
-    # UTC 기준: 15시, 18시, 21시, 0시, 3시, 6시, 9시, 12시
-    - cron: '0 15 * * *'   # KST 00:00
-    - cron: '0 18 * * *'   # KST 03:00
+    # KST 기준: 6시, 9시, 15시, 20시 (하루 4회)
+    # UTC 기준: 21시(전날), 0시, 6시, 11시
     - cron: '0 21 * * *'   # KST 06:00
     - cron: '0 0 * * *'    # KST 09:00
-    - cron: '0 3 * * *'    # KST 12:00
     - cron: '0 6 * * *'    # KST 15:00
-    - cron: '0 9 * * *'    # KST 18:00
-    - cron: '0 12 * * *'   # KST 21:00
+    - cron: '0 11 * * *'   # KST 20:00
   workflow_dispatch:  # 수동 실행 버튼
 
 permissions:
@@ -63,6 +59,6 @@ jobs:
         run: |
           git config user.email "duatkdtn@gmail.com"
           git config user.name "duatkdtn"
-          git add today_keywords.json
+          git add today_keywords.json used_main_keywords.txt
           git diff --staged --quiet || git commit -m "발행 완료 상태 업데이트"
           git push
