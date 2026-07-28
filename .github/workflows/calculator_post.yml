@@ -1,0 +1,76 @@
+name: 계산기 포스팅 하루 1개 자동발행
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # KST 11:00 (매일 오전 11시)
+  workflow_dispatch:       # 수동 실행 가능
+
+permissions:
+  contents: write
+
+jobs:
+  publish-calculator-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: pip install google-auth google-auth-oauthlib google-auth-httplib2 requests
+
+      - name: Google 토큰 복원
+        env:
+          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
+        run: |
+          python -c "
+          import os, base64
+          token = os.environ.get('GOOGLE_TOKEN','')
+          if token:
+              with open('token.pickle','wb') as f:
+                  f.write(base64.b64decode(token))
+              print('token.pickle 복원 완료')
+          else:
+              print('GOOGLE_TOKEN 없음')
+          "
+
+      - name: config.py 생성
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        run: |
+          python -c "
+          import os
+          cfg = '''CLAUDE_API_KEY = '{claude}'
+GMAIL_ADDRESS = '{gmail}'
+GMAIL_APP_PASSWORD = '{pw}'
+EMAIL_RECIPIENT = '{recipient}'
+'''.format(
+            claude=os.environ.get('CLAUDE_API_KEY',''),
+            gmail=os.environ.get('GMAIL_ADDRESS',''),
+            pw=os.environ.get('GMAIL_APP_PASSWORD',''),
+            recipient=os.environ.get('EMAIL_RECIPIENT','duatkdtn@gmail.com'),
+          )
+          with open('config.py','w') as f:
+              f.write(cfg)
+          print('config.py 생성 완료')
+          "
+
+      - name: 계산기 포스팅 발행
+        run: python calculator_posts.py
+
+      - name: 발행 기록 저장 (git push)
+        run: |
+          git config user.email "duatkdtn@gmail.com"
+          git config user.name "hijanee-bot"
+          git add calc_posts_published.txt || true
+          git diff --cached --quiet || git commit -m "계산기 포스팅 발행 기록 업데이트"
+          git pull origin main --no-edit
+          git push
