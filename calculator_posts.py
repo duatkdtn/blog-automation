@@ -17,6 +17,16 @@ except Exception:
     def _get(key, default=None):
         return os.environ.get(key, default)
 
+def restore_token():
+    """GitHub Actions: GOOGLE_TOKEN 환경변수로 token.pickle 복원"""
+    import base64
+    token_b64 = os.environ.get("GOOGLE_TOKEN")
+    if token_b64:
+        token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+        with open(token_path, "wb") as f:
+            f.write(base64.b64decode(token_b64))
+
+
 GMAIL_ADDRESS    = _get("GMAIL_ADDRESS")
 GMAIL_APP_PASSWORD = _get("GMAIL_APP_PASSWORD")
 EMAIL_RECIPIENT  = _get("EMAIL_RECIPIENT", "duatkdtn@gmail.com")
@@ -402,6 +412,7 @@ def send_naver_email(post, post_url, content_html):
 
 
 def main():
+    restore_token()
     post = get_next_post()
     if not post:
         print("모든 계산기 포스팅 발행 완료!")
