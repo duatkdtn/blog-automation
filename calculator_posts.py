@@ -24,7 +24,11 @@ def restore_token():
     if token_b64:
         token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
         with open(token_path, "wb") as f:
-            f.write(base64.b64decode(token_b64))
+            # 패딩 부족 시 보정 (GitHub Secrets에서 = 제거되는 경우)
+        padding = 4 - len(token_b64) % 4
+        if padding != 4:
+            token_b64 += "=" * padding
+        f.write(base64.b64decode(token_b64))
 
 
 GMAIL_ADDRESS    = _get("GMAIL_ADDRESS")
