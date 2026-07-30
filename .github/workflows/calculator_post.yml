@@ -37,6 +37,7 @@ jobs:
         run: |
           git config user.email "duatkdtn@gmail.com"
           git config user.name "hijanee-bot"
+          git config pull.rebase false
           git add calc_posts_published.txt || true
           git diff --cached --quiet || git commit -m "계산기 포스팅 발행 기록 업데이트"
           git pull origin main --no-edit
