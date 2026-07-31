@@ -15,6 +15,24 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # GitHub Actions 환경에서 token.pickle 복원
+
+def preflight_check(get_google_credentials, BLOG_ID):
+    """발행 전 사전 체크 - Google 인증 검증 (비용 발생 전 실행)"""
+    import urllib.request as _req
+    import json as _json
+    try:
+        creds = get_google_credentials()
+        url = f"https://www.googleapis.com/blogger/v3/blogs/{BLOG_ID}"
+        r = _req.Request(url)
+        r.add_header("Authorization", "Bearer " + creds.token)
+        with _req.urlopen(r, timeout=10) as resp:
+            blog = _json.loads(resp.read())
+        print(f"✅ Google 인증 OK: {blog.get('name', BLOG_ID)}")
+        return True
+    except Exception as e:
+        print(f"❌ Google 인증 실패 - 글 생성 중단 (비용 절약): {e}")
+        return False
+
 def restore_token():
     token_b64 = os.environ.get("GOOGLE_TOKEN")
     if token_b64:
@@ -430,6 +448,10 @@ def main():
         )
     except ImportError as e:
         print(f"❌ blog_automation.py import 실패: {e}")
+        return
+
+    # 0. 사전 체크 (Google 인증 확인 - 비용 발생 전)
+    if not preflight_check(get_google_credentials, os.environ.get("BLOG_ID", "7703234808905245526")):
         return
 
     # 1. 글 생성
