@@ -57,23 +57,19 @@ def upload_image_to_cloudinary(img_bytes, filename="blog_image"):
 def get_google_credentials():
     """Google 인증 처리"""
     import os as _os
-    from google.oauth2.credentials import Credentials as _Creds
+    import base64 as _base64
 
-    # GitHub Actions 환경: GOOGLE_TOKEN 환경변수에서 refresh_token으로 인증
-    refresh_token = _os.environ.get('GOOGLE_TOKEN')
-    if refresh_token:
-        creds = _Creds(
-            token=None,
-            refresh_token=refresh_token,
-            token_uri='https://oauth2.googleapis.com/token',
-            client_id=GOOGLE_CLIENT_ID,
-            client_secret=GOOGLE_CLIENT_SECRET,
-            scopes=SCOPES
-        )
-        creds.refresh(Request())
-        return creds
+    # GitHub Actions 환경: GOOGLE_TOKEN(base64) → token.pickle 복원
+    token_b64 = _os.environ.get('GOOGLE_TOKEN')
+    if token_b64:
+        padding = 4 - len(token_b64) % 4
+        if padding != 4:
+            token_b64 += "=" * padding
+        token_path_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
+        with open(token_path_env, "wb") as f:
+            f.write(_base64.b64decode(token_b64))
 
-    # 로컬 환경: token.pickle 사용
+    # 로컬/복원 환경: token.pickle 사용
     creds = None
     token_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "token.pickle")
 
