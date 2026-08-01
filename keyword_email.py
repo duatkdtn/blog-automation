@@ -166,13 +166,50 @@ def get_naver_news_for_context():
 # 2. Claude로 키워드 + 제목 생성
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=None):
-    """Claude로 키워드 10개 생성 + 베스트 2 선정 (구글 기반)"""
+def extract_recent_categories(used_main_raw):
+    """최근 7일 발행 키워드에서 과다 사용된 카테고리 감지"""
+    from datetime import timedelta as _td
+    cutoff_7 = (now_kst() - _td(days=7)).strftime("%Y-%m-%d")
+    recent_7 = [line.split("|")[1] for line in used_main_raw
+                if "|" in line and line.split("|")[0] >= cutoff_7]
+
+    # 카테고리 키워드 매핑
+    cat_map = {
+        "금융/대출": ["대출", "자금", "융자", "금리", "이자", "햇살론", "새희망홀씨", "버팀목"],
+        "소상공인/자영업": ["소상공인", "자영업자", "중소기업", "소기업", "창업"],
+        "정부지원금/복지": ["지원금", "지원사업", "보조금", "혜택", "복지", "급여", "수당"],
+        "건강/의료": ["건강검진", "의료비", "병원", "치료비", "암", "당뇨", "혈압", "탈모", "비만"],
+        "보험": ["실비보험", "건강보험", "생명보험", "보험료", "보험"],
+        "부동산": ["아파트", "부동산", "취득세", "전세", "월세", "청약", "집값"],
+        "취업/직장": ["취업", "이직", "연봉", "직장", "면접", "퇴직금", "실업급여"],
+        "IT/전자기기": ["스마트폰", "노트북", "갤럭시", "아이폰", "AI", "챗GPT"],
+        "연예/트렌드": ["콘서트", "아이돌", "드라마", "영화", "팬"],
+        "건강식품/다이어트": ["다이어트", "체중", "BMI", "칼로리", "영양제", "홍삼"],
+    }
+
+    cat_count = {}
+    for kw in recent_7:
+        for cat, keywords in cat_map.items():
+            if any(k in kw for k in keywords):
+                cat_count[cat] = cat_count.get(cat, 0) + 1
+
+    # 2회 이상 나온 카테고리를 "과다 사용"으로 표시
+    overused = [cat for cat, cnt in cat_count.items() if cnt >= 2]
+    return overused
+
+
+
+def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=None, overused_categories=None):
+    """Claude로 키워드 4개 생성 + 베스트 2 선정 (구글 기반)"""
 
     today = now_kst().strftime("%Y년 %m월 %d일")
     google_context = "\n".join(google_trends) if google_trends else "없음"
     news_context = "\n".join(naver_news) if naver_news else "없음"
     used_main_str = "\n".join(used_main_keywords[-60:]) if used_main_keywords else "없음"
+    if overused_categories:
+        overused_str = "\n".join([f"- {cat} 관련 키워드" for cat in overused_categories])
+    else:
+        overused_str = "없음 (모든 카테고리 자유롭게 선정 가능)"
 
     prompt = f"""당신은 구글 SEO 전문가이자 한국 블로그 수익화 전문가입니다.
 
@@ -189,9 +226,13 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 최근 60일 내 이미 발행한 키워드 (비슷한 주제도 피할 것):
 {used_main_str}
 
+=== 이번 주 과다 사용 카테고리 (이번엔 절대 선정 금지) ===
+{overused_str}
+(위 카테고리와 조금이라도 관련된 키워드는 이번에 제외할 것)
+
 === 키워드 선정 기준 ===
 플랫폼: 블로그스팟 (구글 검색 노출 최적화)
-타겟 독자: 30~60대 한국인
+타겟 독자: 30~70대 한국인 (주 타겟: 40~70대 — 건강, 노후준비, 연금, 정부혜택, 부동산, 생활정보에 특히 관심 높음)
 
 유형별 구성 (반드시 지킬 것):
 - 롱테일 3개: 구글에서 "~비용", "~방법", "~후기", "~얼마" 형태로 검색되는 정보형 키워드
@@ -204,11 +245,11 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 - 반드시 하위 세분화 키워드 (상위 주제 절대 금지)
   * 금지: "보험", "건강", "재테크" (너무 광범위)
   * 권장: "실비보험 청구 거절 이유 2026", "40대 종합건강검진 비용 차이", "직장인 ISA계좌 단점"
-- 카테고리 다양성 필수: 6개 중 1개만 고단가(보험/대출/법률/금융), 나머지 5개는 트렌드 기반으로 육아, 여행, 부동산, 건강, 취업, 자동차, 반려동물, IT, 생활정보 등 다양한 카테고리에서 골고루 선정
+- 카테고리 다양성 필수: 4개 중 1개만 금융/대출/보험 관련, 나머지 3개는 건강, 부동산, 생활정보, 취업, 여행, 음식, IT, 반려동물, 노후/연금/퇴직 등에서 서로 다른 카테고리로 선정 (같은 카테고리 2개 이상 절대 금지)
 - 연도/나이/상황 붙여 세분화: "2026", "30대", "직장인", "초보자", "비용", "후기"
 - 구글 자동완성에 실제로 뜨는 형태의 키워드
 
-[1단계] 구글 기반 블로그 키워드 10개 추천 (카테고리 중복 최소화)
+[1단계] 구글 기반 블로그 키워드 4개 추천 (카테고리 중복 최소화 - 4개 모두 반드시 다른 카테고리)
 [2단계] 베스트 2개 선정 (롱테일 또는 행동형 우선, 반드시 서로 다른 카테고리에서 선정)
 
 아래 형식으로 정확히 출력해주세요:
@@ -224,12 +265,6 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 ---키워드2---
 ---키워드3---
 ---키워드4---
----키워드5---
----키워드6---
----키워드7---
----키워드8---
----키워드9---
----키워드10---
 
 ===베스트2===
 베스트1: [키워드번호]
@@ -242,7 +277,7 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
         try:
             response = client.messages.create(
                 model=CLAUDE_MODEL,
-                max_tokens=3000,
+                max_tokens=1500,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text
@@ -352,7 +387,7 @@ def generate_naver_title(keyword, related_keywords, naver_top_titles):
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def parse_keywords_and_best6(raw_text):
-    """전체 10개 파싱 + 베스트 2 선정"""
+    """전체 4개 파싱 + 베스트 2 선정"""
     keywords = []
 
     if "===전체키워드===" in raw_text:
@@ -692,7 +727,7 @@ def build_email_html(keywords, best6, today_str):
 
     <div style="background:white; padding:20px; margin-top:2px;">
         <h2 style="color:#333; font-size:17px; margin:0 0 15px;">
-            📋 전체 추천 키워드 10개
+            📋 전체 추천 키워드
             <span style="font-size:12px; color:#764ba2;">⏰ = 자동 발행 시간</span>
         </h2>
         <table style="width:100%; border-collapse:collapse;">
@@ -763,20 +798,27 @@ def main():
     cutoff = (now_kst() - _timedelta(days=60)).strftime("%Y-%m-%d")
     recent_used_main = [line.split("|")[1] for line in used_main_raw if "|" in line and line.split("|")[0] >= cutoff]
 
-    # 3. Claude로 키워드 10개 + 베스트 2 생성
-    print("\n🤖 Claude가 키워드 분석 중...")
-    raw_text = generate_keywords_with_claude(google_trends, naver_news, recent_used_main)
+    # 3. 최근 7일 과다 사용 카테고리 분석
+    overused_cats = extract_recent_categories(used_main_raw)
+    if overused_cats:
+        print(f"   ⚠️ 이번 주 과다 카테고리 (제외): {', '.join(overused_cats)}")
+    else:
+        print("   ✅ 카테고리 편중 없음")
 
-    # 4. 파싱
+    # 4. Claude로 키워드 4개 + 베스트 2 생성
+    print("\n🤖 Claude가 키워드 분석 중...")
+    raw_text = generate_keywords_with_claude(google_trends, naver_news, recent_used_main, overused_cats)
+
+    # 5. 파싱
     keywords, best6 = parse_keywords_and_best6(raw_text)
-    print(f"   → 전체 {len(keywords)}개 키워드 생성")
+    print(f"   → Claude 키워드 {len(keywords)}개 생성")
     print(f"   → 베스트 2개 선정: {[kw['keyword'] for kw in best6]}")
 
-    # 5. 블로그스팟용 + 네이버용 제목 각각 생성
+    # 6. 블로그스팟용 + 네이버용 제목 각각 생성
     print("\n🔍 제목 생성 중 (블로그스팟용 + 네이버용)...")
     keywords, best6 = enrich_keywords_with_titles(keywords, best6)
 
-    # 6. 정부지원금 키워드 → 1번째 슬롯(06:00)
+    # 7. 정부지원금 키워드 → 1번째 슬롯(06:00)
     print("\n🏛️ 정부지원금 키워드 생성 중...")
     gov_kw = generate_gov_keyword()
     if gov_kw:
@@ -784,7 +826,7 @@ def main():
         if not any(kw.get("keyword") == gov_kw["keyword"] for kw in keywords):
             keywords.append(gov_kw)
 
-    # 7. 정부정책자금 키워드 → 2번째 슬롯(09:00)
+    # 8. 정부정책자금 키워드 → 2번째 슬롯(09:00)
     print("\n💰 정부정책자금 키워드 생성 중...")
     policy_kw = generate_policy_keyword()
     if policy_kw:
@@ -792,13 +834,13 @@ def main():
         if not any(kw.get("keyword") == policy_kw["keyword"] for kw in keywords):
             keywords.append(policy_kw)
 
-    # 8. JSON 저장
+    # 9. JSON 저장
     print("\n💾 오늘의 발행 스케줄 저장 중...")
     save_today_keywords(keywords, best6)
 
-    # 9. 이메일 발송
+    # 10. 이메일 발송
     html = build_email_html(keywords, best6, today_str)
-    subject = f"📊 [{today_short}] 키워드 추천 10개 + 오늘 자동발행 4개"
+    subject = f"📊 [{today_short}] 키워드 추천 6개 + 오늘 자동발행 4개"
     print(f"\n📧 이메일 발송 중... → {EMAIL_RECIPIENT}")
     send_email(subject, html)
 
