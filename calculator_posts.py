@@ -369,7 +369,13 @@ def publish_to_blogger(post, content):
 
 def send_naver_email(post, post_url, content_html):
     """네이버 블로그 복붙용 이메일 발송"""
-    if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
+    # 자격증명을 함수 안에서 직접 로드 (환경변수 우선)
+    gmail_address = os.environ.get("GMAIL_ADDRESS") or GMAIL_ADDRESS
+    gmail_password = os.environ.get("GMAIL_APP_PASSWORD") or GMAIL_APP_PASSWORD
+    email_recipient = os.environ.get("EMAIL_RECIPIENT") or EMAIL_RECIPIENT
+
+    print(f"이메일 발송 시도: {gmail_address} → {email_recipient}")
+    if not gmail_address or not gmail_password:
         print("Gmail 설정 없음 - 이메일 스킵")
         return
 
@@ -401,17 +407,14 @@ def send_naver_email(post, post_url, content_html):
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = GMAIL_ADDRESS
-    msg["To"] = EMAIL_RECIPIENT
+    msg["From"] = gmail_address
+    msg["To"] = email_recipient
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-            smtp.sendmail(GMAIL_ADDRESS, EMAIL_RECIPIENT, msg.as_string())
-        print("이메일 발송 완료: " + EMAIL_RECIPIENT)
-    except Exception as e:
-        print("이메일 발송 실패: " + str(e))
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(gmail_address, gmail_password)
+        smtp.sendmail(gmail_address, email_recipient, msg.as_string())
+    print("이메일 발송 완료: " + email_recipient)
 
 
 def main():
