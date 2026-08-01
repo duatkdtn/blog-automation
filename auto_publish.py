@@ -402,35 +402,54 @@ def main():
     print(f"🚀 자동 발행 실행 - KST {now_kst.strftime('%Y-%m-%d %H:%M')}")
     print(f"{'='*50}\n")
 
-    # today_keywords.json 읽기
-    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "today_keywords.json")
+    # ── 수동 발행 모드: py auto_publish.py --keyword "키워드" ──
+    manual_keyword = None
+    if "--keyword" in sys.argv:
+        idx = sys.argv.index("--keyword")
+        if idx + 1 < len(sys.argv):
+            manual_keyword = sys.argv[idx + 1]
 
-    if not os.path.exists(json_path):
-        print("❌ today_keywords.json 없음 - 오늘 키워드 이메일이 아직 발송되지 않았습니다.")
-        return
+    if manual_keyword:
+        print(f"🖊️  수동 발행 모드: {manual_keyword}")
+        target = {
+            "keyword": manual_keyword,
+            "title": "",          # 제목은 Claude가 생성
+            "naver_title": "",
+            "related_keywords": [],
+            "naver_top_titles": [],
+            "time": "수동",
+        }
+        json_path = None          # JSON 업데이트 불필요
+    else:
+        # ── 자동 발행 모드: today_keywords.json 읽기 ──
+        json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "today_keywords.json")
 
-    with open(json_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        if not os.path.exists(json_path):
+            print("❌ today_keywords.json 없음 - 오늘 키워드 이메일이 아직 발송되지 않았습니다.")
+            return
 
-    # 순서대로 미발행 항목 찾기 (날짜 체크 없음 - 미발행 항목 있으면 순서대로 발행)
-    schedule = data.get("schedule", [])
-    target = None
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-    for item in schedule:
-        if not item.get("published", False):
-            target = item
-            break
+        # 순서대로 미발행 항목 찾기 (날짜 체크 없음 - 미발행 항목 있으면 순서대로 발행)
+        schedule = data.get("schedule", [])
+        target = None
 
-    if not target:
-        print(f"✅ 오늘 발행할 키워드가 모두 발행 완료되었습니다.")
-        return
+        for item in schedule:
+            if not item.get("published", False):
+                target = item
+                break
 
-    print(f"🕐 예정 시간 {target['time']} 슬롯 발행 시작 (현재 KST {current_time})")
+        if not target:
+            print(f"✅ 오늘 발행할 키워드가 모두 발행 완료되었습니다.")
+            return
+
+        print(f"🕐 예정 시간 {target['time']} 슬롯 발행 시작 (현재 KST {current_time})")
 
     keyword = target["keyword"]
     title = target["title"]
     print(f"📝 발행 키워드: {keyword}")
-    print(f"📌 발행 제목: {title}")
+    print(f"📌 발행 제목: {title if title else '(Claude가 생성)'}")
 
     # blog_automation.py에서 함수 import
     try:
@@ -501,15 +520,16 @@ def main():
     if post_url:
         print(f"\n✅ 발행 완료! → {post_url}")
 
-        # 발행 완료 표시
-        target["published"] = True
-        target["post_url"] = post_url
-        target["published_at"] = now_kst.strftime("%Y-%m-%d %H:%M")
-
-        # JSON 파일 저장 (GitHub Actions가 커밋할 수 있도록)
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"💾 today_keywords.json 업데이트 완료 (published: true)")
+        # JSON 파일 저장 (자동 발행 모드만, 수동 모드는 스킵)
+        if json_path:
+            target["published"] = True
+            target["post_url"] = post_url
+            target["published_at"] = now_kst.strftime("%Y-%m-%d %H:%M")
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            print(f"💾 today_keywords.json 업데이트 완료 (published: true)")
+        else:
+            print(f"📝 수동 발행 모드 - today_keywords.json 업데이트 생략")
 
         # used_main_keywords.txt 저장 (60일 중복 방지)
         used_main_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "used_main_keywords.txt")
