@@ -380,6 +380,44 @@ def search_naver_news(keyword):
         return ""
 
 
+def extract_price_info(news_text):
+    """뉴스 텍스트에서 가격/수치 정보 자동 추출"""
+    import re
+    if not news_text:
+        return ""
+
+    patterns = [
+        r'[\d,]+(?:\.\d+)?만\s*원',      # 73만원, 1,350만원
+        r'[\d,]+(?:\.\d+)?억\s*원',      # 5억원
+        r'[\d,]+(?:\.\d+)?\s*원',        # 1,350원
+        r'[\d,]+(?:\.\d+)?달러',         # 1,350달러
+        r'[\d,]+(?:\.\d+)?%',            # 3.5%
+        r'[\d,]+(?:\.\d+)?배',           # 2.3배
+        r'[\d,]+(?:\.\d+)?배\s*증가',    # 2배 증가
+        r'\d+년\s*\d+월',                # 2026년 8월
+    ]
+
+    found = []
+    for line in news_text.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        for pat in patterns:
+            matches = re.findall(pat, line)
+            if matches:
+                # 해당 줄을 컨텍스트로 포함 (너무 길면 앞 60자만)
+                short_line = line[:80] if len(line) > 80 else line
+                entry = f"- {short_line}"
+                if entry not in found:
+                    found.append(entry)
+                break  # 줄당 한 번만
+
+    if not found:
+        return ""
+    return "\n".join(found[:10])  # 최대 10개
+
+
+
 # 장소 관련 키워드 목록
 LOCATION_KEYWORDS = ["맛집", "식당", "카페", "여행", "관광", "숙소", "펜션", "호텔", "명소", "공원", "마트", "시장", "쇼핑"]
 
@@ -473,16 +511,27 @@ def generate_blog_post(keyword):
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
 
+    # 뉴스에서 가격/수치 정보 추출
+    price_info = extract_price_info(news_text)
+
     # 뉴스 정보가 있으면 프롬프트에 포함
     news_section = ""
     if news_text:
+        price_section_text = ""
+        if price_info:
+            price_section_text = f"""
+=== 오늘 실제 가격/수치 (뉴스에서 추출) ===
+{price_info}
+⚠️ 중요: 글에 가격·시세·수치를 쓸 때는 반드시 위 목록에 있는 숫자만 사용할 것.
+위 목록에 없는 가격/수치는 절대 임의로 작성하지 말고, "현재 시세는 직접 검색해 확인하시기 바랍니다"로 대체할 것.
+============================================
+"""
         news_section = f"""
 아래는 오늘 기준 최신 뉴스입니다. 키워드 "{keyword}"와 직접 관련된 내용만 참고하고, 관련 없는 내용은 무시하세요:
 
 === 최신 뉴스 ===
 {news_text}
-=================
-
+================={price_section_text}
 주의: 뉴스 내용이 특정 지역이나 특수한 사례인 경우 글 전체를 그 내용으로 채우지 말고, 전국 독자에게 유용한 일반적인 정보 위주로 작성하세요.
 """
 
@@ -552,6 +601,7 @@ def generate_blog_post(keyword):
 - 표는 반드시 2개 이상 포함
 - 제목 줄 이후 바로 HTML 본문 작성
 - 가격, 날짜, 법령, 정책, 수치 등 시간에 따라 바뀔 수 있는 정보가 있더라도 글 중간에 면책문구를 삽입하지 말 것. 면책문구는 글 맨 마지막(AI 생성 표시 바로 위)에 한 번만 넣음.
+- 가격·시세·이자율 등 수치는 위 뉴스에서 추출된 숫자만 사용할 것. 뉴스에 없는 수치는 절대 임의로 쓰지 말 것.
 - 글 전체 길이는 반드시 2000자 이상 3000자 이하. 너무 짧아도, 너무 길어도 안 됨."""
 
     message = client.messages.create(
