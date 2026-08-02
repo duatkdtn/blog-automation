@@ -370,9 +370,11 @@ def publish_to_blogger(post, content):
 def send_naver_email(post, post_url, content_html):
     """네이버 블로그 복붙용 이메일 발송"""
     # 자격증명을 함수 안에서 직접 로드 (환경변수 우선)
-    gmail_address = os.environ.get("GMAIL_ADDRESS") or GMAIL_ADDRESS
-    gmail_password = os.environ.get("GMAIL_APP_PASSWORD") or GMAIL_APP_PASSWORD
-    email_recipient = os.environ.get("EMAIL_RECIPIENT") or EMAIL_RECIPIENT
+    gmail_address = os.environ.get("GMAIL_ADDRESS") or GMAIL_ADDRESS or ""
+    gmail_password = os.environ.get("GMAIL_APP_PASSWORD") or GMAIL_APP_PASSWORD or ""
+    email_recipient = os.environ.get("EMAIL_RECIPIENT") or EMAIL_RECIPIENT or "duatkdtn@gmail.com"
+    # 빈 문자열 방지 (GitHub Secrets 미설정 시 빈 문자열로 들어옴)
+    email_recipient = email_recipient.strip() or "duatkdtn@gmail.com"
 
     print(f"이메일 발송 시도: {gmail_address} → {email_recipient}")
     if not gmail_address or not gmail_password:
