@@ -1,0 +1,4 @@
+# 자동 append되는 파일들 - 충돌 시 양쪽 내용 모두 합치기
+calc_posts_published.txt merge=union
+used_main_keywords.txt merge=union
+used_policy_keywords.txt merge=union
