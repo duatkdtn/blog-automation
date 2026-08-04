@@ -35,45 +35,27 @@ NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
 
 
 
-# ── 네이버 데이터랩 쇼핑 카테고리 + 세부 키워드 ──
+# ── 쇼핑 AI 카테고리 (4개 고정) ──
 CATEGORIES = [
-    {"name": "화장품/미용", "id": "50000002", "keywords": [
-        "선크림", "토너패드", "쿠션팩트", "마스카라", "세럼", "클렌징폼",
-        "립틴트", "아이크림", "파운데이션", "미스트", "에센스", "립밤", "자외선차단제"
-    ]},
-    {"name": "디지털/가전", "id": "50000003", "keywords": [
-        "무선이어폰", "공기청정기", "로봇청소기", "블루투스스피커", "스마트워치",
-        "전동칫솔", "가습기", "선풍기", "전기면도기", "태블릿", "게이밍마우스", "웹캠"
-    ]},
-    {"name": "가구/인테리어", "id": "50000004", "keywords": [
-        "식탁의자", "수납장", "커튼", "카펫", "조명", "책상", "소파",
-        "선반", "화분", "무드등", "방향제", "침구세트", "벽시계"
-    ]},
-    {"name": "식품", "id": "50000005", "keywords": [
-        "단백질쉐이크", "견과류", "홍삼", "유산균", "냉동식품", "즉석밥",
-        "커피믹스", "비타민", "오메가3", "콜라겐", "프로틴바", "그래놀라"
-    ]},
-    {"name": "스포츠/레저", "id": "50000006", "keywords": [
-        "등산스틱", "요가매트", "헬스글러브", "수영복", "자전거헬멧",
-        "등산화", "골프장갑", "캠핑의자", "낚시대", "배드민턴라켓", "폼롤러", "점프줄"
-    ]},
-    {"name": "생활/건강", "id": "50000007", "keywords": [
-        "안마기", "칫솔", "핸드크림", "발열내복", "압박스타킹",
-        "체중계", "혈압계", "발마사지기", "족욕기", "허리보호대", "무릎보호대", "냉찜질팩"
-    ]},
-    {"name": "여가/생활편의", "id": "50000008", "keywords": [
-        "여행가방", "우산", "보조배터리", "텀블러", "에코백",
-        "파우치", "독서대", "자동차방향제", "차량용충전기", "접이식테이블", "캐리어"
-    ]},
-    {"name": "출산/육아", "id": "50000009", "keywords": [
-        "기저귀", "아기물티슈", "유아매트", "아기띠", "이유식",
-        "아기욕조", "장난감", "아기침대", "젖병", "유모차", "아기로션", "치발기"
-    ]},
-    {"name": "도서", "id": "50000010", "keywords": [
-        "자기계발서", "소설", "경제경영서", "어린이책", "영어원서",
-        "역사책", "요리책", "그림책", "수험서", "에세이", "만화책"
-    ]},
+    {"name": "디지털/가전",   "id": "50000003"},
+    {"name": "가구/인테리어", "id": "50000004"},
+    {"name": "식품",         "id": "50000005"},
+    {"name": "출산/육아",    "id": "50000009"},
 ]
+
+# ── 시즌 키워드 (월별 자동 적용) ──
+def get_season_keyword():
+    month = datetime.now().month
+    season_map = {
+        (3, 4, 5):   ["봄청소용품", "입학선물", "미세먼지마스크", "봄이불"],
+        (6, 7, 8):   ["선풍기", "냉풍기", "물놀이용품", "냉감침구"],
+        (9, 10, 11): ["전기장판", "핫팩", "추석선물세트", "가을이불"],
+        (12, 1, 2):  ["크리스마스선물", "가습기", "방한용품", "전기방석"],
+    }
+    for months, keywords in season_map.items():
+        if month in months:
+            return random.choice(keywords)
+    return "인기상품"
 
 NAVER_HEADERS = lambda: {
     "X-Naver-Client-Id":     NAVER_CLIENT_ID,
@@ -195,26 +177,14 @@ _last_keyword_info = {"keyword": None, "rank": None, "source": "fallback ⚠️"
 
 def get_top_product(category):
     """
-    키워드 선택 순서:
-      1순위: DataLab 인기 키워드 TOP 10 중 랜덤
-      2순위(fallback): 하드코딩 keywords 중 랜덤
-    → 네이버 쇼핑 검색 → 20개 수집 → reviewCount 기준 상위 반환
+    카테고리명으로 네이버 쇼핑 검색 → sim(인기순) 정렬 → 상품 반환
+    DataLab 키워드 크롤링 없이 안정적으로 동작
     반환: list of product dict
     """
-    # 키워드 결정
     global _last_keyword_info
-    datalab_kws = get_trending_keywords_from_datalab(category)
-    if datalab_kws:
-        idx = random.randint(0, min(4, len(datalab_kws)-1))
-        query = datalab_kws[idx]
-        _last_keyword_info = {"keyword": query, "rank": idx + 1, "source": "DataLab ✅"}
-    else:
-        fallback_kws = category.get("keywords", [category["name"]])
-        query = random.choice(fallback_kws)
-        _last_keyword_info = {"keyword": query, "rank": None, "source": "fallback ⚠️"}
-        print(f"   🔀 Fallback 키워드: {query}")
-
-    print(f"   🔍 검색 키워드: {query}")
+    query = category["name"]
+    _last_keyword_info = {"keyword": query, "rank": None, "source": "카테고리 직접검색 ✅"}
+    print(f"   🔍 검색: {query} (인기순)")
 
     try:
         res = requests.get(
@@ -223,7 +193,7 @@ def get_top_product(category):
                 "X-Naver-Client-Id":     NAVER_CLIENT_ID,
                 "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
             },
-            params={"query": query, "display": 20, "sort": "sim"},
+            params={"query": query, "display": 30, "sort": "sim"},
             timeout=10,
         )
         res.raise_for_status()
@@ -232,13 +202,6 @@ def get_top_product(category):
         # HTML 태그 제거
         for item in items:
             item["title"] = re.sub(r"<[^>]+>", "", item.get("title", ""))
-
-        # 네이버 쇼핑 기본 API는 reviewCount 미제공
-        # → 정확도(sim) 상위 10개를 섞어서 반환: 실행마다 다른 상품 선택
-        if len(items) > 10:
-            pool = items[:10]
-            random.shuffle(pool)
-            items = pool + items[10:]
 
         return items
 
@@ -266,8 +229,11 @@ def save_run_today():
         f.write(str(date.today()))
 
 def load_published_ids():
+    """30일 이내 발행된 상품 ID만 반환 (30일 지나면 다시 추천 가능)"""
     if not os.path.exists(PUBLISHED_FILE):
         return set()
+    from datetime import timedelta as _td
+    cutoff = (datetime.now() - _td(days=30)).strftime("%Y-%m-%d")
     ids = set()
     with open(PUBLISHED_FILE, "r", encoding="utf-8") as f:
         for line in f:
@@ -275,8 +241,12 @@ def load_published_ids():
             if not line or line.startswith("#"):
                 continue
             parts = line.split("|")
-            if parts:
-                ids.add(parts[0].strip())
+            if len(parts) >= 3:
+                date_str = parts[2].strip()
+                if date_str >= cutoff:   # 30일 이내만 중복 처리
+                    ids.add(parts[0].strip())
+            elif parts:
+                ids.add(parts[0].strip())  # 날짜 없는 기존 항목은 유지
     return ids
 
 
@@ -337,60 +307,72 @@ def find_new_product():
     return None, None, None
 
 
-def find_new_products(count=9):
+def find_new_products(count=5):
     """
-    여러 카테고리에서 미발행 상품 최대 count개 반환
-    반환: list of (category, product, bc_product)
+    4개 카테고리 각 1개 + 시즌 상품 1개 = 총 5개 반환
+    반환: list of (category, product, bc_product, kw_info)
     """
     published_ids = load_published_ids()
-    print(f"📋 발행된 상품 수: {len(published_ids)}개")
-
-    trending = get_trending_category()
-    category_order = ([trending] if trending else []) + \
-                     [c for c in CATEGORIES if not trending or c["id"] != trending["id"]]
+    print(f"📋 발행된 상품 수(30일 이내): {len(published_ids)}개")
 
     results = []
-    used_ids = set(published_ids)  # 이번 실행 중 선택된 것도 중복 방지
+    used_ids = set(published_ids)
 
-    for category in category_order:
-        if len(results) >= count:
-            break
-
-        print(f"\n🔍 [{len(results)+1}/{count}] 카테고리: {category['name']}")
+    # 1~4번: 고정 카테고리 각 1개
+    for category in CATEGORIES:
+        print(f"\n🔍 [{len(results)+1}/5] 카테고리: {category['name']}")
         products = get_top_product(category)
 
-        new_products = []
         for product in products:
             pid = str(product.get("productId", ""))
-            if pid and pid not in used_ids:
-                new_products.append(product)
-            else:
-                print(f"   └ 스킵: {product.get('title','')[:20]}")
+            if not pid or pid in used_ids:
+                continue
 
-        if not new_products:
-            print("   └ 미발행 상품 없음, 다음 카테고리로")
-            continue
+            selected_product = product
+            selected_bc = None
+            if NAVER_COOKIE:
+                bc_p, bc_i = find_best_brandconnect([product])
+                if bc_p:
+                    selected_product, selected_bc = bc_p, bc_i
 
-        # 브랜드커넥트 우선
-        selected_product = None
-        selected_bc = None
+            used_ids.add(str(selected_product.get("productId", pid)))
+            kw_info = dict(_last_keyword_info)
+            results.append((category, selected_product, selected_bc, kw_info))
+            print(f"   ✅ 선택: {selected_product.get('title','')[:30]}")
+            break
+        else:
+            print(f"   ⚠️ 미발행 상품 없음")
 
-        if NAVER_COOKIE:
-            print(f"   └ 브랜드커넥트 검색 중...")
-            bc_product, bc_info = find_best_brandconnect(new_products)
-            if bc_product:
-                selected_product = bc_product
-                selected_bc = bc_info
-                pid = str(selected_product.get("productId", ""))
-                print(f"   ✅ 브랜드커넥트 선택: {selected_product.get('title','')[:25]}")
-
-        if not selected_product:
-            selected_product = new_products[0]
-            pid = str(selected_product.get("productId", ""))
-            print(f"   ✅ 일반 상품 선택: {selected_product.get('title','')[:25]}")
-
-        used_ids.add(pid)
-        results.append((category, selected_product, selected_bc))
+    # 5번: 시즌 상품
+    season_kw = get_season_keyword()
+    season_cat = {"name": f"시즌({season_kw})", "id": "season"}
+    print(f"\n🌿 [5/5] 시즌 상품: '{season_kw}'")
+    try:
+        res = requests.get(
+            "https://openapi.naver.com/v1/search/shop.json",
+            headers={
+                "X-Naver-Client-Id":     NAVER_CLIENT_ID,
+                "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+            },
+            params={"query": season_kw, "display": 20, "sort": "sim"},
+            timeout=10,
+        )
+        res.raise_for_status()
+        season_products = res.json().get("items", [])
+        for item in season_products:
+            item["title"] = re.sub(r"<[^>]+>", "", item.get("title", ""))
+        for product in season_products:
+            pid = str(product.get("productId", ""))
+            if not pid or pid in used_ids:
+                continue
+            used_ids.add(pid)
+            _last_keyword_info.update({"keyword": season_kw, "rank": None, "source": "시즌 ✅"})
+            kw_info = dict(_last_keyword_info)
+            results.append((season_cat, product, None, kw_info))
+            print(f"   ✅ 시즌 상품: {product.get('title','')[:30]}")
+            break
+    except Exception as e:
+        print(f"   ⚠️ 시즌 상품 검색 실패: {e}")
 
     print(f"\n📦 총 {len(results)}개 상품 선택 완료")
     return results
@@ -761,89 +743,40 @@ def send_shopping_email_bulk(items):
 
 # ── 메인 ──────────────────────────────────────────
 
-def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
+def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
                       log_fn=print, force=False):
     """
     GUI / 자동실행 모두에서 호출 가능한 핵심 함수
-    category_ids : None이면 전체, 리스트면 해당 id만 사용
-    count        : 상품 개수 (1~10)
+    count           : 상품 개수 (기본 5)
     send_email_flag : False면 이메일 발송 생략
-    log_fn       : GUI 로그창 콜백 (기본=print)
-    force        : True면 오늘 이미 실행됐어도 강제 실행
-    반환: {"success": bool, "count": int, "datalab_used": bool}
+    log_fn          : GUI 로그창 콜백 (기본=print)
+    force           : True면 오늘 이미 실행됐어도 강제 실행
+    반환: {"success": bool, "count": int}
     """
     from datetime import datetime as _dt, timezone
     _tz = timezone(timedelta(hours=9))
 
     if not force and check_already_ran_today():
         log_fn("⏭️  오늘 이미 실행됨. 건너뜀 (강제실행: force=True)")
-        return {"success": False, "count": 0, "datalab_used": False, "skipped": True}
+        return {"success": False, "count": 0, "skipped": True}
 
     log_fn("=" * 50)
     log_fn(f"🛒 쇼핑AI 시작  [{_dt.now(_tz).strftime('%H:%M')}]")
     log_fn("=" * 50)
 
-    # 카테고리 필터
-    cats = CATEGORIES
-    if category_ids:
-        cats = [c for c in CATEGORIES if c["id"] in category_ids]
-    if not cats:
-        cats = CATEGORIES
-
-    # DataLab 상태 추적
-    datalab_used = False
-    _orig_datalab = get_trending_keywords_from_datalab
-
-    def _tracked_datalab(cat):
-        nonlocal datalab_used
-        result = _orig_datalab(cat)
-        if result:
-            datalab_used = True
-        return result
-
-    # 임시로 패치
-    import shopping_automation as _self
-    _self.get_trending_keywords_from_datalab = _tracked_datalab
-
-    # 상품 선택 (카테고리 필터 적용)
-    selected = []
-    _tried = set()
-    for cat in cats * 3:  # 부족하면 반복
-        if len(selected) >= count:
-            break
-        if cat["name"] in _tried:
-            continue
-        products = get_top_product(cat)
-        if not products:
-            continue
-        published = load_published_ids()
-        new_products = [p for p in products if str(p.get("productId","")) not in published]
-        if not new_products:
-            _tried.add(cat["name"])
-            continue
-        selected_product = new_products[0]
-        selected_bc = None
-        if NAVER_COOKIE:
-            bc_p, bc_i = find_best_brandconnect(new_products)
-            if bc_p:
-                selected_product, selected_bc = bc_p, bc_i
-        kw_info = dict(_last_keyword_info)  # 상품 선택 시점의 키워드 정보 복사
-        selected.append((cat, selected_product, selected_bc, kw_info))
-        _tried.add(cat["name"])
-
-    _self.get_trending_keywords_from_datalab = _orig_datalab  # 패치 복구
+    selected = find_new_products()
 
     if not selected:
         log_fn("❌ 발행할 상품 없음.")
-        return {"success": False, "count": 0, "datalab_used": datalab_used}
+        return {"success": False, "count": 0}
 
     email_items = []
-    pub_times = ["06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"]
+    pub_times = ["06:00", "09:00", "12:00", "15:00", "18:00"]
 
     for i, (category, product, bc_product, kw_info) in enumerate(selected):
         log_fn(f"\n[{i+1}/{len(selected)}] {product.get('title','')[:40]}")
-        product_id   = str(product.get("productId",""))
-        product_name = product.get("title","")
+        product_id   = str(product.get("productId", ""))
+        product_name = product.get("title", "")
 
         log_fn("  🖼️ 이미지 수집 중...")
         images = get_product_images(product)
@@ -857,7 +790,7 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
         if product_id:
             save_published_product(product_id, product_name)
 
-        pub_time_str = pub_times[i] if i < len(pub_times) else f"{6+i*2:02d}:00"
+        pub_time_str = pub_times[i] if i < len(pub_times) else f"{6+i*3:02d}:00"
         email_items.append({
             "category": category, "product": product, "bc_product": bc_product,
             "images": images, "seo_titles": seo_titles, "post_body": post_body,
@@ -876,11 +809,7 @@ def run_shopping_task(category_ids=None, count=9, send_email_flag=True,
     else:
         log_fn("❌ 처리된 상품 없음.")
 
-    datalab_status = "DataLab ✅" if datalab_used else "fallback ⚠️"
-    log_fn(f"📊 키워드 소스: {datalab_status}")
-
-    return {"success": bool(email_items), "count": len(email_items),
-            "datalab_used": datalab_used}
+    return {"success": bool(email_items), "count": len(email_items)}
 
 
 def main():

@@ -1,0 +1,32 @@
+name: 쇼핑AI 이메일 자동발송
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 매일 KST 08:00 (UTC 23:00 전날)
+  workflow_dispatch:         # 수동 실행 가능
+
+jobs:
+  shopping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Python 설정
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: pip install anthropic requests
+
+      - name: 쇼핑AI 실행
+        env:
+          CLAUDE_API_KEY:       ${{ secrets.CLAUDE_API_KEY }}
+          NAVER_CLIENT_ID:      ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET:  ${{ secrets.NAVER_CLIENT_SECRET }}
+          NAVER_COOKIE:         ${{ secrets.NAVER_COOKIE }}
+          NAVER_SPACE_ID:       ${{ secrets.NAVER_SPACE_ID }}
+          GMAIL_ADDRESS:        ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT:      ${{ secrets.EMAIL_RECIPIENT }}
+        run: python shopping_automation.py
