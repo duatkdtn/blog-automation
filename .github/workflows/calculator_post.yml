@@ -1,8 +1,9 @@
 name: 계산기 포스팅 하루 1개 자동발행
 
 on:
-  schedule:
-    - cron: '0 2 * * *'   # KST 11:00 (매일 오전 11시)
+  # ⏸️ 블로그 차단으로 인해 일시정지 (2026.08.05)
+  # schedule:
+  #   - cron: '0 2 * * *'   # KST 11:00 (매일 오전 11시)
   workflow_dispatch:       # 수동 실행 가능
 
 permissions:
