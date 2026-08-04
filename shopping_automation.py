@@ -182,7 +182,7 @@ def get_top_product(category):
     반환: list of product dict
     """
     global _last_keyword_info
-    query = category["name"]
+    query = category["name"].replace("/", " ")  # 슬래시 → 공백 (API 404 방지)
     _last_keyword_info = {"keyword": query, "rank": None, "source": "카테고리 직접검색 ✅"}
     print(f"   🔍 검색: {query} (인기순)")
 
@@ -193,7 +193,7 @@ def get_top_product(category):
                 "X-Naver-Client-Id":     NAVER_CLIENT_ID,
                 "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
             },
-            params={"query": query, "display": 30, "sort": "sim"},
+            params={"query": query, "display": 20, "sort": "sim"},
             timeout=10,
         )
         res.raise_for_status()
