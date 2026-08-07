@@ -62,7 +62,7 @@ except ImportError:
     EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT", "duatkdtn@gmail.com")
 
 # 자동 발행 시간 (0시부터 3시간 간격, 8개)
-PUBLISH_TIMES = ["06:00", "09:00", "15:00", "20:00"]
+PUBLISH_TIMES = ["05:00"]
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -200,7 +200,7 @@ def extract_recent_categories(used_main_raw):
 
 
 def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=None, overused_categories=None):
-    """Claude로 키워드 4개 생성 + 베스트 2 선정 (구글 기반)"""
+    """Claude로 키워드 4개 생성 + 베스트 1 선정 (구글 기반)"""
 
     today = now_kst().strftime("%Y년 %m월 %d일")
     google_context = "\n".join(google_trends) if google_trends else "없음"
@@ -250,7 +250,7 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 - 구글 자동완성에 실제로 뜨는 형태의 키워드
 
 [1단계] 구글 기반 블로그 키워드 4개 추천 (카테고리 중복 최소화 - 4개 모두 반드시 다른 카테고리)
-[2단계] 베스트 2개 선정 (롱테일 또는 행동형 우선, 반드시 서로 다른 카테고리에서 선정)
+[2단계] 베스트 1개 선정 (롱테일 또는 행동형 우선, 그날 가장 이슈인 키워드 1개)
 
 아래 형식으로 정확히 출력해주세요:
 
@@ -266,9 +266,8 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 ---키워드3---
 ---키워드4---
 
-===베스트2===
+===베스트1===
 베스트1: [키워드번호]
-베스트2: [키워드번호]
 """
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
@@ -387,13 +386,13 @@ def generate_naver_title(keyword, related_keywords, naver_top_titles):
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 def parse_keywords_and_best6(raw_text):
-    """전체 4개 파싱 + 베스트 2 선정"""
+    """전체 4개 파싱 + 베스트 1 선정"""
     keywords = []
 
     if "===전체키워드===" in raw_text:
         kw_section = raw_text.split("===전체키워드===")[1]
-        if "===베스트2===" in kw_section:
-            kw_section = kw_section.split("===베스트2===")[0]
+        if "===베스트1===" in kw_section:
+            kw_section = kw_section.split("===베스트1===")[0]
     else:
         kw_section = raw_text
 
@@ -422,8 +421,8 @@ def parse_keywords_and_best6(raw_text):
     keywords = keywords[:10]
 
     best6_indices = []
-    if "===베스트2===" in raw_text:
-        best_section = raw_text.split("===베스트2===")[1]
+    if "===베스트1===" in raw_text:
+        best_section = raw_text.split("===베스트1===")[1]
         for line in best_section.strip().split("\n"):
             line = line.strip()
             if line.startswith("베스트"):
@@ -434,10 +433,10 @@ def parse_keywords_and_best6(raw_text):
                 except:
                     pass
 
-    if len(best6_indices) < 2:
-        best6_indices = list(range(min(2, len(keywords))))
+    if len(best6_indices) < 1:
+        best6_indices = list(range(min(1, len(keywords))))
 
-    best6 = [keywords[i] for i in best6_indices[:2]]
+    best6 = [keywords[i] for i in best6_indices[:1]]
 
     # 경쟁강도 필터: 높음 제외, 낮음 우선 정렬
     def competition_score(kw):
@@ -450,9 +449,9 @@ def parse_keywords_and_best6(raw_text):
     # 높음 경쟁강도 키워드 제외 (낮음+중간만 유지, 최소 3개 보장)
     filtered = [kw for kw in best6_sorted if competition_score(kw) < 2]
     if len(filtered) >= 3:
-        best6 = filtered[:2]
+        best6 = filtered[:1]
     else:
-        best6 = best6_sorted[:2]  # 필터 후 3개 미만이면 그냥 정렬만
+        best6 = best6_sorted[:1]  # 필터 후 3개 미만이면 그냥 정렬만
 
     print(f"   📊 경쟁강도 필터 적용: {[kw.get('keyword','') + '(' + kw.get('competition','?') + ')' for kw in best6]}")
 
@@ -812,35 +811,19 @@ def main():
     # 5. 파싱
     keywords, best6 = parse_keywords_and_best6(raw_text)
     print(f"   → Claude 키워드 {len(keywords)}개 생성")
-    print(f"   → 베스트 2개 선정: {[kw['keyword'] for kw in best6]}")
+    print(f"   → 베스트 1개 선정: {[kw['keyword'] for kw in best6]}")
 
     # 6. 블로그스팟용 + 네이버용 제목 각각 생성
     print("\n🔍 제목 생성 중 (블로그스팟용 + 네이버용)...")
     keywords, best6 = enrich_keywords_with_titles(keywords, best6)
 
-    # 7. 정부지원금 키워드 → 1번째 슬롯(06:00)
-    print("\n🏛️ 정부지원금 키워드 생성 중...")
-    gov_kw = generate_gov_keyword()
-    if gov_kw:
-        best6.insert(0, gov_kw)  # 1번째 슬롯(06:00)
-        if not any(kw.get("keyword") == gov_kw["keyword"] for kw in keywords):
-            keywords.append(gov_kw)
-
-    # 8. 정부정책자금 키워드 → 2번째 슬롯(09:00)
-    print("\n💰 정부정책자금 키워드 생성 중...")
-    policy_kw = generate_policy_keyword()
-    if policy_kw:
-        best6.insert(1, policy_kw)  # 2번째 슬롯(09:00)
-        if not any(kw.get("keyword") == policy_kw["keyword"] for kw in keywords):
-            keywords.append(policy_kw)
-
-    # 9. JSON 저장
+    # 7. JSON 저장
     print("\n💾 오늘의 발행 스케줄 저장 중...")
     save_today_keywords(keywords, best6)
 
-    # 10. 이메일 발송
+    # 8. 이메일 발송
     html = build_email_html(keywords, best6, today_str)
-    subject = f"📊 [{today_short}] 키워드 추천 6개 + 오늘 자동발행 4개"
+    subject = f"📊 [{today_short}] 오늘의 이슈 키워드 + 자동발행 1개"
     print(f"\n📧 이메일 발송 중... → {EMAIL_RECIPIENT}")
     send_email(subject, html)
 
