@@ -351,7 +351,7 @@ def send_shopping_email_bulk(items):
         except:
             price_fmt = price or "가격 미정"
 
-        # 본문에 실제 쿠팡 링크 삽입
+        # 본문에 실제 쿠팡 링크 삽입 (textarea용 - raw URL 포함)
         body_with_link = post_body
         if link:
             body_with_link = body_with_link.replace(
@@ -362,9 +362,20 @@ def send_shopping_email_bulk(items):
                 f"👇 오늘 최저가 확인하기\n{link}"
             )
 
+        # HTML 이메일 본문용 - "현재 가격 확인하기"를 하이퍼링크로, raw URL 텍스트 숨김
+        body_for_html = post_body
+        if link:
+            body_for_html = body_for_html.replace(
+                "👇 현재 가격 확인하기",
+                f'<a href="{link}" style="color:#e8274b;font-weight:bold;text-decoration:underline">👇 현재 가격 확인하기</a>'
+            ).replace(
+                "👇 오늘 최저가 확인하기",
+                f'<a href="{link}" style="color:#e8274b;font-weight:bold;text-decoration:underline">👇 오늘 최저가 확인하기</a>'
+            )
+
         body_html = "".join(
             f"<div style='margin:0 0 12px 0'>{line}</div>"
-            for line in body_with_link.split("\n") if line.strip()
+            for line in body_for_html.split("\n") if line.strip()
         )
         title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
         titles_html = "".join(
