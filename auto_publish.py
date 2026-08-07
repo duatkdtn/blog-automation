@@ -486,7 +486,7 @@ def main():
 
     # 3. 이미지 생성
     print(f"\n🎨 이미지 생성 중...")
-    images = generate_images_with_vertex(keyword, count=3)
+    images = generate_images_with_vertex(keyword, count=1)
     thumbnail = generate_thumbnail_with_vertex(keyword, final_title)
 
     # 4. 이미지 삽입
