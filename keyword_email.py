@@ -200,7 +200,7 @@ def extract_recent_categories(used_main_raw):
 
 
 def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=None, overused_categories=None):
-    """Claude로 키워드 4개 생성 + 베스트 1 선정 (구글 기반)"""
+    """Claude로 키워드 1개 생성 (구글 기반)"""
 
     today = now_kst().strftime("%Y년 %m월 %d일")
     google_context = "\n".join(google_trends) if google_trends else "없음"
@@ -234,10 +234,7 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 플랫폼: 블로그스팟 (구글 검색 노출 최적화)
 타겟 독자: 30~70대 한국인 (주 타겟: 40~70대 — 건강, 노후준비, 연금, 정부혜택, 부동산, 생활정보에 특히 관심 높음)
 
-유형별 구성 (반드시 지킬 것):
-- 롱테일 3개: 구글에서 "~비용", "~방법", "~후기", "~얼마" 형태로 검색되는 정보형 키워드
-- 행동형 2개: "~하는 법", "~추천", "~비교" 등 해결책을 찾는 키워드
-- 정보형 1개: "~뜻", "~이란", "~차이점" 등 개념 설명 키워드
+유형: 롱테일 또는 행동형 우선
 ※ 숏테일 키워드(단어 1~2개) 절대 금지 - 대형 사이트와 경쟁 불가
 
 핵심 전략:
@@ -245,12 +242,11 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 - 반드시 하위 세분화 키워드 (상위 주제 절대 금지)
   * 금지: "보험", "건강", "재테크" (너무 광범위)
   * 권장: "실비보험 청구 거절 이유 2026", "40대 종합건강검진 비용 차이", "직장인 ISA계좌 단점"
-- 카테고리 다양성 필수: 4개 중 1개만 금융/대출/보험 관련, 나머지 3개는 건강, 부동산, 생활정보, 취업, 여행, 음식, IT, 반려동물, 노후/연금/퇴직 등에서 서로 다른 카테고리로 선정 (같은 카테고리 2개 이상 절대 금지)
+- 금융/대출/보험, 건강, 부동산, 생활정보, 취업, 여행, 음식, IT, 반려동물, 노후/연금/퇴직 중 그날 가장 이슈인 카테고리 1개 선정
 - 연도/나이/상황 붙여 세분화: "2026", "30대", "직장인", "초보자", "비용", "후기"
 - 구글 자동완성에 실제로 뜨는 형태의 키워드
 
-[1단계] 구글 기반 블로그 키워드 4개 추천 (카테고리 중복 최소화 - 4개 모두 반드시 다른 카테고리)
-[2단계] 베스트 1개 선정 (롱테일 또는 행동형 우선, 그날 가장 이슈인 키워드 1개)
+그날 가장 이슈인 키워드 1개를 선정하세요.
 
 아래 형식으로 정확히 출력해주세요:
 
@@ -262,12 +258,9 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
 경쟁강도: [낮음/중간/높음]
 광고단가: [낮음/중간/높음]
 이유: [선정 이유 한 줄]
----키워드2---
----키워드3---
----키워드4---
 
 ===베스트1===
-베스트1: [키워드번호]
+베스트1: 1
 """
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
@@ -276,7 +269,7 @@ def generate_keywords_with_claude(google_trends, naver_news, used_main_keywords=
         try:
             response = client.messages.create(
                 model=CLAUDE_MODEL,
-                max_tokens=1500,
+                max_tokens=600,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.content[0].text
@@ -804,7 +797,7 @@ def main():
     else:
         print("   ✅ 카테고리 편중 없음")
 
-    # 4. Claude로 키워드 4개 + 베스트 2 생성
+    # 4. Claude로 키워드 1개 생성
     print("\n🤖 Claude가 키워드 분석 중...")
     raw_text = generate_keywords_with_claude(google_trends, naver_news, recent_used_main, overused_cats)
 
