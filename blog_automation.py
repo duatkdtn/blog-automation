@@ -341,6 +341,58 @@ def get_pexels_images(keyword, count=4):
         return []
 
 
+def search_google_latest(keyword):
+    """Google Custom Search API로 최신 정책/정보 검색"""
+    try:
+        api_key = GOOGLE_SEARCH_API_KEY or os.environ.get('GOOGLE_SEARCH_API_KEY', '')
+        cx = GOOGLE_SEARCH_ENGINE_ID or os.environ.get('GOOGLE_SEARCH_ENGINE_ID', '')
+        if not api_key or not cx:
+            return ""
+
+        print(f"\n🔎 Google 최신 정보 검색 중...")
+
+        url = "https://www.googleapis.com/customsearch/v1"
+
+        # 1차: 공식 사이트(gov.kr) 우선 검색
+        params = {
+            "key": api_key,
+            "cx": cx,
+            "q": f"{keyword} 2026 site:gov.kr OR site:bokjiro.go.kr OR site:nhis.or.kr OR site:work24.go.kr OR site:moel.go.kr",
+            "num": 5,
+            "lr": "lang_ko"
+        }
+        response = requests.get(url, params=params, timeout=10)
+        data = response.json()
+        items = data.get("items", [])
+
+        # 공식 결과 없으면 일반 검색
+        if not items:
+            params["q"] = f"{keyword} 2026 최신 정보 조건 금액"
+            response = requests.get(url, params=params, timeout=10)
+            data = response.json()
+            items = data.get("items", [])
+
+        if not items:
+            print("   ⚠️ Google 검색 결과 없음")
+            return ""
+
+        info_list = []
+        for item in items[:5]:
+            title = item.get("title", "")
+            snippet = item.get("snippet", "")
+            link = item.get("link", "")
+            if snippet:
+                info_list.append(f"[출처: {title}]\n{snippet}\n(URL: {link})")
+
+        result_text = "\n\n".join(info_list)
+        print(f"   ✅ Google 검색 완료 ({len(items)}개 결과)")
+        return result_text
+
+    except Exception as e:
+        print(f"   ⚠️ Google 검색 실패: {e}")
+        return ""
+
+
 def search_naver_news(keyword):
     """네이버 뉴스 검색으로 최신 정보 수집"""
     print(f"\n🔍 최신 뉴스 검색 중...")
@@ -501,7 +553,10 @@ def generate_blog_post(keyword):
     from datetime import datetime
     today = datetime.now().strftime("%Y년 %m월 %d일")
 
-    # 최신 뉴스 수집
+    # Google Custom Search로 최신 공식 정보 수집 (우선순위 1)
+    tavily_text = search_google_latest(keyword)
+
+    # 최신 뉴스 수집 (우선순위 2)
     news_text = search_naver_news(keyword)
 
     # 맛집/여행/지역 키워드면 실제 장소 정보 수집
@@ -513,6 +568,18 @@ def generate_blog_post(keyword):
 
     # 뉴스에서 가격/수치 정보 추출
     price_info = extract_price_info(news_text)
+
+    # Tavily 최신 정보가 있으면 프롬프트에 포함
+    tavily_section = ""
+    if tavily_text:
+        tavily_section = f"""
+⚠️ 아래는 공식 사이트에서 수집한 2026년 최신 정보입니다. 반드시 이 내용을 우선 참고하여 정확한 수치·조건·날짜를 글에 반영하세요.
+임의로 만든 수치나 예전 기준 정보를 쓰지 마세요.
+
+=== 최신 공식 정보 (Tavily 검색) ===
+{tavily_text}
+=====================================
+"""
 
     # 뉴스 정보가 있으면 프롬프트에 포함
     news_section = ""
@@ -544,7 +611,7 @@ def generate_blog_post(keyword):
 아래 키워드로 구글 상위노출 + 클릭률 높은 수익형 블로그 글을 작성해주세요.
 
 오늘 날짜: {today}
-{news_section}{place_section}
+{tavily_section}{news_section}{place_section}
 키워드: {keyword}
 글 길이: 반드시 2000자 이상 3000자 이하로 작성할 것. 각 섹션을 충분히 풍부하게 채워야 함. 2000자 미만이거나 3000자 초과하면 안 됨.
 톤: 친근하고 따뜻한 말투. "저도 처음엔 몰랐는데요~", "직접 해보니까요~" 같은 경험담 문체. 독자에게 직접 말하듯 자연스럽게.
@@ -558,6 +625,7 @@ def generate_blog_post(keyword):
 
 [1. 제목]
 첫 줄에 반드시 "제목: [제목내용]" 형식으로 작성
+- 키워드를 제목 맨 앞에 배치할 것 (예: "실업급여 신청 방법 – 처음이라도 쉽게 따라하는 4단계")
 
 [2. 도입부] - <p> 태그 3~4개 (충분히 길게)
 - 첫 문장에 반드시 핵심 결론/수치/답변을 바로 제시할 것 (독자가 더 이상 다른 글 찾을 필요 없게)
@@ -583,16 +651,18 @@ def generate_blog_post(keyword):
 
 [5. FAQ] - 자주 묻는 질문 5개 (기존 3개에서 늘림)
 <h2>자주 묻는 질문</h2>
-<h3>Q: 질문</h3><p>A: 상세한 답변 (2~3문장 이상)</p>
+<h3>Q: 질문</h3><h4>A: 상세한 답변 (2~3문장 이상)</h4>
 
 [6. 결론 + 행동 유도] - <p> 태그 3~4개
 - 핵심 내용 요약 (2~3줄)
 - 독자에게 도움이 됐으면 하는 따뜻한 마무리 문장
-- 다른 글로 유도하는 모든 문구 절대 금지: "함께 읽으면 좋은 글", "비슷한 주제로 정리해뒀으니", "이 글도 읽어보세요", "다음 글에서", "관련 글은" 등 형태 불문 전부 금지 (내부링크는 코드에서 자동 삽입됨)
+- 관련 글 링크 1개만 자연스럽게 유도 가능: "이 글과 함께 읽으면 더 도움이 될 수 있어요" 형태로 키워드만 언급 (실제 URL은 코드에서 자동 삽입됨)
+- "함께 읽으면 좋은 글 목록", "비슷한 주제로 정리해뒀으니", "다음 글에서" 등 복수 나열하는 유도는 금지
 - 댓글/공유 유도만 간단히: "궁금한 점은 댓글로 남겨주세요 :)"
 
 [7. 면책문구 + AI 생성 표시] - 글 맨 마지막에 반드시 포함 (순서 지킬 것)
 <p style="background:#f8f9fa;border-left:3px solid #adb5bd;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.9em;margin-top:30px">※ 본 정보는 작성 시점({today}) 기준이며, 시장 상황·정책 변경 등에 따라 실제 내용과 다를 수 있습니다. 최신 정보는 공식 채널을 통해 반드시 확인하시기 바랍니다.</p>
+<p style="background:#fff8e1;border-left:3px solid #ffc107;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.85em;margin-top:10px">※ 이 글에는 제휴 링크가 포함되어 있을 수 있으며, 이를 통해 소정의 수수료를 받을 수 있습니다. (공정거래위원회 고시에 의한 표시)</p>
 <p style="background:#f1f3f5;border:1px solid #dee2e6;padding:8px 14px;border-radius:6px;color:#adb5bd;font-size:0.78em;margin-top:10px;line-height:1.5">🤖 본 콘텐츠는 AI(인공지능)의 도움을 받아 작성되었습니다. 「AI 생성 콘텐츠 표시에 관한 지침」에 따라 이를 고지하며, 정보의 정확성은 공식 채널을 통해 확인하시기 바랍니다.</p>
 
 === 주의사항 ===
