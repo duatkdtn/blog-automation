@@ -378,16 +378,19 @@ def send_shopping_email_bulk(items):
             for line in body_for_html.split("\n") if line.strip()
         )
         title_lines = [l.strip() for l in seo_titles.strip().split("\n") if l.strip()]
+        _title_pat = re.compile(r"^[1-5][.)\s]+")
+        clean_titles = [_title_pat.sub("", l).strip() for l in title_lines[:5]]
         titles_html = "".join(
-            f'<div style="margin:4px 0;padding:5px 10px;background:#f8f8f8;border-radius:4px;font-size:13px">{j+1}. {re.sub(r"^[1-5][.)\\s]+","",l).strip()}</div>'
-            for j, l in enumerate(title_lines[:5])
+            f'<div style="margin:4px 0;padding:5px 10px;background:#f8f8f8;border-radius:4px;font-size:13px">{j+1}. {t}</div>'
+            for j, t in enumerate(clean_titles)
         )
 
         img_parts = [
             f'<img src="{u}" style="width:calc(50% - 4px);max-height:130px;object-fit:cover;border-radius:6px;display:inline-block;vertical-align:top" alt="상품이미지">'
             for u in images[:4]
         ]
-        img_html = f'<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px">{"".join(img_parts)}</div>' if img_parts else ""
+        img_joined = "".join(img_parts)
+        img_html = f'<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px">{img_joined}</div>' if img_parts else ""
 
         link_html = f'<div style="margin:8px 0"><a href="{link}" style="background:#e8274b;color:white;padding:6px 14px;border-radius:4px;text-decoration:none;font-size:13px;font-weight:bold">🛒 쿠팡 링크 열기</a></div>' if link else ""
 
