@@ -30,4 +30,4 @@ jobs:
           GMAIL_ADDRESS:        ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
           EMAIL_RECIPIENT:      ${{ secrets.EMAIL_RECIPIENT }}
-        run: python shopping_automation.py
+        run: python shopping_brandconnect.py
