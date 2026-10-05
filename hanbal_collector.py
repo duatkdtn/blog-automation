@@ -7,7 +7,12 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import TAVILY_API_KEY
+# GitHub Actions 환경변수 우선, 없으면 config.py에서 로드
+try:
+    from config import TAVILY_API_KEY
+except ImportError:
+    TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
+
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import requests
