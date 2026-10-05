@@ -90,16 +90,16 @@ CATEGORIES = [
 def get_time_window():
     """발송 기준 시각 기준 직전 24시간 창 반환 (한국 시간)"""
     now = datetime.now(KST)
-    # 매일 새벽 5시 발송 기준
     today_5am = now.replace(hour=5, minute=0, second=0, microsecond=0)
-    if now < today_5am:
-        # 아직 오늘 5시 안 됐으면 어제 5시 ~ 오늘 5시
+    if now >= today_5am:
+        # 오늘 5시 이후 실행 → 어제 5시 ~ 오늘 5시 기사 수집
         window_end = today_5am
         window_start = today_5am - timedelta(days=1)
     else:
-        # 오늘 5시 지났으면 오늘 5시 ~ 내일 5시 (다음 발송 기준)
-        window_start = today_5am
-        window_end = today_5am + timedelta(days=1)
+        # 오늘 5시 이전 실행 → 그제 5시 ~ 어제 5시 기사 수집
+        yesterday_5am = today_5am - timedelta(days=1)
+        window_end = yesterday_5am
+        window_start = yesterday_5am - timedelta(days=1)
     return window_start, window_end
 
 
@@ -177,7 +177,7 @@ def collect_news():
 
         for query in cat["queries"]:
             time.sleep(0.5)  # API 호출 간격
-            raw = search_tavily(query, days=1)
+            raw = search_tavily(query, days=2)
 
             for item in raw:
                 url = item.get("url", "")
