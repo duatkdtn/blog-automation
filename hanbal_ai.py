@@ -7,7 +7,12 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import CLAUDE_API_KEY, CLAUDE_MODEL
+# GitHub Actions 환경변수 우선, 없으면 config.py에서 로드
+try:
+    from config import CLAUDE_API_KEY, CLAUDE_MODEL
+except ImportError:
+    CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY", "")
+    CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 import anthropic
 import json
 import re

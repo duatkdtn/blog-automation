@@ -7,7 +7,13 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, EMAIL_RECIPIENT
+# GitHub Actions 환경변수 우선, 없으면 config.py에서 로드
+try:
+    from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, EMAIL_RECIPIENT
+except ImportError:
+    GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+    GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+    EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT", "")
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText

@@ -11,7 +11,13 @@ from hanbal_collector import collect_news
 from hanbal_ai import run_ai, print_summary
 from hanbal_email import send_email, build_html
 
-from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, EMAIL_RECIPIENT
+# GitHub Actions 환경변수 우선, 없으면 config.py에서 로드
+try:
+    from config import GMAIL_ADDRESS, GMAIL_APP_PASSWORD, EMAIL_RECIPIENT
+except ImportError:
+    GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+    GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+    EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT", "")
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import smtplib
