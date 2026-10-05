@@ -68,6 +68,8 @@ def build_html(result):
         facts = item.get("핵심사실", [])
         keywords = item.get("키워드후보", [])
         grade = item.get("블로그적합도", {}).get("등급", "중")
+        grade_score = item.get("블로그적합도", {}).get("점수", "")
+        grade_detail = item.get("블로그적합도", {}).get("항목별점수", {})
         grade_reason = item.get("블로그적합도", {}).get("이유", "")
         source = item.get("출처", "")
         pub_date = item.get("기사날짜", "")
@@ -122,7 +124,7 @@ def build_html(result):
 <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:20px;margin-bottom:16px;border-left:4px solid {grade_color};">
   <div style="display:flex;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
     <span style="background:#eaf4fb;color:#2980b9;padding:3px 10px;border-radius:12px;font-size:13px;font-weight:bold;">{emoji} {cat}</span>
-    <span style="background:{grade_color};color:#fff;padding:3px 8px;border-radius:12px;font-size:12px;">적합도 {grade}</span>
+    <span style="background:{grade_color};color:#fff;padding:3px 8px;border-radius:12px;font-size:12px;">적합도 {grade}{f" ({grade_score}점)" if grade_score else ""}</span>
     {f'<span style="background:#f8f9fa;color:#555;padding:3px 8px;border-radius:12px;font-size:12px;">{confirmed}</span>' if confirmed else ''}
     {dday_html}
     {sensitive_badge}
