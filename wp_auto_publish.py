@@ -69,13 +69,18 @@ def load_top_articles():
         result = json.load(f)
 
     items = result.get("항목", [])
-    top = [
-        i for i in items
-        if i.get("상태") == "선정"
-        and i.get("블로그적합도", {}).get("등급") == "상"
-    ]
-    top.sort(key=lambda x: x.get("블로그적합도", {}).get("점수", 0), reverse=True)
-    return top[:MAX_POSTS]
+    selected = [i for i in items if i.get("상태") == "선정"]
+
+    # 상 등급 우선, 부족하면 중 등급으로 채움
+    top_s = [i for i in selected if i.get("블로그적합도", {}).get("등급") == "상"]
+    top_m = [i for i in selected if i.get("블로그적합도", {}).get("등급") == "중"]
+
+    top_s.sort(key=lambda x: x.get("블로그적합도", {}).get("점수", 0), reverse=True)
+    top_m.sort(key=lambda x: x.get("블로그적합도", {}).get("점수", 0), reverse=True)
+
+    combined = top_s + top_m  # 상 먼저, 그 다음 중
+    print(f"  상 등급: {len(top_s)}개 / 중 등급: {len(top_m)}개 → 최대 {MAX_POSTS}개 발행")
+    return combined[:MAX_POSTS]
 
 
 # ================================================
