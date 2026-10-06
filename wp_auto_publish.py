@@ -412,12 +412,66 @@ def request_google_indexing(post_url):
 
 
 # ================================================
-# 6. 완료 이메일 발송
+# 6. 전날 발행 글 색인 요청
 # ================================================
 
-def send_result_email(results, today_str):
+def request_yesterday_indexing():
+    """어제 WordPress에 발행된 글들을 Google 색인 요청"""
+    yesterday = datetime.now(KST) - timedelta(days=1)
+    after  = yesterday.replace(hour=0,  minute=0,  second=0).strftime("%Y-%m-%dT%H:%M:%S")
+    before = yesterday.replace(hour=23, minute=59, second=59).strftime("%Y-%m-%dT%H:%M:%S")
+
+    print(f"\n[색인 요청] 어제({yesterday.strftime('%Y-%m-%d')}) 발행 글 조회 중...")
+
+    try:
+        res = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            auth=AUTH,
+            params={"after": after, "before": before, "per_page": 20, "status": "publish"},
+            timeout=15,
+        )
+        if res.status_code != 200:
+            print(f"  ❌ 글 목록 조회 실패: {res.status_code}")
+            return []
+
+        posts = res.json()
+        print(f"  어제 발행 글 {len(posts)}개 발견")
+
+        indexed = []
+        for post in posts:
+            url = post.get("link", "")
+            if url:
+                ok = request_google_indexing(url)
+                if ok:
+                    indexed.append(url)
+                time.sleep(0.5)
+
+        return indexed
+    except Exception as e:
+        print(f"  ❌ 오류: {e}")
+        return []
+
+
+# ================================================
+# 7. 완료 이메일 발송
+# ================================================
+
+def send_result_email(results, today_str, indexed_urls=None):
     """발행 결과 이메일 발송"""
     success_list = [r for r in results if r.get("wp_id")]
+    indexed_urls = indexed_urls or []
+
+    # 색인 요청 섹션
+    index_html = ""
+    if indexed_urls:
+        links = "".join([f'<li style="font-size:13px;color:#2980b9;margin:3px 0;">{u}</li>' for u in indexed_urls])
+        index_html = f"""
+<div style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:14px;margin:10px 0;">
+  <strong style="color:#27ae60;">🔍 어제 발행 글 색인 요청 완료 ({len(indexed_urls)}개)</strong>
+  <ul style="margin:8px 0;padding-left:18px;">{links}</ul>
+</div>"""
+    elif indexed_urls is not None:
+        index_html = '<div style="background:#f8f9fa;border-radius:8px;padding:10px;margin:10px 0;color:#888;font-size:13px;">🔍 어제 발행 글 없음 (색인 요청 건너뜀)</div>'
 
     cards_html = ""
     for r in results:
@@ -444,6 +498,7 @@ def send_result_email(results, today_str):
     <p style="margin:6px 0 0;color:#aed6f1;font-size:14px;">{today_str} · 발행 {len(success_list)}/{len(results)}개</p>
   </div>
   {cards_html}
+  {index_html}
   <div style="text-align:center;padding:16px;color:#bbb;font-size:12px;border-top:1px solid #e0e0e0;margin-top:10px;">
     한발뉴스24 × WordPress 자동 발행 시스템
   </div>
@@ -557,10 +612,13 @@ def main():
             print("  ⏳ 3초 대기...")
             time.sleep(3)
 
-    # ⑦ 결과 이메일
+    # ⑦ 전날 발행 글 색인 요청
+    indexed_urls = request_yesterday_indexing()
+
+    # ⑧ 결과 이메일
     print(f"\n{'='*55}")
     print("이메일 발송 중...")
-    send_result_email(results, today_str)
+    send_result_email(results, today_str, indexed_urls)
 
     success = len([r for r in results if r.get("wp_id")])
     print(f"\n🎉 완료! 발행 성공 {success}/{len(results)}개")
