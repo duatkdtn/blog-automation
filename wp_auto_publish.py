@@ -25,7 +25,7 @@ except ImportError:
     EMAIL_RECIPIENT    = os.environ.get("EMAIL_RECIPIENT", "")
     WP_URL  = os.environ.get("WP_URL",  "https://hijaneeinfo.com")
     WP_USER = os.environ.get("WP_USER", "duatkdtn@gmail.com")
-    WP_PASS = os.environ.get("WP_PASS", "")
+    WP_PASS = os.environ.get("WP_PASS", "TO18 KpNd 3xkN x1cf 7REu ZIWi")
 
 KST  = ZoneInfo("Asia/Seoul")
 AUTH = HTTPBasicAuth(WP_USER, WP_PASS)
@@ -176,19 +176,30 @@ def generate_wp_post(article, today_str):
 
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
     msg = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=8192,
+        model="claude-sonnet-4-6",
+        max_tokens=16000,
         system=system,
         messages=[{"role": "user", "content": user}]
     )
 
+    # stop_reason 확인 (max_tokens면 JSON 잘림)
+    if msg.stop_reason == "max_tokens":
+        raise ValueError(f"토큰 한계 도달 - JSON 잘림 가능성 (stop_reason=max_tokens)")
+
     raw = msg.content[0].text.strip()
-    # 혹시 코드블록 있으면 제거
+    print(f"     API 응답 길이: {len(raw)}자")
+
+    # 코드블록 제거
     raw = re.sub(r"```json\s*", "", raw)
     raw = re.sub(r"```\s*", "", raw)
     raw = raw.strip()
 
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(f"     JSON 파싱 오류: {e}")
+        print(f"     응답 앞 200자: {raw[:200]}")
+        raise
 
 
 # ================================================
