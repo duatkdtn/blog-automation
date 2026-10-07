@@ -161,9 +161,9 @@ def generate_wp_post(article, today_str):
     meta = json.loads(raw1)
     print(f"     1단계 완료: {meta.get('wp_title','')}")
 
-    # ── 2단계: HTML 본문만 생성 (JSON 감싸지 않아 잘림 없음) ──
+    # ── 2단계: 본문 앞부분 (요약박스·도입부·본문·오해주의) ──
     sys2 = "한국어 블로그 전문 작가. HTML 본문만 출력. JSON·마크다운·코드블록 감싸기 절대 금지."
-    usr2 = f"""아래 정보로 워드프레스 블로그 HTML 본문을 5000자 이상 작성하세요.
+    usr2 = f"""아래 정보로 워드프레스 블로그 HTML 본문 앞부분을 작성하세요.
 
 [글 정보]
 제목: {meta.get('wp_title', title_h)}
@@ -173,9 +173,8 @@ def generate_wp_post(article, today_str):
 {facts_text}
 원본링크: {link}
 오늘날짜: {today_str}
-{f'계산기: {calc_hint}' if calc_hint else ''}
 
-[글 구조 - 이 순서 반드시 지키기]
+[작성할 섹션 - 이 4개만 작성]
 ① 파란 핵심 요약 박스 (background:#eaf4fb;border:2px solid #2980b9) - ✅ 5개 항목
    ※ 목차 직접 삽입 절대 금지 (플러그인이 자동 생성함)
 ② 도입부: ~더라고요, ~이에요 말투, 2~3문단
@@ -184,51 +183,102 @@ def generate_wp_post(article, today_str):
    <strong>🙋 이런 분들이 꼭 읽어보세요</strong><br>
    · 체크항목1<br>· 체크항목2<br>· 체크항목3
    </div>
-③ 본문: h2 6~10개 범위, 표 최소 2개 (thead background:#2980b9), 리스트 박스
+③ 본문: h2 6~10개 범위, 표 최소 2개 (thead background:#2980b9;color:white), 리스트 박스
    - h2 안에 자연스럽게 나뉘는 소주제는 h3로 세분화
    - 포커스키워드를 본문 전체에 자연스럽게 6~9회 분산
-④ 오해/주의사항 (background:#fdf2f8;border:1px solid #d2b4de) ❌기호, ✅기호
-⑤ FAQ 5개 이상
-   - 질문은 반드시 h3 태그로 감싸기:
-   <div style="background:#f8f9fa;border-left:4px solid #2980b9;padding:15px 20px;margin-bottom:10px;">
-   <h3 style="margin:0 0 8px 0;font-size:1em;color:#2c3e50;">Q. 질문</h3>
-   <p>A. 답변</p>
-   </div>
-⑥ ✅ 핵심 요약 박스 (background:#eafaf1;border:1px solid #a9dfbf) - 핵심수치·조건 5개 재정리
-⑦ 이런분들 해당 (background:#eaf4fb;border:1px solid #aed6f1) 👉체크리스트 5개 이상
-{f"⑧ 계산기 버튼: {calc_hint}" if calc_hint else ""}
-⑧ 결론 CTA (background:#2980b9 파란배경 흰글씨):
-   1) 핵심 행동 촉구 문구 (굵게)
-   2) 글 요약 + 신청 독려
-   3) "비슷한 주제로 [관련키워드]도 정리해뒀으니 함께 참고해보세요!"
-   4) "궁금한 점은 댓글로 남겨주세요 :)"
-⑨ 내부링크박스 "📌 함께 읽으면 좋은 글" (background:#eaf4fb;border:1px solid #aed6f1)
-   - 반드시 실제 <a href="https://hijaneeinfo.com/슬러그/">글제목</a> 태그로 작성 (텍스트만 쓰지 말 것)
-   - URL은 반드시 https://hijaneeinfo.com/ 도메인만
-⑩ 외부버튼: 공식 사이트 큰 파란 버튼, 중앙정렬, target="_blank" rel="noopener noreferrer"
-⑪ 면책문구 (background:#f8f9fa;border:1px solid #dee2e6)
+   - 행 번갈아: background:#fff / #f8f9fa
+④ 오해/주의사항 섹션 (h2 제목 포함)
+   - 박스 스타일: background:#fdf2f8;border:1px solid #d2b4de;padding:20px;margin:20px 0
+   - ❌ 기호로 잘못된 생각, ✅ 기호로 올바른 내용
 
-[언어 수준 - 매우 중요]
-- 초등학생·70~80대 할머니·할아버지도 이해할 수 있는 쉬운 단어 선택
-- 어려운 전문용어 금지. 어려운 단어는 바로 뒤 괄호로 풀어서 쓸 것
-  예) 나쁜: "심폐지구력 향상", 좋은: "숨이 덜 차요"
-  예) 나쁜: "절세 혜택 활용", 좋은: "세금을 덜 내요"
+[언어 수준]
+- 초등학생·70~80대도 이해할 수 있는 쉬운 단어
+- 어려운 단어는 바로 뒤 괄호로 풀어서 쓸 것
 - 문장은 짧게. 한 문장에 한 가지 내용만.
 
 [원칙]
-- inline style만 (style태그·코드블록 금지)
+- inline style만 (style태그 금지)
 - ~더라고요, ~이에요, ~해요 (친근한 존댓말)
-- ~습니다 금지
-- "마치며" 금지
-- 파트너스 안내 박스 금지
-- AI생성표시 박스("🤖 이 글은 AI가..." 등) 절대 금지
-- HTML만 출력"""
+- ~습니다 금지 / "마치며" 금지
+- AI생성표시 박스 절대 금지
+- HTML만 출력 (코드블록 감싸기 금지)"""
 
-    html_content = _call_haiku(sys2, usr2, max_tokens=8192)
-    # 혹시 코드블록으로 감쌌으면 제거
-    html_content = re.sub(r"```html\s*", "", html_content)
-    html_content = re.sub(r"```\s*", "", html_content).strip()
-    print(f"     2단계 완료: HTML {len(html_content)}자")
+    html_part1 = _call_haiku(sys2, usr2, max_tokens=8192)
+    html_part1 = re.sub(r"```html\s*", "", html_part1)
+    html_part1 = re.sub(r"```\s*", "", html_part1).strip()
+    print(f"     2단계 완료: HTML {len(html_part1)}자")
+
+    # ── 3단계: 본문 뒷부분 (FAQ·요약박스·이런분들·CTA·링크·면책) ──
+    focus_kw = meta.get('focus_keyword', meta.get('wp_title', title_h))
+    sys3 = "한국어 블로그 전문 작가. HTML만 출력. 코드블록·마크다운 절대 금지."
+    usr3 = f"""아래 정보로 워드프레스 블로그 HTML 본문 뒷부분을 작성하세요.
+
+[글 정보]
+제목: {meta.get('wp_title', title_h)}
+포커스키워드: {focus_kw}
+카테고리: {cat}
+핵심사실:
+{facts_text}
+원본링크: {link}
+오늘날짜: {today_str}
+{f'계산기: {calc_hint}' if calc_hint else ''}
+
+[작성할 섹션 - 이 순서대로 모두 작성]
+① FAQ 섹션 (h2 제목 "자주 묻는 질문" 포함)
+   - 질문 5개 이상, 각 질문은 h3 태그로 감싸기
+   형식:
+   <div style="background:#f8f9fa;border-left:4px solid #2980b9;padding:15px 20px;margin-bottom:10px;border-radius:4px;">
+   <h3 style="margin:0 0 8px 0;font-size:1em;color:#2c3e50;">Q. 질문 내용</h3>
+   <p style="margin:0;">A. 답변 내용</p>
+   </div>
+
+② ✅ 핵심 요약 박스 (h2 제목 포함)
+   - background:#eafaf1;border:1px solid #a9dfbf;padding:20px;margin:20px 0
+   - ✅ 기호로 핵심수치·조건 5개 재정리
+
+③ 이런분들 해당 섹션 (h2 제목 "✅ 이런 분들 꼭 확인해보세요!" 포함)
+   - background:#eaf4fb;border:1px solid #aed6f1;padding:20px;margin:20px 0
+   - 👉 기호로 체크리스트 5개 이상
+{f"④ 계산기 버튼 섹션: {calc_hint}" if calc_hint else ""}
+④ 결론 CTA 섹션 (background:#2980b9;color:white;padding:30px;margin:20px 0;border-radius:8px;text-align:center)
+   - <strong style="font-size:1.2em;color:white;">핵심 행동 촉구 문구</strong>
+   - 글 요약 + 행동 독려 (흰 글씨)
+   - "비슷한 주제로 [관련키워드]도 정리해뒀으니 함께 참고해보세요!" (흰 글씨)
+   - "궁금한 점은 댓글로 남겨주세요 :)" (흰 글씨)
+
+⑤ 내부링크박스 (h2 제목 "📌 함께 읽으면 좋은 글" 포함)
+   - background:#eaf4fb;border:1px solid #aed6f1;padding:20px;margin:20px 0
+   - 반드시 실제 <a href="https://hijaneeinfo.com/slug/" style="color:#2980b9;">글제목</a> 형태로 3~4개
+   - URL은 반드시 https://hijaneeinfo.com/ 도메인만 (카테고리 URL 활용 가능)
+   - 예시: 👉 <a href="https://hijaneeinfo.com/category/life-policy/">생활·정책 관련 글 모아보기</a>
+
+⑥ 외부버튼: 공식 사이트 링크 (원본: {link})
+   형식: <div style="text-align:center;margin:30px 0;">
+   <a href="{link}" target="_blank" rel="noopener noreferrer"
+      style="display:inline-block;background:#2980b9;color:white;padding:15px 40px;border-radius:6px;font-size:1.1em;font-weight:bold;text-decoration:none;">
+   🔗 공식 사이트 바로가기</a></div>
+
+⑦ 면책문구
+   - background:#f8f9fa;border:1px solid #dee2e6;padding:15px 20px;margin:30px 0;font-size:0.9em;color:#666
+   - 내용: "{today_str} 기준 작성. 실제 신청·이용 전 공식 사이트에서 최신 정보를 반드시 확인하세요. 이 글은 정보 제공 목적으로 작성되었으며, 법적 효력이 없습니다."
+
+[언어 수준]
+- 초등학생·70~80대도 이해할 수 있는 쉬운 단어
+- 문장은 짧게. 한 문장에 한 가지 내용만.
+
+[원칙]
+- inline style만 (style태그 금지)
+- ~더라고요, ~이에요, ~해요 말투
+- ~습니다 금지 / AI생성표시 박스 절대 금지
+- HTML만 출력 (코드블록 감싸기 금지)"""
+
+    html_part2 = _call_haiku(sys3, usr3, max_tokens=4096)
+    html_part2 = re.sub(r"```html\s*", "", html_part2)
+    html_part2 = re.sub(r"```\s*", "", html_part2).strip()
+    print(f"     3단계 완료: HTML {len(html_part2)}자")
+
+    html_content = html_part1 + "\n\n" + html_part2
+    print(f"     전체 HTML: {len(html_content)}자")
 
     meta["html_content"] = html_content
     return meta
