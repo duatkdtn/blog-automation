@@ -43,13 +43,15 @@ CAT_MAP = {
     "트렌드·사회":  219,
 }
 
-# 카테고리별 추천 계산기 (글에 포함)
+# 카테고리별 추천 계산기 (글에 포함) — hijaneeinfo.com 워프 전용
 CALC_LINKS = {
-    "재테크·금융": ("연봉 실수령액 계산기", "https://www.hijanee.com/p/blog-page.html"),
-    "생활·정책":   ("근로장려금 계산기",    "https://www.hijanee.com/p/blog-page_10.html"),
-    "노약자·시니어":("국민연금 예상수령액 계산기","https://www.hijanee.com/p/blog-page_15.html"),
-    "부동산":       ("취득세 계산기",        "https://www.hijanee.com/p/blog-page_758.html"),
-    "교육·육아":    ("만 나이 계산기",       "https://www.hijanee.com/p/blog-page_12.html"),
+    "재테크·금융":   ("연봉 실수령액 계산기",      "https://hijaneeinfo.com/salary-calculator/"),
+    "생활·정책":     ("근로장려금 계산기",          "https://hijaneeinfo.com/earned-income-calculator/"),
+    "노약자·시니어": ("국민연금 예상수령액 계산기", "https://hijaneeinfo.com/pension-calculator/"),
+    "부동산":        ("취득세 계산기",              "https://hijaneeinfo.com/realestate-tax-calculator/"),
+    "교육·육아":     ("만 나이 계산기",             "https://hijaneeinfo.com/age-calculator/"),
+    "건강·의료":     ("BMI 계산기",                 "https://hijaneeinfo.com/bmi-calculator/"),
+    "법률·생활법":   ("근로장려금 계산기",          "https://hijaneeinfo.com/earned-income-calculator/"),
 }
 
 # ================================================
@@ -125,8 +127,8 @@ def generate_wp_post(article, today_str):
         calc_hint = f'계산기 버튼 포함: {c_name} → {c_url}'
 
     # ── 1단계: 제목·슬러그·태그·메타·구조 생성 (짧은 JSON, 토큰 부담 없음) ──
-    sys1 = "한국어 블로그 전문 작가. JSON만 출력."
-    usr1 = f"""아래 뉴스 소재로 워드프레스 블로그 글의 메타 정보와 글 구조를 작성하세요.
+    sys1 = "한국어 블로그 전문 작가. JSON만 출력. 절대 코드블록 사용 금지."
+    usr1 = f"""아래 뉴스 소재로 워드프레스 블로그 글의 메타 정보를 작성하세요.
 
 [소재]
 카테고리: {cat}
@@ -137,14 +139,20 @@ def generate_wp_post(article, today_str):
 키워드: {keywords_str}
 출처: {source}
 
+[규칙]
+- wp_title: 메인키워드 반드시 맨 앞, 30자 이내, 숫자 포함
+- focus_keyword: wp_title 맨 앞에 오는 핵심 키워드와 정확히 동일한 문구
+- meta_description: focus_keyword로 시작, 120자 이내
+- tags: 2~3개만, 카테고리명({cat})과 절대 겹치지 않게, 포커스키워드 파생 개념으로
+- wp_slug: 영어만, 6단어 이내, 한글 절대 금지
+
 [출력] JSON만, 코드블록 없이:
 {{
-  "wp_title": "제목(30자 이내, 숫자 포함, 메인키워드 앞에)",
+  "wp_title": "메인키워드 앞에 + 30자 이내 + 숫자 포함",
   "wp_slug": "english-slug-max-6-words",
-  "focus_keyword": "포커스 키워드",
-  "meta_description": "메타설명(120자 이내)",
-  "tags": ["태그1","태그2","태그3"],
-  "sections": ["핵심요약","도입부","본문(표2개포함)","주의사항","FAQ","결론"]
+  "focus_keyword": "wp_title 맨 앞 키워드와 정확히 동일",
+  "meta_description": "포커스키워드로 시작하는 120자 이내 설명",
+  "tags": ["태그1","태그2"]
 }}"""
 
     raw1 = _call_haiku(sys1, usr1, max_tokens=512)
@@ -154,11 +162,12 @@ def generate_wp_post(article, today_str):
     print(f"     1단계 완료: {meta.get('wp_title','')}")
 
     # ── 2단계: HTML 본문만 생성 (JSON 감싸지 않아 잘림 없음) ──
-    sys2 = "한국어 블로그 전문 작가. HTML 본문만 출력. JSON 감싸기 금지."
+    sys2 = "한국어 블로그 전문 작가. HTML 본문만 출력. JSON·마크다운·코드블록 감싸기 절대 금지."
     usr2 = f"""아래 정보로 워드프레스 블로그 HTML 본문을 5000자 이상 작성하세요.
 
 [글 정보]
 제목: {meta.get('wp_title', title_h)}
+포커스키워드: {meta.get('focus_keyword', '')}
 카테고리: {cat}
 핵심사실:
 {facts_text}
@@ -166,26 +175,54 @@ def generate_wp_post(article, today_str):
 오늘날짜: {today_str}
 {f'계산기: {calc_hint}' if calc_hint else ''}
 
-[글 구조 - 순서 지키기]
+[글 구조 - 이 순서 반드시 지키기]
 ① 파란 핵심 요약 박스 (background:#eaf4fb;border:2px solid #2980b9) - ✅ 5개 항목
-② 목차 (background:#f8f9fa;border-left:4px solid #2980b9)
-③ 도입부: ~더라고요, ~이에요 말투, 2~3문단
-④ 본문: 표 최소 2개 (thead background:#2980b9), 리스트 박스
-⑤ 오해/주의사항 (background:#fdf2f8;border:1px solid #d2b4de) ❌기호
-⑥ FAQ 5개 이상 (background:#f8f9fa;border-left:4px solid #2980b9)
-⑦ 이런분들 해당 (background:#eaf4fb;border:1px solid #aed6f1) 👉체크리스트
-⑧ 결론: background:#2980b9 파란배경 흰글씨
-⑨ 내부링크박스 "📌 함께 읽으면 좋은 글" (URL은 /경로만)
-⑩ 외부버튼 (target="_blank" rel="noopener noreferrer")
+   ※ 목차 직접 삽입 절대 금지 (플러그인이 자동 생성함)
+② 도입부: ~더라고요, ~이에요 말투, 2~3문단
+   → 도입부 마지막 바로 아래 미니박스 추가:
+   <div style="background:#f8f9fa;border:1px solid #dee2e6;padding:15px 20px;margin:20px 0;border-radius:6px;">
+   <strong>🙋 이런 분들이 꼭 읽어보세요</strong><br>
+   · 체크항목1<br>· 체크항목2<br>· 체크항목3
+   </div>
+③ 본문: h2 6~10개 범위, 표 최소 2개 (thead background:#2980b9), 리스트 박스
+   - h2 안에 자연스럽게 나뉘는 소주제는 h3로 세분화
+   - 포커스키워드를 본문 전체에 자연스럽게 6~9회 분산
+④ 오해/주의사항 (background:#fdf2f8;border:1px solid #d2b4de) ❌기호, ✅기호
+⑤ FAQ 5개 이상
+   - 질문은 반드시 h3 태그로 감싸기:
+   <div style="background:#f8f9fa;border-left:4px solid #2980b9;padding:15px 20px;margin-bottom:10px;">
+   <h3 style="margin:0 0 8px 0;font-size:1em;color:#2c3e50;">Q. 질문</h3>
+   <p>A. 답변</p>
+   </div>
+⑥ ✅ 핵심 요약 박스 (background:#eafaf1;border:1px solid #a9dfbf) - 핵심수치·조건 5개 재정리
+⑦ 이런분들 해당 (background:#eaf4fb;border:1px solid #aed6f1) 👉체크리스트 5개 이상
+{f"⑧ 계산기 버튼: {calc_hint}" if calc_hint else ""}
+⑧ 결론 CTA (background:#2980b9 파란배경 흰글씨):
+   1) 핵심 행동 촉구 문구 (굵게)
+   2) 글 요약 + 신청 독려
+   3) "비슷한 주제로 [관련키워드]도 정리해뒀으니 함께 참고해보세요!"
+   4) "궁금한 점은 댓글로 남겨주세요 :)"
+⑨ 내부링크박스 "📌 함께 읽으면 좋은 글" (background:#eaf4fb;border:1px solid #aed6f1)
+   - 반드시 실제 <a href="https://hijaneeinfo.com/슬러그/">글제목</a> 태그로 작성 (텍스트만 쓰지 말 것)
+   - URL은 반드시 https://hijaneeinfo.com/ 도메인만
+⑩ 외부버튼: 공식 사이트 큰 파란 버튼, 중앙정렬, target="_blank" rel="noopener noreferrer"
 ⑪ 면책문구 (background:#f8f9fa;border:1px solid #dee2e6)
 
+[언어 수준 - 매우 중요]
+- 초등학생·70~80대 할머니·할아버지도 이해할 수 있는 쉬운 단어 선택
+- 어려운 전문용어 금지. 어려운 단어는 바로 뒤 괄호로 풀어서 쓸 것
+  예) 나쁜: "심폐지구력 향상", 좋은: "숨이 덜 차요"
+  예) 나쁜: "절세 혜택 활용", 좋은: "세금을 덜 내요"
+- 문장은 짧게. 한 문장에 한 가지 내용만.
+
 [원칙]
-- inline style만 (style태그 금지)
+- inline style만 (style태그·코드블록 금지)
 - ~더라고요, ~이에요, ~해요 (친근한 존댓말)
 - ~습니다 금지
 - "마치며" 금지
 - 파트너스 안내 박스 금지
-- HTML만 출력 (JSON, 마크다운 감싸기 금지)"""
+- AI생성표시 박스("🤖 이 글은 AI가..." 등) 절대 금지
+- HTML만 출력"""
 
     html_content = _call_haiku(sys2, usr2, max_tokens=8192)
     # 혹시 코드블록으로 감쌌으면 제거
