@@ -87,119 +87,114 @@ def load_top_articles():
 # 2. Claude API로 WordPress 글 생성
 # ================================================
 
-def build_post_prompt(article, today_str):
-    cat       = article.get("카테고리", "")
-    title_h   = article.get("제목", "")
-    summary   = article.get("한줄요약", "")
-    facts     = article.get("핵심사실", [])
-    keywords  = article.get("키워드후보", [])
-    link      = article.get("링크", "")
-    source    = article.get("출처", "")
-    confirmed = article.get("확정여부", "")
-
+def _get_article_base(article, today_str):
+    """기사 공통 정보 추출"""
+    cat          = article.get("카테고리", "")
+    title_h      = article.get("제목", "")
+    summary      = article.get("한줄요약", "")
+    facts        = article.get("핵심사실", [])
+    keywords     = article.get("키워드후보", [])
+    link         = article.get("링크", "")
+    source       = article.get("출처", "")
+    confirmed    = article.get("확정여부", "")
     facts_text   = "\n".join([f"- {f}" for f in facts])
     keywords_str = ", ".join(keywords)
+    return cat, title_h, summary, facts_text, keywords_str, link, source, confirmed
+
+
+def _call_haiku(system, user, max_tokens=1024):
+    """Haiku 호출 공통 함수"""
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+    msg = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=max_tokens,
+        system=system,
+        messages=[{"role": "user", "content": user}]
+    )
+    return msg.content[0].text.strip()
+
+
+def generate_wp_post(article, today_str):
+    """2단계 Haiku 호출로 WordPress 글 생성 (비용 절감)"""
+    cat, title_h, summary, facts_text, keywords_str, link, source, confirmed = \
+        _get_article_base(article, today_str)
 
     calc_hint = ""
     if cat in CALC_LINKS:
         c_name, c_url = CALC_LINKS[cat]
-        calc_hint = f'\n- 계산기 버튼 포함: <a href="{c_url}" target="_blank" rel="noopener" style="display:inline-block;background:#2980b9;color:#fff;padding:12px 28px;border-radius:6px;font-size:16px;font-weight:bold;text-decoration:none;">👉 {c_name} 바로 가기</a>'
+        calc_hint = f'계산기 버튼 포함: {c_name} → {c_url}'
 
-    system = "당신은 한국어 생활정보 블로그 전문 작가입니다. 워드프레스 HTML 글을 작성합니다. JSON만 출력합니다."
+    # ── 1단계: 제목·슬러그·태그·메타·구조 생성 (짧은 JSON, 토큰 부담 없음) ──
+    sys1 = "한국어 블로그 전문 작가. JSON만 출력."
+    usr1 = f"""아래 뉴스 소재로 워드프레스 블로그 글의 메타 정보와 글 구조를 작성하세요.
 
-    user = f"""아래 뉴스 소재로 워드프레스 블로그 글을 HTML로 완전하게 작성해주세요.
-
-[소재 정보]
+[소재]
 카테고리: {cat}
-기사 요약 제목: {title_h}
-한줄 요약: {summary}
-핵심 사실:
+제목: {title_h}
+요약: {summary}
+핵심사실:
 {facts_text}
-키워드 후보: {keywords_str}
-확정 여부: {confirmed}
+키워드: {keywords_str}
 출처: {source}
-원본 링크: {link}
-오늘 날짜: {today_str}
 
-[글 작성 원칙]
-- 5,000자 이상 작성
-- inline style만 사용 (style 태그 금지)
-- 외부 링크: target="_blank" rel="noopener" 필수
-- "마치며" 섹션 쓰지 않기
-- 파트너스 활동 안내 박스 쓰지 않기
-- 면책문구 포함 (글 맨 아래)
-- 본문에 날짜 기준 문구 넣지 않기
-
-[글 구조 - 이 순서 반드시 지키기]
-① 파란 핵심 요약 박스 (background:#eaf4fb;border:2px solid #2980b9) - ✅ 5개 항목으로 이 글의 핵심 요약
-② 목차 (background:#f8f9fa;border-left:4px solid #2980b9) - h2 id와 연결
-③ 도입부: 경험담 느낌으로 (~더라고요, ~이에요, ~해요), 2~3 문단
-④ 본문: 표 최소 2개 (thead background:#2980b9, 파란색), 리스트 박스 포함
-⑤ 단계별 설명 (해당 시): ol 태그, 각 단계 쉽게 설명
-⑥ 오해/주의사항: background:#fdf2f8;border:1px solid #d2b4de (보라색), ❌ 기호
-⑦ FAQ 최소 5개: background:#f8f9fa;border-left:4px solid #2980b9
-⑧ 이런 분들 해당: background:#eaf4fb;border:1px solid #aed6f1 - 👉 체크리스트 5개
-{calc_hint}
-⑨ 결론: background:#2980b9 파란 배경, 흰 글씨, CTA + 관련글 유도 + 댓글 유도
-⑩ 내부링크 박스: background:#eaf4fb;border:1px solid #aed6f1 - "📌 함께 읽으면 좋은 글" + 같은 주제 관련 글 3개 (URL은 / 로만 표기)
-⑪ 외부버튼: 관련 공식 사이트 파란 버튼 (target="_blank" rel="noopener noreferrer")
-⑫ 면책문구: background:#f8f9fa;border:1px solid #dee2e6
-
-[말투]
-✅ ~더라고요, ~이에요, ~해요 (친근한 존댓말)
-✅ 어려운 용어는 쉬운 말로
-✅ 예시/계산 예시 포함
-❌ ~습니다 금지
-❌ 전문 용어 그대로 쓰기 금지
-
-[제목 공식]
-메인키워드(앞에) + 연관검색어 + 클릭유도형
-→ 30자 이내, 숫자 포함
-
-[출력 형식]
-반드시 아래 JSON만 출력하세요. 코드블록(```), 설명 텍스트 없이 JSON만:
+[출력] JSON만, 코드블록 없이:
 {{
-  "wp_title": "워드프레스 글 제목 (30자 이내)",
-  "wp_slug": "영문-슬러그-최대-6단어",
-  "focus_keyword": "포커스 키워드 (검색량 높은 표현)",
-  "meta_description": "메타 설명 (120자 이내, 핵심 정보 포함)",
-  "tags": ["태그1", "태그2", "태그3"],
-  "html_content": "완전한 HTML 본문 (5000자 이상, inline style만)"
+  "wp_title": "제목(30자 이내, 숫자 포함, 메인키워드 앞에)",
+  "wp_slug": "english-slug-max-6-words",
+  "focus_keyword": "포커스 키워드",
+  "meta_description": "메타설명(120자 이내)",
+  "tags": ["태그1","태그2","태그3"],
+  "sections": ["핵심요약","도입부","본문(표2개포함)","주의사항","FAQ","결론"]
 }}"""
 
-    return system, user
+    raw1 = _call_haiku(sys1, usr1, max_tokens=512)
+    raw1 = re.sub(r"```json\s*", "", raw1)
+    raw1 = re.sub(r"```\s*", "", raw1).strip()
+    meta = json.loads(raw1)
+    print(f"     1단계 완료: {meta.get('wp_title','')}")
 
+    # ── 2단계: HTML 본문만 생성 (JSON 감싸지 않아 잘림 없음) ──
+    sys2 = "한국어 블로그 전문 작가. HTML 본문만 출력. JSON 감싸기 금지."
+    usr2 = f"""아래 정보로 워드프레스 블로그 HTML 본문을 5000자 이상 작성하세요.
 
-def generate_wp_post(article, today_str):
-    """Claude Sonnet 4.6으로 WordPress 글 생성"""
-    system, user = build_post_prompt(article, today_str)
+[글 정보]
+제목: {meta.get('wp_title', title_h)}
+카테고리: {cat}
+핵심사실:
+{facts_text}
+원본링크: {link}
+오늘날짜: {today_str}
+{f'계산기: {calc_hint}' if calc_hint else ''}
 
-    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-    msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=16000,
-        system=system,
-        messages=[{"role": "user", "content": user}]
-    )
+[글 구조 - 순서 지키기]
+① 파란 핵심 요약 박스 (background:#eaf4fb;border:2px solid #2980b9) - ✅ 5개 항목
+② 목차 (background:#f8f9fa;border-left:4px solid #2980b9)
+③ 도입부: ~더라고요, ~이에요 말투, 2~3문단
+④ 본문: 표 최소 2개 (thead background:#2980b9), 리스트 박스
+⑤ 오해/주의사항 (background:#fdf2f8;border:1px solid #d2b4de) ❌기호
+⑥ FAQ 5개 이상 (background:#f8f9fa;border-left:4px solid #2980b9)
+⑦ 이런분들 해당 (background:#eaf4fb;border:1px solid #aed6f1) 👉체크리스트
+⑧ 결론: background:#2980b9 파란배경 흰글씨
+⑨ 내부링크박스 "📌 함께 읽으면 좋은 글" (URL은 /경로만)
+⑩ 외부버튼 (target="_blank" rel="noopener noreferrer")
+⑪ 면책문구 (background:#f8f9fa;border:1px solid #dee2e6)
 
-    # stop_reason 확인 (max_tokens면 JSON 잘림)
-    if msg.stop_reason == "max_tokens":
-        raise ValueError(f"토큰 한계 도달 - JSON 잘림 가능성 (stop_reason=max_tokens)")
+[원칙]
+- inline style만 (style태그 금지)
+- ~더라고요, ~이에요, ~해요 (친근한 존댓말)
+- ~습니다 금지
+- "마치며" 금지
+- 파트너스 안내 박스 금지
+- HTML만 출력 (JSON, 마크다운 감싸기 금지)"""
 
-    raw = msg.content[0].text.strip()
-    print(f"     API 응답 길이: {len(raw)}자")
+    html_content = _call_haiku(sys2, usr2, max_tokens=8192)
+    # 혹시 코드블록으로 감쌌으면 제거
+    html_content = re.sub(r"```html\s*", "", html_content)
+    html_content = re.sub(r"```\s*", "", html_content).strip()
+    print(f"     2단계 완료: HTML {len(html_content)}자")
 
-    # 코드블록 제거
-    raw = re.sub(r"```json\s*", "", raw)
-    raw = re.sub(r"```\s*", "", raw)
-    raw = raw.strip()
-
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError as e:
-        print(f"     JSON 파싱 오류: {e}")
-        print(f"     응답 앞 200자: {raw[:200]}")
-        raise
+    meta["html_content"] = html_content
+    return meta
 
 
 # ================================================
