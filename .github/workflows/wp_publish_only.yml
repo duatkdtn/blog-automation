@@ -1,0 +1,35 @@
+name: WordPress 발행만 단독 실행
+
+on:
+  workflow_dispatch:  # 수동 버튼으로만 실행
+
+jobs:
+  wp-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 한국어 폰트 설치 (썸네일용)
+        run: sudo apt-get install -y fonts-nanum
+
+      - name: 패키지 설치
+        run: pip install anthropic requests pillow google-auth google-auth-oauthlib google-auth-httplib2
+
+      - name: WordPress 발행 실행
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT: "duatkdtn@gmail.com"
+          WP_URL: "https://hijaneeinfo.com"
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_PASS: ${{ secrets.WP_PASS }}
+          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
+        run: python wp_auto_publish.py
