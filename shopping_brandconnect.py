@@ -88,8 +88,9 @@ def refresh_naver_cookie():
     return bool(NAVER_COOKIE)
 NAVER_SPACE_ID      = _get("NAVER_SPACE_ID", "962414636778176")
 
-PUBLISHED_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "published_products.txt")
-LAST_RUN_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shopping_last_run.txt")
+PUBLISHED_FILE     = os.path.join(os.path.dirname(os.path.abspath(__file__)), "published_products.txt")
+LAST_RUN_FILE      = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shopping_last_run.txt")
+USED_KEYWORDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "used_keywords.txt")
 NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
 
 
@@ -104,8 +105,8 @@ def _food_keywords():
     m, d = today.month, today.day
     # 설날: 1/1 ~ 1/28 (2026 설날 1/29)
     seollal = (m == 1 and d <= 28)
-    # 추석: 9/1 ~ 9/27 (2026 추석 9/25, 연휴 9/23~27)
-    chuseok = (m == 9 and d <= 27)
+    # 추석: 9/1 ~ 9/21 (2026 추석 9/25, 연휴 9/23~27) ← 9/22 종료
+    chuseok = (m == 9 and d <= 21)
     if seollal or chuseok:
         return [
             # 육류
@@ -127,34 +128,124 @@ def _food_keywords():
             "추석선물세트", "건강식품선물세트", "올리브오일선물세트", "와인선물세트",
         ]
     return [
-        "단백질보충제", "밀키트", "건강즙", "커피원두",
-        "냉동과일", "견과류", "홍삼", "다이어트식품",
-        "그래놀라", "두유"
+        # 건강식품
+        "단백질보충제", "건강즙", "홍삼", "흑마늘즙", "석류즙",
+        "유산균", "오메가3", "콜라겐", "비타민C", "마그네슘",
+        # 간편식
+        "밀키트", "냉동만두", "냉동김밥", "컵밥", "레토르트식품",
+        "간편국", "즉석죽", "냉동볶음밥", "냉동피자",
+        # 음료/커피
+        "커피원두", "캡슐커피", "드립백커피", "콜드브루커피",
+        "프로틴음료", "녹즙", "과채주스",
+        # 스낵/간식
+        "그래놀라", "견과류", "프로틴바", "두유", "냉동과일",
+        "다이어트식품", "저칼로리과자", "무설탕젤리",
+        # 조미료/소스
+        "올리브오일", "참기름", "들기름", "천일염", "유기농설탕",
     ]
 
 CATEGORIES = [
     {"name": "스포츠/레저", "id": "50000007", "keywords": [
-        # fallback용 (DataLab 실패 시 사용)
+        # 골프
         "골프채", "골프백", "골프거리측정기", "골프웨어", "골프화",
-        "텐트", "캠핑의자", "캠핑버너", "캠핑랜턴", "타프"
+        "골프장갑", "골프공", "골프트롤리", "골프우산", "골프카트",
+        "파크골프채", "파크골프백", "파크골프공",
+        # 캠핑
+        "텐트", "캠핑의자", "캠핑버너", "캠핑랜턴", "타프",
+        "캠핑테이블", "침낭", "해먹", "캠핑매트", "캠핑코펠",
+        "캠핑그릴", "캠핑쿨러", "캠핑조명", "캠핑도끼", "캠핑선풍기",
+        # 등산/아웃도어
+        "등산화", "등산배낭", "등산스틱", "등산자켓", "트레킹화",
+        "아이젠", "헤드랜턴", "등산양말",
+        # 홈트/헬스
+        "덤벨", "요가매트", "폼롤러", "점핑줄", "밴드운동",
+        "실내자전거", "런닝머신", "철봉", "푸쉬업바", "ab롤러",
+        # 수상/레저
+        "낚시대", "낚시릴", "낚시가방", "수영복", "서핑보드",
+        # 자전거
+        "전기자전거", "킥보드", "자전거헬멧", "자전거가방",
     ]},
     {"name": "식품", "id": "50000006", "keywords": []},  # _food_keywords()로 동적 처리
     {"name": "디지털/가전", "id": "50000003", "keywords": [
-        # fallback용
-        "갤럭시탭", "아이패드", "갤럭시워치", "애플워치", "다이슨청소기",
-        "삼성냉장고", "LG냉장고", "에어컨", "맥북", "삼성모니터"
+        # 모바일/태블릿
+        "갤럭시탭", "아이패드", "갤럭시워치", "애플워치", "애플워치SE",
+        "갤럭시버즈", "에어팟", "블루투스이어폰", "블루투스스피커",
+        # PC/노트북
+        "맥북", "삼성노트북", "LG그램", "게이밍노트북", "태블릿거치대",
+        "삼성모니터", "LG모니터", "게이밍모니터", "웹캠", "기계식키보드",
+        "무선마우스", "게이밍마우스", "노트북거치대", "SSD", "외장하드",
+        # 생활가전
+        "다이슨청소기", "로봇청소기", "스팀청소기", "에어랩",
+        "삼성냉장고", "LG냉장고", "에어컨", "제습기", "공기청정기",
+        "전기밥솥", "에어프라이어", "전자레인지", "식기세척기", "드럼세탁기",
+        # 카메라/영상
+        "미러리스카메라", "액션캠", "짐벌", "카메라가방", "삼각대",
+        # 스마트홈
+        "스마트스피커", "스마트전구", "IP카메라", "로봇청소기",
+        "무선충전기", "멀티탭", "보조배터리", "차량용충전기",
+        # TV/영상
+        "OLED TV", "삼성QLED", "빔프로젝터", "사운드바",
     ]},
     {"name": "생활/건강", "id": "50000008", "keywords": [
-        "공기청정기", "안마의자", "건강식품", "유산균", "비타민",
-        "정수기", "식기세척기", "음식물처리기", "청소기", "로봇청소기",
-        "마사지건", "혈압계", "체중계", "가습기", "제습기",
-        "전기요", "족욕기", "안마기", "혈당계", "체온계"
+        # 건강기기
+        "안마의자", "마사지건", "혈압계", "체중계", "혈당계",
+        "체온계", "족욕기", "안마기", "목마사지기", "눈마사지기",
+        # 건강식품
+        "유산균", "비타민", "오메가3", "루테인", "콜라겐",
+        "마그네슘", "아연", "칼슘", "프로바이오틱스", "밀크씨슬",
+        "L카르니틴", "글루타치온", "코엔자임Q10", "스피루리나",
+        # 다이어트
+        "단백질보충제", "다이어트보조제", "식이섬유", "저칼로리식품",
+        # 생활건강
+        "공기청정기", "정수기", "가습기", "제습기", "음이온청정기",
+        "헤파필터", "살균소독기", "UV살균기",
+        # 청소/위생
+        "청소기", "로봇청소기", "물걸레청소기", "음식물처리기",
+        "의류건조기", "의류관리기", "스팀다리미",
+        # 생활용품
+        "전기요", "전기장판", "온열패드", "냉온수매트",
+        "미용기기", "피부관리기", "LED마스크", "초음파세안기",
+        "두피케어", "탈모샴푸", "탈모영양제",
     ]},
     {"name": "가구/인테리어", "id": "50000004", "keywords": [
-        "소파", "침대", "식탁", "책상", "옷장",
-        "조명", "커튼", "러그", "행거", "화장대",
-        "드레스룸", "좌식소파", "책장", "수납박스", "벽시계",
-        "아트포스터", "디퓨저", "캔들", "화분", "수납선반"
+        # 가구
+        "소파", "침대", "매트리스", "식탁", "책상",
+        "옷장", "드레스룸", "좌식소파", "책장", "화장대",
+        "서랍장", "행거", "신발장", "TV장식장", "사이드테이블",
+        # 조명
+        "조명", "스탠드조명", "펜던트조명", "LED조명", "무드등",
+        "수면등", "취침등", "데스크조명", "스마트조명",
+        # 인테리어 소품
+        "커튼", "블라인드", "러그", "카펫", "벽시계",
+        "아트포스터", "액자", "쿠션", "담요", "이불",
+        # 수납
+        "수납박스", "수납선반", "수납바구니", "정리함", "옷걸이",
+        "진공압축팩", "모듈선반",
+        # 생활소품
+        "디퓨저", "캔들", "화분", "인테리어화분", "조화",
+        "욕실소품", "주방소품", "테이블웨어", "머그컵세트",
+        # 침구
+        "이불세트", "베개", "메모리폼베개", "라텍스베개", "토퍼",
+    ]},
+    {"name": "육아/유아동", "id": "50000005", "keywords": [
+        # 유모차/이동
+        "유모차", "휴대용유모차", "쌍둥이유모차", "카시트", "아기띠",
+        "힙시트", "유아자전거", "킥보드유아",
+        # 수유/이유식
+        "젖병", "분유", "이유식", "아기과자", "유아음료",
+        "수유쿠션", "착유기", "젖병소독기",
+        # 위생/기저귀
+        "기저귀", "물티슈", "아기로션", "아기샴푸", "아기욕조",
+        "기저귀가방", "배변훈련",
+        # 장난감/놀이
+        "레고", "블록장난감", "인형", "보드게임", "퍼즐",
+        "아기체육관", "쏘서", "점퍼루", "모빌",
+        # 유아동 의류
+        "아기옷", "돌복", "유아상하복", "아기신발", "아기양말",
+        # 침구/안전
+        "아기침대", "유아침구", "범퍼침대", "안전문", "안전게이트",
+        # 교육
+        "유아영어", "한글공부", "유아태블릿", "어린이책",
     ]},
 ]
 
@@ -163,6 +254,113 @@ for _c in CATEGORIES:
     if _c["name"] == "식품":
         _c["keywords"] = _food_keywords()
         break
+
+
+# ── 시즌 키워드 ──────────────────────────────────
+SEASON_KEYWORDS = {
+    "발렌타인": {
+        "months_days": [(2, 1, 2, 14)],
+        "keywords": [
+            "초콜릿선물", "발렌타인초콜릿", "커플선물", "발렌타인선물",
+            "수제초콜릿", "와인선물", "꽃다발", "향수선물", "커플반지",
+        ]
+    },
+    "봄": {
+        "months_days": [(3, 1, 5, 31)],
+        "keywords": [
+            "봄패션", "봄자켓", "봄원피스", "봄신발", "봄야외활동",
+            "캠핑용품", "봄나들이", "자전거", "등산화", "봄이불",
+            "공기청정기", "황사마스크", "알레르기약", "봄청소용품",
+        ]
+    },
+    "어린이날어버이날": {
+        "months_days": [(5, 1, 5, 8)],
+        "keywords": [
+            "어린이선물", "장난감", "레고선물", "어린이날선물",
+            "어버이날선물", "부모님선물", "카네이션", "효도선물",
+            "건강식품선물", "안마기선물",
+        ]
+    },
+    "여름": {
+        "months_days": [(6, 1, 8, 31)],
+        "keywords": [
+            "수영복", "래쉬가드", "선크림", "여름샌들", "슬리퍼",
+            "휴대용선풍기", "아이스박스", "물놀이용품", "여름이불",
+            "냉감패드", "에어컨", "제습기", "여름원피스", "반바지",
+        ]
+    },
+    "핼러윈": {
+        "months_days": [(10, 15, 10, 31)],
+        "keywords": [
+            "핼러윈용품", "핼러윈코스튬", "핼러윈파티용품",
+            "핼러윈과자", "핼러윈데코", "공포소품", "마녀의상",
+        ]
+    },
+    "빼빼로데이": {
+        "months_days": [(11, 1, 11, 11)],
+        "keywords": [
+            "빼빼로선물세트", "빼빼로", "과자선물세트", "사탕선물",
+            "커플선물", "친구선물", "초콜릿과자",
+        ]
+    },
+    "김장철": {
+        "months_days": [(11, 1, 11, 30)],
+        "keywords": [
+            "김치냉장고", "김장용품", "절임배추", "고춧가루",
+            "김장비닐", "김장장갑", "젓갈", "새우젓",
+        ]
+    },
+    "크리스마스": {
+        "months_days": [(12, 1, 12, 25)],
+        "keywords": [
+            "크리스마스선물", "크리스마스트리", "크리스마스데코",
+            "산타의상", "크리스마스케이크", "연말선물", "트리장식",
+            "크리스마스양말", "루돌프인형",
+        ]
+    },
+    "겨울": {
+        "months_days": [(12, 1, 2, 28)],
+        "keywords": [
+            "패딩", "겨울코트", "목도리", "장갑", "핫팩",
+            "전기장판", "전기요", "온열매트", "보온텀블러",
+            "겨울부츠", "기모레깅스", "방한용품", "누빔이불",
+        ]
+    },
+    "설날": {
+        "months_days": [(1, 1, 1, 28)],
+        "keywords": [
+            "설날선물세트", "명절선물세트", "한우선물세트",
+            "홍삼선물세트", "과일선물세트", "스팸선물세트",
+            "참기름선물세트", "설날용품",
+        ]
+    },
+    "추석": {
+        "months_days": [(9, 1, 9, 21)],
+        "keywords": [
+            "추석선물세트", "추석선물", "명절선물세트",
+            "굴비선물세트", "전복선물세트", "건강식품선물세트",
+            "추석용품", "차례상용품",
+        ]
+    },
+}
+
+def get_current_season():
+    """현재 날짜에 맞는 시즌 이름과 키워드 반환 (없으면 None, [])"""
+    today = datetime.now()
+    m, d = today.month, today.day
+
+    for season_name, info in SEASON_KEYWORDS.items():
+        for (sm, sd, em, ed) in info["months_days"]:
+            # 연도 걸치는 시즌 처리 (예: 겨울 12~2월)
+            if sm <= em:
+                if (m == sm and d >= sd) or (sm < m < em) or (m == em and d <= ed):
+                    return season_name, info["keywords"]
+            else:
+                # 연도 넘기는 경우 (12월~2월)
+                if (m == sm and d >= sd) or (m > sm) or (m < em) or (m == em and d <= ed):
+                    return season_name, info["keywords"]
+    return None, []
+
 
 NAVER_HEADERS = lambda: {
     "X-Naver-Client-Id":     NAVER_CLIENT_ID,
@@ -289,7 +487,16 @@ def get_top_product(category, specific_keyword=None):
     if specific_keyword:
         keywords_to_try = [specific_keyword]
     else:
-        keywords_to_try = category.get("keywords", [category["name"]])[:]
+        all_keywords = category.get("keywords", [category["name"]])[:]
+        # 7일 이내 사용된 키워드 제외
+        recent_keywords = load_used_keywords(days=7)
+        filtered = [k for k in all_keywords if k not in recent_keywords]
+        if not filtered:
+            print(f"   ⚠️ 7일 이내 모든 키워드 사용됨 → 전체 키워드에서 선택")
+            filtered = all_keywords
+        else:
+            print(f"   📌 키워드 {len(all_keywords)}개 중 {len(filtered)}개 사용 가능 (7일 중복 제외)")
+        keywords_to_try = filtered
         random.shuffle(keywords_to_try)
 
     if not NAVER_COOKIE:
@@ -312,7 +519,7 @@ def get_top_product(category, specific_keyword=None):
             res = requests.get(
                 "https://gw-brandconnect.naver.com/affiliate/query/affiliate-products/search-by-query",
                 headers=bc_headers,
-                params={"query": query, "limit": 20},
+                params={"query": query, "limit": 100},
                 timeout=10,
             )
             if res.status_code == 200:
@@ -326,7 +533,8 @@ def get_top_product(category, specific_keyword=None):
                     rate  = p.get("commissionRate", 0)
                     review = p.get("reviewInfo", {})
                     price_val = int(p.get("discountedSalePrice", 0) or p.get("salePrice", 0) or 0)
-                    if name and price_val >= 30000 and float(rate) >= 10:
+                    _min_rate = 5 if __import__('datetime').date.today() <= __import__('datetime').date(2026, 9, 20) else 10
+                    if name and price_val >= 30000 and float(rate) >= _min_rate:
                         items.append({
                             "title":          name,
                             "lprice":         price,
@@ -384,6 +592,59 @@ def load_published_ids():
             if parts:
                 ids.add(parts[0].strip())
     return ids
+
+
+def load_used_keywords(days=7):
+    """7일 이내 사용된 키워드 목록 반환"""
+    if not os.path.exists(USED_KEYWORDS_FILE):
+        return set()
+    cutoff = datetime.now() - timedelta(days=days)
+    used = set()
+    with open(USED_KEYWORDS_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("|")
+            if len(parts) >= 2:
+                keyword = parts[0].strip()
+                try:
+                    used_date = datetime.strptime(parts[1].strip(), "%Y-%m-%d")
+                    if used_date >= cutoff:
+                        used.add(keyword)
+                except:
+                    pass
+    return used
+
+
+def save_used_keyword(keyword):
+    """사용된 키워드를 날짜와 함께 저장"""
+    today = datetime.now().strftime("%Y-%m-%d")
+    with open(USED_KEYWORDS_FILE, "a", encoding="utf-8") as f:
+        f.write(f"{keyword}|{today}\n")
+
+
+def cleanup_used_keywords(days=7):
+    """7일 지난 키워드 항목 정리"""
+    if not os.path.exists(USED_KEYWORDS_FILE):
+        return
+    cutoff = datetime.now() - timedelta(days=days)
+    kept = []
+    with open(USED_KEYWORDS_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("|")
+            if len(parts) >= 2:
+                try:
+                    used_date = datetime.strptime(parts[1].strip(), "%Y-%m-%d")
+                    if used_date >= cutoff:
+                        kept.append(line)
+                except:
+                    kept.append(line)
+    with open(USED_KEYWORDS_FILE, "w", encoding="utf-8") as f:
+        f.write("\n".join(kept) + ("\n" if kept else ""))
 
 
 def save_published_product(product_id, product_name):
@@ -458,6 +719,9 @@ def find_new_products(count=9):
     results = []
     used_ids = set(published_ids)  # 이번 실행 중 선택된 것도 중복 방지
 
+    # 7일 지난 키워드 기록 정리
+    cleanup_used_keywords(days=7)
+
     for category in category_order:
         if len(results) >= count:
             break
@@ -495,6 +759,11 @@ def find_new_products(count=9):
             continue
 
         used_ids.add(pid)
+        # 사용된 키워드 저장 (7일 중복 방지용)
+        used_kw = selected_product.get("keyword", "")
+        if used_kw:
+            save_used_keyword(used_kw)
+            print(f"   📝 키워드 기록: {used_kw}")
         results.append((category, selected_product, selected_bc))
 
     print(f"\n📦 총 {len(results)}개 상품 선택 완료")
@@ -550,10 +819,12 @@ def check_brandconnect(product_name):
             score_rv = float(review.get("averageReviewScore", 0)) / 5.0
             return rate * 0.5 + cnt * 30 * 0.3 + score_rv * 100 * 0.2
 
-        # 수수료 10% 이상만 선택
-        high_commission = [p for p in data if float(p.get("commissionRate", 0)) >= 10]
+        # 수수료 필터 (추석 시즌 ~9/22: 5%, 이후: 10%)
+        from datetime import date as _date
+        _min_rate = 5 if _date.today() <= _date(2026, 9, 20) else 10
+        high_commission = [p for p in data if float(p.get("commissionRate", 0)) >= _min_rate]
         if not high_commission:
-            print(f"   └ 수수료 10% 이상 상품 없음 - 스킵")
+            print(f"   └ 수수료 {_min_rate}% 이상 상품 없음 - 스킵")
             return None
         # 리뷰 1개 이상인 상품 우선 선택, 없으면 수수료 10%+ 전체에서 선택
         reviewed = [p for p in high_commission if p.get("reviewInfo", {}).get("totalReviewCount", 0) > 0]
@@ -619,7 +890,7 @@ def get_product_images(product):
                     "X-Naver-Client-Id":     NAVER_CLIENT_ID,
                     "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
                 },
-                params={"query": product_name, "display": 6, "sort": "sim", "filter": "large"},
+                params={"query": product_name, "display": 8, "sort": "sim", "filter": "large"},
                 timeout=10
             )
             res.raise_for_status()
@@ -628,13 +899,13 @@ def get_product_images(product):
                 url = item.get("link", "")
                 if url and url not in images:
                     images.append(url)
-                if len(images) >= 4:
+                if len(images) >= 5:
                     break
         except Exception as e:
             print(f"⚠️ 이미지 검색 오류: {e}")
 
     print(f"🖼️ 이미지 {len(images)}장 수집")
-    return images[:4]
+    return images[:5]
 
 
 # ── 5단계: Claude로 글 작성 ──────────────────────
@@ -755,7 +1026,7 @@ def generate_shopping_post(category, product):
 
 # ── 6단계: 이메일 발송 ───────────────────────────
 
-def send_shopping_email_bulk(items):
+def send_shopping_email_bulk(items, label=""):
     """5개 상품을 하나의 이메일로 발송 (네이버 블로그 복붙용)"""
     if not GMAIL_ADDRESS or not GMAIL_APP_PASSWORD:
         print("⚠️ Gmail 환경변수 없음")
@@ -797,8 +1068,15 @@ def send_shopping_email_bulk(items):
             titles_html += f'<div style="margin:4px 0;padding:5px 10px;background:#f8f8f8;border-radius:4px;font-size:13px">{j+1}. {clean}</div>'
 
         img_parts = []
-        for img_url in images[:4]:
-            img_parts.append(f'<img src="{img_url}" style="width:calc(50% - 4px);max-height:130px;object-fit:cover;border-radius:6px;display:inline-block;vertical-align:top" alt="상품이미지">')
+        for idx, img_url in enumerate(images[:5], 1):
+            img_parts.append(
+                f'<div style="width:calc(50% - 4px);display:inline-block;vertical-align:top;margin-bottom:4px;text-align:center">'
+                f'<a href="{img_url}" target="_blank" style="display:block">'
+                f'<img src="{img_url}" style="width:100%;max-height:130px;object-fit:cover;border-radius:6px;display:block" alt="상품이미지{idx}">'
+                f'</a>'
+                f'<a href="{img_url}" target="_blank" download style="font-size:11px;color:#2980b9;text-decoration:none;display:block;margin-top:2px">⬇ 이미지{idx} 저장</a>'
+                f'</div>'
+            )
         img_html = f'<div style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px">{" ".join(img_parts)}</div>' if img_parts else ""
 
         cards_html += f"""
@@ -851,7 +1129,8 @@ def send_shopping_email_bulk(items):
 </body></html>"""
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"[쇼핑발행] {today_str} · {len(items)}개 상품"
+    label_str = f" · {label}" if label else ""
+    msg["Subject"] = f"[쇼핑발행] {today_str} · {len(items)}개 상품{label_str}"
     msg["From"]    = GMAIL_ADDRESS
     msg["To"]      = EMAIL_RECIPIENT
     msg.attach(MIMEText(email_html, "html", "utf-8"))
@@ -867,7 +1146,7 @@ def send_shopping_email_bulk(items):
 # ── 메인 ──────────────────────────────────────────
 
 def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
-                      log_fn=print, force=False):
+                      log_fn=print, force=False, label=""):
     """
     GUI / 자동실행 모두에서 호출 가능한 핵심 함수
     category_ids : None이면 전체, 리스트면 해당 id만 사용
@@ -924,12 +1203,46 @@ def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
     # 카테고리가 1개이고 키워드가 많은 경우(식품 등) 키워드마다 1개씩 배정
     published = load_published_ids()
 
+    # ── 시즌 상품 1개 먼저 확보 ──────────────────────
+    season_name, season_kws = get_current_season()
+    if season_name and season_kws:
+        log_fn(f"🎄 현재 시즌: {season_name} → 시즌 상품 1개 먼저 확보")
+        season_cat = {"name": f"시즌({season_name})", "id": "50000006", "keywords": season_kws}
+        random.shuffle(season_kws)
+        for skw in season_kws[:5]:
+            s_products = get_top_product(season_cat, specific_keyword=skw)
+            if not s_products:
+                continue
+            s_new = [p for p in s_products
+                     if str(p.get("productId","")) not in published
+                     and str(p.get("productId","")) not in selected_ids]
+            if not s_new:
+                continue
+            s_best = max(s_new, key=bc_score)
+            pid = str(s_best.get("productId",""))
+            selected_ids.add(pid)
+            selected.append((season_cat, s_best, s_best))
+            log_fn(f"   ✅ 시즌 상품 확보: {s_best.get('title','')[:30]}")
+            break
+        else:
+            log_fn(f"   ⚠️ 시즌 상품 없음 - 일반 상품으로 대체")
+
     # 키워드 풀 구성: 카테고리 × 키워드 순환
+    # 7일 이내 사용된 키워드 먼저 로드
+    recent_kws = load_used_keywords(days=7)
+    cleanup_used_keywords(days=7)
+    if recent_kws:
+        log_fn(f"🚫 7일 이내 사용 키워드 {len(recent_kws)}개 제외")
+
     # 카테고리별 키워드 라운드로빈 배치 (같은 카테고리 중복 방지)
     cat_kw_lists = []
     for cat in cats:
-        kws = cat.get("keywords", [cat["name"]])[:]
-        random.shuffle(kws)  # 카테고리 내 키워드는 랜덤
+        all_kws = cat.get("keywords", [cat["name"]])[:]
+        # 7일 이내 사용 키워드 제외
+        kws = [k for k in all_kws if k not in recent_kws]
+        if not kws:
+            kws = all_kws  # 모두 사용됐으면 전체에서 선택
+        random.shuffle(kws)
         cat_kw_lists.append([(cat, kw) for kw in kws])
 
     # 라운드로빈: cat1_kw1, cat2_kw1, cat3_kw1, ..., cat1_kw2, cat2_kw2, ...
@@ -940,13 +1253,13 @@ def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
             if i < len(lst):
                 keyword_pool.append(lst[i])
 
-    # count * 2 미만이면 반복 보충
-    while len(keyword_pool) < count * 2:
+    # count * 5 미만이면 반복 보충
+    while len(keyword_pool) < count * 5:
         keyword_pool += keyword_pool
 
     attempt = 0
     kw_idx = 0
-    while len(selected) < count and attempt < count * 3 and kw_idx < len(keyword_pool):
+    while len(selected) < count and attempt < count * 5 and kw_idx < len(keyword_pool):
         cat, kw = keyword_pool[kw_idx]
         kw_idx += 1
         attempt += 1
@@ -966,6 +1279,8 @@ def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
         pid = str(selected_product.get("productId",""))
         selected_ids.add(pid)
         selected_bc = selected_product
+        # 사용된 키워드 저장 (7일 중복 방지)
+        save_used_keyword(kw)
         selected.append((cat, selected_product, selected_bc))
 
     if not selected:
@@ -1003,7 +1318,7 @@ def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
 
     if email_items and send_email_flag:
         log_fn(f"\n📧 이메일 발송 중... ({len(email_items)}개 상품)")
-        send_shopping_email_bulk(email_items)
+        send_shopping_email_bulk(email_items, label=label)
         save_run_today()
         log_fn(f"✅ 완료! {len(email_items)}개 상품 이메일 발송")
     elif email_items:
@@ -1018,8 +1333,52 @@ def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
             "datalab_used": datalab_used}
 
 
+CHUSEOK_CATEGORIES = [
+    {"name": "추석선물", "id": "50000006", "keywords": [
+        "추석선물세트", "추석선물", "명절선물세트", "명절선물",
+        "한우선물세트", "홍삼선물세트", "과일선물세트", "굴비선물세트",
+        "전복선물세트", "건강식품선물세트", "참기름선물세트", "버섯선물세트",
+        "햄선물세트", "스팸선물세트", "올리브유선물세트", "견과류선물세트",
+        "사과선물세트", "배선물세트", "샴푸선물세트", "화장품선물세트",
+        "추석용품", "차례상용품", "전통주선물", "꿀선물세트",
+        "잡곡선물세트", "김선물세트", "참치선물세트", "커피선물세트",
+        "녹차선물세트", "수건선물세트", "양말선물세트", "속옷선물세트",
+    ]},
+]
+
 def main():
-    run_shopping_task(count=5, force=False)
+    from datetime import date
+    # 오늘 이미 실행됐는지 확인
+    if check_already_ran_today():
+        print("⏭️  오늘 이미 실행됨. 건너뜀 (강제실행: force=True)")
+        return
+
+    # 추석 기간(~9월 22일)이면 추석 카테고리로 교체
+    today = date.today()
+    if today <= date(2026, 9, 20):
+        print("🎑 추석 시즌 - 추석/명절 선물 키워드로 실행")
+        global CATEGORIES
+        _orig_categories = CATEGORIES
+        CATEGORIES = CHUSEOK_CATEGORIES
+    else:
+        _orig_categories = None
+
+    try:
+        # 블로그1: 8개 수집 → 메일 발송
+        print("\n" + "="*50)
+        print("📧 [블로그1] 상품 수집 및 메일 발송...")
+        result1 = run_shopping_task(count=8, send_email_flag=True, force=True, label="블로그1")
+
+        # 블로그2: 8개 수집 → 메일 발송 (블로그1 발행 상품 자동 제외)
+        print("\n" + "="*50)
+        print("📧 [블로그2] 상품 수집 및 메일 발송...")
+        result2 = run_shopping_task(count=8, send_email_flag=True, force=True, label="블로그2")
+    finally:
+        if _orig_categories is not None:
+            CATEGORIES = _orig_categories
+
+    save_run_today()
+    print(f"\n✅ 완료! 블로그1: {result1.get('count',0)}개 / 블로그2: {result2.get('count',0)}개")
 
 if __name__ == "__main__":
     main()
