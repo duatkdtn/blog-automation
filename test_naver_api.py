@@ -1,29 +1,44 @@
-import hmac, hashlib, base64, time, requests
-from config import NAVER_AD_CUSTOMER_ID, NAVER_AD_ACCESS_LICENSE, NAVER_AD_SECRET_KEY
+import requests
 
-BASE_URL = "https://api.naver.com"
-uri = "/keywordstool"
+NAVER_CLIENT_ID = "GmBf8vCYZJ_AiqDDmsiU"
+NAVER_CLIENT_SECRET = "qA560H5Ktj"
 
-x_timestamp = str(round(time.time() * 1000))
-method = "GET"
+print("=== 네이버 쇼핑 API 테스트 ===\n")
 
-# 공식 샘플과 동일: secret_key.encode() (base64 디코딩 X)
-sign = "%s.%s.%s" % (x_timestamp, method, uri)
-signature_encrypted = hmac.new(
-    NAVER_AD_SECRET_KEY.encode(),
-    sign.encode(),
-    hashlib.sha256
-).digest()
-x_signature = base64.b64encode(signature_encrypted).decode()
+# 1. 쇼핑 검색 API 테스트
+print("1) 쇼핑 검색 API (shop.json) 테스트...")
+res = requests.get(
+    "https://openapi.naver.com/v1/search/shop.json",
+    headers={
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+    },
+    params={"query": "골프채", "display": 3, "sort": "sim"},
+    timeout=10
+)
+print(f"   Status: {res.status_code}")
+print(f"   Response: {res.text[:300]}\n")
 
-headers = {
-    "X-API-KEY": NAVER_AD_ACCESS_LICENSE,
-    "X-CUSTOMER": str(NAVER_AD_CUSTOMER_ID),   # 대문자!
-    "X-Timestamp": x_timestamp,
-    "X-Signature": x_signature,
+# 2. 데이터랩 쇼핑인사이트 API 테스트
+print("2) 데이터랩 쇼핑인사이트 API 테스트...")
+import json
+body = {
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-31",
+    "timeUnit": "month",
+    "category": [{"name": "골프", "param": ["50000006"]}]
 }
+res2 = requests.post(
+    "https://openapi.naver.com/v1/datalab/shopping/categories",
+    headers={
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+        "Content-Type": "application/json",
+    },
+    data=json.dumps(body),
+    timeout=10
+)
+print(f"   Status: {res2.status_code}")
+print(f"   Response: {res2.text[:300]}\n")
 
-params = {"hintKeywords": "정부지원금", "showDetail": "1"}
-r = requests.get(BASE_URL + uri, headers=headers, params=params)
-print("STATUS:", r.status_code)
-print("RESPONSE:", r.text[:500])
+print("=== 테스트 완료 ===")

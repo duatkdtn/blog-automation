@@ -5,6 +5,7 @@
 # ================================================
 
 import json, os, sys, time, io, re, smtplib, base64, pickle
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from email.mime.multipart import MIMEMultipart
@@ -234,6 +235,12 @@ def generate_wp_post(article, today_str):
     # 카테고리 URL 목록 텍스트 생성
     cat_url_list = "\n".join([f"   · {k}: {v}" for k, v in CATEGORY_URLS.items()])
 
+    # 외부버튼용 출처 레이블 (source 없으면 링크 도메인 자동 추출)
+    source_label = source if source else (urlparse(link).netloc.replace('www.', '') if link else '공식 사이트')
+
+    # 면책문구용 년월 (일 제외)
+    month_str = datetime.now(KST).strftime("%Y년 %m월")
+
     sys3 = "한국어 블로그 전문 작가. HTML만 출력. 코드블록·마크다운 절대 금지."
     usr3 = f"""아래 정보로 워드프레스 블로그 HTML 본문 뒷부분을 작성하세요.
 
@@ -275,16 +282,15 @@ def generate_wp_post(article, today_str):
 {cat_url_list}
    - 형태: 👉 <a href="카테고리URL" style="color:#2980b9;">카테고리명 관련 글 모아보기</a>
 
-⑤ 외부버튼: 공식 사이트 링크 (원본: {link}, 출처: {source})
-   - 버튼 텍스트: "🔗 {source} 바로가기" (출처명이 없으면 "🔗 공식 사이트 바로가기")
+⑤ 외부버튼: 공식 사이트 링크 (원본: {link}, 출처: {source_label})
    형식: <div style="text-align:center;margin:30px 0;">
    <a href="{link}" target="_blank" rel="noopener noreferrer"
       style="display:inline-block;background:#2980b9;color:white;padding:15px 40px;border-radius:6px;font-size:1.1em;font-weight:bold;text-decoration:none;">
-   🔗 {source if source else '공식 사이트'} 바로가기</a></div>
+   🔗 {source_label} 바로가기</a></div>
 
 ⑥ 면책문구
    - background:#f8f9fa;border:1px solid #dee2e6;padding:15px 20px;margin:30px 0;font-size:0.9em;color:#666
-   - 내용: "{today_str} 기준 작성. 실제 신청·이용 전 공식 사이트에서 최신 정보를 반드시 확인하세요. 이 글은 정보 제공 목적으로 작성되었으며, 법적 효력이 없습니다."
+   - 내용: "{month_str} 기준 작성. 실제 신청·이용 전 공식 사이트에서 최신 정보를 반드시 확인하세요. 이 글은 정보 제공 목적으로 작성되었으며, 법적 효력이 없습니다."
 
 [언어 수준]
 - 초등학생·70~80대도 이해할 수 있는 쉬운 단어

@@ -552,6 +552,7 @@ def generate_blog_post(keyword):
     """Claude API로 블로그 글 생성"""
     from datetime import datetime
     today = datetime.now().strftime("%Y년 %m월 %d일")
+    year_month = datetime.now().strftime("%Y년 %m월")
 
     # Google Custom Search로 최신 공식 정보 수집 (우선순위 1)
     tavily_text = search_google_latest(keyword)
@@ -660,10 +661,8 @@ def generate_blog_post(keyword):
 - "함께 읽으면 좋은 글 목록", "비슷한 주제로 정리해뒀으니", "다음 글에서" 등 복수 나열하는 유도는 금지
 - 댓글/공유 유도만 간단히: "궁금한 점은 댓글로 남겨주세요 :)"
 
-[7. 면책문구 + AI 생성 표시] - 글 맨 마지막에 반드시 포함 (순서 지킬 것)
-<p style="background:#f8f9fa;border-left:3px solid #adb5bd;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.9em;margin-top:30px">※ 본 정보는 작성 시점({today}) 기준이며, 시장 상황·정책 변경 등에 따라 실제 내용과 다를 수 있습니다. 최신 정보는 공식 채널을 통해 반드시 확인하시기 바랍니다.</p>
-<p style="background:#fff8e1;border-left:3px solid #ffc107;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.85em;margin-top:10px">※ 이 글에는 제휴 링크가 포함되어 있을 수 있으며, 이를 통해 소정의 수수료를 받을 수 있습니다. (공정거래위원회 고시에 의한 표시)</p>
-<p style="background:#f1f3f5;border:1px solid #dee2e6;padding:8px 14px;border-radius:6px;color:#adb5bd;font-size:0.78em;margin-top:10px;line-height:1.5">🤖 본 콘텐츠는 AI(인공지능)의 도움을 받아 작성되었습니다. 「AI 생성 콘텐츠 표시에 관한 지침」에 따라 이를 고지하며, 정보의 정확성은 공식 채널을 통해 확인하시기 바랍니다.</p>
+[7. 면책문구] - 글 맨 마지막에 반드시 포함 (순서 지킬 것)
+<p style="background:#f8f9fa;border-left:3px solid #adb5bd;padding:10px 14px;border-radius:4px;color:#6c757d;font-size:0.9em;margin-top:30px">※ 본 정보는 작성 시점({year_month}) 기준이며, 시장 상황·정책 변경 등에 따라 실제 내용과 다를 수 있습니다. 최신 정보는 공식 채널을 통해 반드시 확인하시기 바랍니다.</p>
 
 === 주의사항 ===
 - 절대 ```html 같은 코드블록 표시 사용하지 말 것
@@ -672,7 +671,23 @@ def generate_blog_post(keyword):
 - 제목 줄 이후 바로 HTML 본문 작성
 - 가격, 날짜, 법령, 정책, 수치 등 시간에 따라 바뀔 수 있는 정보가 있더라도 글 중간에 면책문구를 삽입하지 말 것. 면책문구는 글 맨 마지막(AI 생성 표시 바로 위)에 한 번만 넣음.
 - 가격·시세·이자율 등 수치는 위 뉴스에서 추출된 숫자만 사용할 것. 뉴스에 없는 수치는 절대 임의로 쓰지 말 것.
-- 글 전체 길이는 반드시 2000자 이상 3000자 이하. 너무 짧아도, 너무 길어도 안 됨."""
+- 글 전체 길이는 반드시 2000자 이상 3000자 이하. 너무 짧아도, 너무 길어도 안 됨.
+
+=== 인라인 외부링크 규칙 (반드시 따를 것) ===
+- 본문 중간에 공식 기관명이나 사이트명이 자연스럽게 언급되는 곳 1~2곳에만 <a href="URL" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">기관명</a> 형태로 링크 삽입
+- 반드시 실제로 존재하는 공식 URL만 사용 (정부기관, 공공기관, 협회 등)
+- 예시:
+  * 실업급여 → <a href="https://www.ei.go.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">고용보험 사이트</a>
+  * 기초연금 → <a href="https://www.bokjiro.go.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">복지로</a>
+  * 건강보험 → <a href="https://www.nhis.or.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">국민건강보험공단</a>
+  * 세금/연말정산 → <a href="https://www.hometax.go.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">홈택스</a>
+  * 청약 → <a href="https://www.applyhome.co.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">청약홈</a>
+  * 국민연금 → <a href="https://www.nps.or.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">국민연금공단</a>
+  * 자동차세 → <a href="https://www.wetax.go.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">위택스</a>
+  * 날씨/기상 → <a href="https://www.weather.go.kr" target="_blank" rel="noopener" style="color:#1a73e8;text-decoration:underline">기상청</a>
+- 같은 링크를 2번 이상 반복 삽입 금지
+- 글과 관련 없는 억지 링크 삽입 금지
+- 링크 개수는 전체 글에서 최대 2개"""
 
     message = client.messages.create(
         model=CLAUDE_MODEL,
@@ -803,135 +818,150 @@ MAP_CATEGORIES = {"맛집/음식점", "여행", "반려동물", "레저"}
 EXTERNAL_LINKS = {
     # ── 지도형 ──────────────────────────────────────────────
     "맛집/음식점": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+        ("네이버 지도에서 찾기", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
     ],
     "여행": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
-        ("한국관광공사", "https://www.visitkorea.or.kr"),
+        ("한국관광공사 여행 정보", "https://korean.visitkorea.or.kr/list/travelinfo.do?service=tv"),
     ],
     "반려동물": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+        ("동물보호관리시스템", "https://www.animal.go.kr"),
     ],
     "레저": [
-        ("네이버 지도", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
-        ("카카오맵", "https://map.kakao.com/?q=KEYWORD_PLACEHOLDER"),
+        ("네이버 지도에서 찾기", "https://map.naver.com/v5/search/KEYWORD_PLACEHOLDER"),
     ],
     # ── 건강/생활 ────────────────────────────────────────────
     "의료/건강": [
-        ("국민건강보험", "https://www.nhis.or.kr"),
-        ("질병관리청", "https://www.kdca.go.kr"),
-        ("건강보험심사평가원", "https://www.hira.or.kr"),
+        ("내 주변 병원·약국 찾기 (건강보험심사평가원)", "https://www.hira.or.kr/ra/hosp/getHospList.do"),
     ],
     "다이어트/운동": [
-        ("국민체력100", "https://nfa.kspo.or.kr"),
-        ("식품안전나라", "https://www.foodsafetykorea.go.kr"),
-        ("보건복지부", "https://www.mohw.go.kr"),
+        ("국민체력100 체력인증센터 찾기", "https://nfa.kspo.or.kr/front/main/main.do"),
     ],
     "뷰티/미용": [
-        ("식품의약품안전처", "https://www.mfds.go.kr"),
-        ("식품안전나라", "https://www.foodsafetykorea.go.kr"),
+        ("화장품 성분 조회 (식품의약품안전처)", "https://www.mfds.go.kr/brd/m_74/list.do"),
     ],
     "환경/날씨": [
-        ("기상청", "https://www.weather.go.kr"),
-        ("환경부", "https://www.me.go.kr"),
-        ("에어코리아", "https://www.airkorea.or.kr"),
+        ("기상청 날씨 예보", "https://www.weather.go.kr/w/index.do"),
     ],
     # ── 경제/금융/권리 ────────────────────────────────────────
     "경제/금융": [
-        ("한국은행", "https://www.bok.or.kr"),
-        ("금융위원회", "https://www.fsc.go.kr"),
-        ("금융감독원", "https://www.fss.or.kr"),
+        ("금융감독원 금융소비자 정보포털", "https://consumer.fss.or.kr"),
     ],
     "보험": [
-        ("국민건강보험", "https://www.nhis.or.kr"),
-        ("금융감독원", "https://www.fss.or.kr"),
-        ("건강보험심사평가원", "https://www.hira.or.kr"),
+        ("건강보험 자격득실확인서 발급 (국민건강보험)", "https://www.nhis.or.kr/nhis/minwon/retrievePapersReqstServiceList.do"),
     ],
     "부동산/청약": [
-        ("청약홈", "https://www.applyhome.co.kr"),
-        ("국토교통부", "https://www.molit.go.kr"),
-        ("부동산공시가격알리미", "https://www.realtyprice.kr"),
+        ("청약홈 공고 조회", "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancListView.do"),
     ],
     "세금": [
-        ("국세청 홈택스", "https://www.hometax.go.kr"),
-        ("국세청", "https://www.nts.go.kr"),
-        ("재정정보공개시스템", "https://www.openfiscaldata.go.kr"),
+        ("국세청 홈택스 신고·납부", "https://www.hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml"),
     ],
     "법률/권리": [
-        ("법제처", "https://www.law.go.kr"),
-        ("대한법률구조공단", "https://www.klac.or.kr"),
-        ("국민신문고", "https://www.epeople.go.kr"),
+        ("법제처 국가법령정보센터", "https://www.law.go.kr/LSW/main.html"),
     ],
     "소비자보호": [
-        ("공정거래위원회", "https://www.ftc.go.kr"),
-        ("한국소비자원", "https://www.kca.go.kr"),
-        ("소비자24", "https://www.consumer.go.kr"),
+        ("소비자24 피해구제 신청", "https://www.consumer.go.kr/user/ftc/consumer/damageRelief/damageReliefMain.do"),
     ],
     # ── 복지/취업 ────────────────────────────────────────────
     "정부지원/복지": [
-        ("복지로", "https://www.bokjiro.go.kr"),
-        ("정부24", "https://www.gov.kr"),
-        ("국민비서", "https://www.ips.go.kr"),
+        ("복지로 복지서비스 신청", "https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do"),
     ],
     "취업/직장": [
-        ("고용노동부", "https://www.moel.go.kr"),
-        ("워크넷", "https://www.work.go.kr"),
-        ("고용24", "https://www.work24.go.kr"),
+        ("고용24 일자리·지원금 신청", "https://www.work24.go.kr/wk/a/b/1100/empSrchList.do"),
+    ],
+    "실업급여": [
+        ("고용보험 실업급여 신청", "https://www.ei.go.kr/ei/eih/cm/hm/main.do"),
+    ],
+    "국민연금": [
+        ("국민연금공단 예상연금 조회", "https://www.nps.or.kr/jsppage/cyber/npe/npe_04_07.jsp"),
     ],
     "육아/교육": [
-        ("교육부", "https://www.moe.go.kr"),
-        ("임신육아종합포털", "https://www.childcare.go.kr"),
-        ("EBS", "https://www.ebs.co.kr"),
+        ("임신육아종합포털 아이사랑", "https://www.childcare.go.kr/cpin/contents/index.jsp"),
+    ],
+    "기초연금": [
+        ("기초연금 모의계산 및 신청", "https://www.bokjiro.go.kr/ssis-tbu/twatsa/basipnsn/retrieveTWAT52016S.do"),
+    ],
+    "장애인복지": [
+        ("복지로 장애인 서비스 안내", "https://www.bokjiro.go.kr/ssis-tbu/twataa/wlfareInfo/moveTWAT52011M.do?wlfareInfoId=WLF_DSABLTY"),
     ],
     # ── 기타 ─────────────────────────────────────────────────
     "자동차": [
-        ("한국교통안전공단", "https://www.kotsa.or.kr"),
-        ("국토교통부", "https://www.molit.go.kr"),
-        ("자동차민원 대국민포털", "https://www.ecar.go.kr"),
+        ("자동차민원 대국민포털 등록·검사", "https://www.ecar.go.kr/main.do"),
     ],
     "IT/전자": [
-        ("과학기술정보통신부", "https://www.msit.go.kr"),
-        ("한국인터넷진흥원", "https://www.kisa.or.kr"),
+        ("한국인터넷진흥원 보안 취약점 신고", "https://www.kisa.or.kr/401"),
     ],
     "스포츠/연예": [
-        ("대한체육회", "https://www.sports.or.kr"),
-        ("한국콘텐츠진흥원", "https://www.kocca.kr"),
+        ("대한체육회 국민생활체육", "https://www.sports.or.kr/life/life_intro.do"),
+    ],
+    "축제/행사": [
+        ("대한민국 구석구석 축제 정보", "https://korean.visitkorea.or.kr/list/festivalList.do"),
     ],
 }
 
 
 def get_external_links_for_keyword(keyword):
-    """키워드에 맞는 외부링크 카테고리 자동 판단. (category, links) 튜플 반환"""
+    """키워드에 맞는 공식 외부링크를 Claude가 직접 추론해서 반환. (category, links) 튜플 반환"""
     client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
-    categories = list(EXTERNAL_LINKS.keys())
-    prompt = f"""키워드: "{keyword}"
-아래 카테고리 중 이 키워드와 명확하게 일치하는 것 1개만 골라서 카테고리 이름만 출력하세요.
 
-카테고리: {', '.join(categories)}
+    # 맛집/여행/레저는 지도형으로 처리
+    map_prompt = f"""키워드: "{keyword}"
+이 키워드가 아래 중 하나면 해당 카테고리 이름만 출력, 아니면 "아님"만 출력하세요.
+- 맛집/음식점 (음식점, 카페, 식당 장소 검색)
+- 여행 (관광지, 여행지)
+- 레저 (캠핑장, 스키장, 수영장 등 레저 장소)
+- 반려동물 (동물병원, 펫샵 장소 검색)"""
 
-판단 기준:
-- 맛집/음식점: 음식점, 카페, 식당 등 장소 검색이 목적인 경우만
-- 다이어트/운동: 체중감량, 식단관리, 운동법 등 (음식점 검색 아님)
-- 세금: 소득세, 부가세, 연말정산 등 세금 납부/신고
-- 법률/권리: 소송, 계약, 법률상담 등
-- 소비자보호: 담합, 소비자 피해, 환불, 불량품 등
-- 레저: 캠핑, 스키장, 수영장 등 레저 장소 검색
-- 여행: 관광지, 여행지 검색
-- 정부지원/복지: 지원금, 보조금, 민원, 공공서비스
+    try:
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=20,
+            messages=[{"role": "user", "content": map_prompt}]
+        )
+        map_cat = msg.content[0].text.strip()
+        if map_cat in MAP_CATEGORIES:
+            return map_cat, EXTERNAL_LINKS.get(map_cat, [])
+    except:
+        pass
 
-확실하지 않으면 반드시 "없음"만 출력하세요."""
+    # 일반 키워드: Claude가 직접 가장 적합한 공식 URL 1개 추론
+    prompt = f"""블로그 키워드: "{keyword}"
+
+이 키워드 주제와 가장 관련 있는 한국 공식 사이트(정부, 공공기관, 협회 등) 1개를 골라
+아래 형식으로만 출력하세요. 다른 말은 절대 쓰지 마세요.
+
+형식:
+버튼이름|URL
+
+규칙:
+- 버튼이름: "~에서 확인하기", "~신청하기", "~조회하기" 형태로 구체적으로 (20자 이내)
+- URL: 실제로 존재하는 공식 URL (홈페이지 메인보다 직접 관련 페이지 우선)
+- 공식 사이트가 확실하지 않으면 "없음"만 출력
+
+예시:
+- 실업급여 신청방법 → 고용보험 실업급여 신청하기|https://www.ei.go.kr/ei/eih/cm/hm/main.do
+- 기초연금 신청방법 → 복지로에서 기초연금 신청하기|https://www.bokjiro.go.kr
+- 독감예방접종 무료 → 질병관리청 예방접종 안내 확인하기|https://nip.kdca.go.kr
+- 국민연금 수령액 → 국민연금공단에서 예상연금 조회하기|https://www.nps.or.kr
+- 아파트 청약 방법 → 청약홈에서 공고 조회하기|https://www.applyhome.co.kr
+- 홈택스 연말정산 → 홈택스에서 연말정산 신청하기|https://www.hometax.go.kr
+- 서울 단풍 명소 → 한국관광공사에서 단풍 여행지 확인하기|https://korean.visitkorea.or.kr
+- 자동차세 납부 → 위택스에서 자동차세 납부하기|https://www.wetax.go.kr"""
 
     try:
         message = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=50,
+            max_tokens=100,
             messages=[{"role": "user", "content": prompt}]
         )
-        category = message.content[0].text.strip()
-        return category, EXTERNAL_LINKS.get(category, [])
+        result = message.content[0].text.strip()
+        if result == "없음" or "|" not in result:
+            return "없음", []
+        parts = result.split("|", 1)
+        if len(parts) == 2:
+            btn_name, url = parts[0].strip(), parts[1].strip()
+            if url.startswith("http"):
+                return "직접추론", [(btn_name, url)]
+        return "없음", []
     except:
         return "없음", []
 
@@ -973,16 +1003,12 @@ def add_external_links(content, keyword, map_keyword=None, place_links=None):
             _parts = _ctitle.split(' - ')[0].strip().split()
             btn_name = ' '.join(_parts[1:]) if len(_parts) > 1 else _parts[0]
             buttons_html += f'''<a href="{_curl}" target="_blank" rel="noopener" style="display:block;background:#e74c3c;color:white;padding:14px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 0;font-size:15px;text-align:center">▶ {btn_name} 바로가기</a>\n'''
-            # 연관 계산기 버튼 추가
-            if _curl in CALC_RELATED:
-                _r_name, _r_url = CALC_RELATED[_curl]
-                buttons_html += f'''<a href="{_r_url}" target="_blank" rel="noopener" style="display:block;background:#e74c3c;color:white;padding:14px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 0;font-size:15px;text-align:center">▶ {_r_name} 바로가기</a>\n'''
         else:
-            # 공식 사이트 링크 (기존 방식)
+            # 공식 사이트 링크 (1개만)
             encoded_keyword = quote(keyword)
-            for name, url in links[:2]:
+            for name, url in links[:1]:
                 actual_url = url.replace("KEYWORD_PLACEHOLDER", encoded_keyword)
-                buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:inline-block;background:#e74c3c;color:white;padding:12px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 4px;font-size:14px">▶ {name} 바로가기</a>\n'''
+                buttons_html += f'''<a href="{actual_url}" target="_blank" rel="noopener" style="display:block;background:#e74c3c;color:white;padding:14px 20px;border-radius:6px;font-weight:bold;text-decoration:none;margin:6px 0;font-size:15px;text-align:center">▶ {name} 바로가기</a>\n'''
 
     # 카테고리에 따라 섹션 제목 변경
     if is_map:

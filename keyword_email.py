@@ -54,7 +54,7 @@ try:
     )
 except ImportError:
     CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY")
-    CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+    CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
     NAVER_CLIENT_ID = os.environ.get("NAVER_CLIENT_ID")
     NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET")
     GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS")
