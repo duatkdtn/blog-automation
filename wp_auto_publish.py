@@ -43,6 +43,23 @@ CAT_MAP = {
     "트렌드·사회":  219,
 }
 
+# 카테고리별 실제 URL (내부링크용)
+CATEGORY_URLS = {
+    "생활·정책":    "https://hijaneeinfo.com/category/life-policy/",
+    "건강·의료":    "https://hijaneeinfo.com/category/health-medical/",
+    "재테크·금융":  "https://hijaneeinfo.com/category/finance/",
+    "부동산":        "https://hijaneeinfo.com/category/realestate/",
+    "교육·육아":    "https://hijaneeinfo.com/category/education/",
+    "자동차·교통":  "https://hijaneeinfo.com/category/car-traffic/",
+    "음식·건강식":  "https://hijaneeinfo.com/category/food/",
+    "여행·나들이":  "https://hijaneeinfo.com/category/travel/",
+    "디지털·IT":   "https://hijaneeinfo.com/category/digital-it/",
+    "법률·생활법":  "https://hijaneeinfo.com/category/law/",
+    "노약자·시니어":"https://hijaneeinfo.com/category/senior/",
+    "연예·문화":   "https://hijaneeinfo.com/category/entertainment/",
+    "트렌드·사회": "https://hijaneeinfo.com/category/trend/",
+}
+
 # 카테고리별 추천 계산기 (글에 포함) — hijaneeinfo.com 워프 전용
 CALC_LINKS = {
     "재테크·금융":   ("연봉 실수령액 계산기",      "https://hijaneeinfo.com/salary-calculator/"),
@@ -187,6 +204,9 @@ def generate_wp_post(article, today_str):
    - h2 안에 자연스럽게 나뉘는 소주제는 h3로 세분화
    - 포커스키워드를 본문 전체에 자연스럽게 6~9회 분산
    - 행 번갈아: background:#fff / #f8f9fa
+   - 본문 중간 자연스러운 문장 안에 공식 출처 인라인 링크 1~2개 삽입
+     예: <a href="{link}" target="_blank" rel="noopener">공식 발표 내용</a>
+     앵커텍스트는 키워드 포함한 구체적인 단어 사용 ("여기 클릭", "바로가기" 금지)
 ④ 오해/주의사항 섹션 (h2 제목 포함)
    - 박스 스타일: background:#fdf2f8;border:1px solid #d2b4de;padding:20px;margin:20px 0
    - ❌ 기호로 잘못된 생각, ✅ 기호로 올바른 내용
@@ -198,9 +218,9 @@ def generate_wp_post(article, today_str):
 
 [원칙]
 - inline style만 (style태그 금지)
-- ~더라고요, ~이에요, ~해요 (친근한 존댓말)
-- ~습니다 금지 / "마치며" 금지
-- AI생성표시 박스 절대 금지
+- 종결어미는 자연스럽게 다양하게 혼용: 입니다, 이죠, 하죠, ~까요?, 됩니다, 인데요, 겠죠, 데요, 이에요, 더라고요 등
+- 한 가지 종결어미만 반복 금지 (강제 풀백 방식 금지) — 글의 온도 조절이 필요함
+- "마치며" 금지 / AI생성표시 박스 절대 금지 / 정보출처 별도 섹션 생성 금지
 - HTML만 출력 (코드블록 감싸기 금지)"""
 
     html_part1 = _call_haiku(sys2, usr2, max_tokens=8192)
@@ -210,6 +230,10 @@ def generate_wp_post(article, today_str):
 
     # ── 3단계: 본문 뒷부분 (FAQ·요약박스·이런분들·CTA·링크·면책) ──
     focus_kw = meta.get('focus_keyword', meta.get('wp_title', title_h))
+
+    # 카테고리 URL 목록 텍스트 생성
+    cat_url_list = "\n".join([f"   · {k}: {v}" for k, v in CATEGORY_URLS.items()])
+
     sys3 = "한국어 블로그 전문 작가. HTML만 출력. 코드블록·마크다운 절대 금지."
     usr3 = f"""아래 정보로 워드프레스 블로그 HTML 본문 뒷부분을 작성하세요.
 
@@ -220,6 +244,7 @@ def generate_wp_post(article, today_str):
 핵심사실:
 {facts_text}
 원본링크: {link}
+출처: {source}
 오늘날짜: {today_str}
 {f'계산기: {calc_hint}' if calc_hint else ''}
 
@@ -232,33 +257,32 @@ def generate_wp_post(article, today_str):
    <p style="margin:0;">A. 답변 내용</p>
    </div>
 
-② ✅ 핵심 요약 박스 (h2 제목 포함)
-   - background:#eafaf1;border:1px solid #a9dfbf;padding:20px;margin:20px 0
-   - ✅ 기호로 핵심수치·조건 5개 재정리
-
-③ 이런분들 해당 섹션 (h2 제목 "✅ 이런 분들 꼭 확인해보세요!" 포함)
+② 이런분들 해당 섹션 (h2 제목 "✅ 이런 분들 꼭 확인해보세요!" 포함)
    - background:#eaf4fb;border:1px solid #aed6f1;padding:20px;margin:20px 0
    - 👉 기호로 체크리스트 5개 이상
-{f"④ 계산기 버튼 섹션: {calc_hint}" if calc_hint else ""}
-④ 결론 CTA 섹션 (background:#2980b9;color:white;padding:30px;margin:20px 0;border-radius:8px;text-align:center)
+{f"③ 계산기 버튼 섹션: {calc_hint}" if calc_hint else ""}
+③ 결론 CTA 섹션 (background:#2980b9;color:white;padding:30px;margin:20px 0;border-radius:8px;text-align:center)
    - <strong style="font-size:1.2em;color:white;">핵심 행동 촉구 문구</strong>
    - 글 요약 + 행동 독려 (흰 글씨)
    - "비슷한 주제로 [관련키워드]도 정리해뒀으니 함께 참고해보세요!" (흰 글씨)
    - "궁금한 점은 댓글로 남겨주세요 :)" (흰 글씨)
 
-⑤ 내부링크박스 (h2 제목 "📌 함께 읽으면 좋은 글" 포함)
+④ 내부링크박스 (h2 제목 "📌 함께 읽으면 좋은 글" 포함)
    - background:#eaf4fb;border:1px solid #aed6f1;padding:20px;margin:20px 0
-   - 반드시 실제 <a href="https://hijaneeinfo.com/slug/" style="color:#2980b9;">글제목</a> 형태로 3~4개
-   - URL은 반드시 https://hijaneeinfo.com/ 도메인만 (카테고리 URL 활용 가능)
-   - 예시: 👉 <a href="https://hijaneeinfo.com/category/life-policy/">생활·정책 관련 글 모아보기</a>
+   - 아래 실제 카테고리 URL 목록에서만 골라서 3~4개 삽입 (추측 슬러그 절대 금지)
+   - 현재 글 카테고리({cat}) 포함 관련 카테고리 위주로 선택
+   [실제 카테고리 URL 목록]
+{cat_url_list}
+   - 형태: 👉 <a href="카테고리URL" style="color:#2980b9;">카테고리명 관련 글 모아보기</a>
 
-⑥ 외부버튼: 공식 사이트 링크 (원본: {link})
+⑤ 외부버튼: 공식 사이트 링크 (원본: {link}, 출처: {source})
+   - 버튼 텍스트: "🔗 {source} 바로가기" (출처명이 없으면 "🔗 공식 사이트 바로가기")
    형식: <div style="text-align:center;margin:30px 0;">
    <a href="{link}" target="_blank" rel="noopener noreferrer"
       style="display:inline-block;background:#2980b9;color:white;padding:15px 40px;border-radius:6px;font-size:1.1em;font-weight:bold;text-decoration:none;">
-   🔗 공식 사이트 바로가기</a></div>
+   🔗 {source if source else '공식 사이트'} 바로가기</a></div>
 
-⑦ 면책문구
+⑥ 면책문구
    - background:#f8f9fa;border:1px solid #dee2e6;padding:15px 20px;margin:30px 0;font-size:0.9em;color:#666
    - 내용: "{today_str} 기준 작성. 실제 신청·이용 전 공식 사이트에서 최신 정보를 반드시 확인하세요. 이 글은 정보 제공 목적으로 작성되었으며, 법적 효력이 없습니다."
 
@@ -268,8 +292,9 @@ def generate_wp_post(article, today_str):
 
 [원칙]
 - inline style만 (style태그 금지)
-- ~더라고요, ~이에요, ~해요 말투
-- ~습니다 금지 / AI생성표시 박스 절대 금지
+- 종결어미는 자연스럽게 다양하게 혼용: 입니다, 이죠, 하죠, ~까요?, 됩니다, 인데요, 겠죠, 데요, 이에요, 더라고요 등
+- 한 가지 종결어미만 반복 금지 (강제 풀백 방식 금지) — 글의 온도 조절이 필요함
+- "마치며" 금지 / AI생성표시 박스 절대 금지 / 정보출처 별도 섹션 생성 금지
 - HTML만 출력 (코드블록 감싸기 금지)"""
 
     html_part2 = _call_haiku(sys3, usr3, max_tokens=4096)
