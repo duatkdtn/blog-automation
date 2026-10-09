@@ -1,0 +1,26 @@
+name: 썸네일 재생성 (수동 실행)
+
+on:
+  workflow_dispatch:  # GitHub Actions 페이지에서 수동 실행만 가능
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 한국어 폰트 설치
+        run: sudo apt-get install -y fonts-nanum
+
+      - name: 패키지 설치
+        run: pip install anthropic requests pillow
+
+      - name: 썸네일 전체 재생성
+        run: python regen_thumbnails.py
