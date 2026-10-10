@@ -361,13 +361,13 @@ def make_thumbnail(title, category, today_str=None):
 
         MAX_TW = 720
 
-        def fit_font(text, start_size=68):
-            for sz in range(start_size, 30, -3):
+        def fit_font(text, start_size=82):
+            for sz in range(start_size, 48, -3):
                 f = rt.load_font(sz)
                 bb2 = draw.textbbox((0, 0), text, font=f)
                 if (bb2[2] - bb2[0]) <= MAX_TW:
                     return f, sz
-            return rt.load_font(32), 32
+            return rt.load_font(52), 52
 
         f_title,  _ = fit_font(hook1)
         f_accent, _ = fit_font(hook2)
