@@ -158,7 +158,12 @@ def generate_wp_post(article, today_str):
 출처: {source}
 
 [규칙]
-- wp_title: 메인키워드 반드시 맨 앞, 30자 이내, 숫자 포함
+- wp_title: 메인키워드 맨 앞 + 연관검색어 + 클릭유도형 문구, 30자 이내
+  → 숫자는 반드시 포함하되, 연도(2026 등)는 정책·제도·신청·혜택·연간행사 글에만 사용
+  → 뉴스·속보·경제지표 글은 연도 대신 구체적 수치(금액·비율·기간·순위 등)로 대체
+  → 단순 사실 나열 금지, 반드시 클릭을 유도하는 문구로 마무리
+  → 좋은 예: "서울 아파트 86주 상승 – 전세·월세까지 동시 강세, 지금 사야 하나"
+  → 나쁜 예: "서울 아파트 86주 연속 상승 2026 매매 강세" (연도 억지 삽입, 유도 없음)
 - focus_keyword: wp_title 맨 앞에 오는 핵심 키워드와 정확히 동일한 문구
 - meta_description: focus_keyword로 시작, 120자 이내
 - tags: 2~3개만, 카테고리명({cat})과 절대 겹치지 않게, 포커스키워드 파생 개념으로
@@ -221,7 +226,8 @@ def generate_wp_post(article, today_str):
 - inline style만 (style태그 금지)
 - 종결어미는 자연스럽게 다양하게 혼용: 입니다, 이죠, 하죠, ~까요?, 됩니다, 인데요, 겠죠, 데요, 이에요, 더라고요 등
 - 한 가지 종결어미만 반복 금지 (강제 풀백 방식 금지) — 글의 온도 조절이 필요함
-- "마치며" 금지 / AI생성표시 박스 절대 금지 / 정보출처 별도 섹션 생성 금지
+- "마치며", "정리하며", "마무리하며", "마무리", "총정리" 같은 마무리 성격의 별도 섹션 생성 절대 금지
+- AI생성표시 박스 절대 금지 / 정보출처 별도 섹션 생성 금지
 - HTML만 출력 (코드블록 감싸기 금지)"""
 
     html_part1 = _call_haiku(sys2, usr2, max_tokens=8192)
@@ -300,7 +306,9 @@ def generate_wp_post(article, today_str):
 - inline style만 (style태그 금지)
 - 종결어미는 자연스럽게 다양하게 혼용: 입니다, 이죠, 하죠, ~까요?, 됩니다, 인데요, 겠죠, 데요, 이에요, 더라고요 등
 - 한 가지 종결어미만 반복 금지 (강제 풀백 방식 금지) — 글의 온도 조절이 필요함
-- "마치며" 금지 / AI생성표시 박스 절대 금지 / 정보출처 별도 섹션 생성 금지
+- "마치며", "정리하며", "마무리하며", "마무리", "총정리" 같은 마무리 성격의 별도 섹션 생성 절대 금지
+- AI생성표시 박스 절대 금지 / 정보출처 별도 섹션 생성 금지
+- 내부링크박스(④)는 반드시 위에 제공된 [실제 카테고리 URL 목록]에 있는 URL만 사용 — 목록에 없는 URL, 글 제목 링크, 추측 URL 절대 금지
 - HTML만 출력 (코드블록 감싸기 금지)"""
 
     html_part2 = _call_haiku(sys3, usr3, max_tokens=4096)
@@ -319,87 +327,108 @@ def generate_wp_post(article, today_str):
 # 3. 썸네일 생성 (Pillow)
 # ================================================
 
-def make_thumbnail(title, category, today_str):
-    """1200×630 WebP 썸네일 생성"""
+def make_thumbnail(title, category, today_str=None):
+    """키워드 기반 썸네일 생성 (1200×630 WebP) — regen_thumbnails 테마 시스템 활용"""
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw
     except ImportError:
         print("  ⚠️ Pillow 없음 - 썸네일 생성 건너뜀")
         return None
 
-    W, H = 1200, 630
-    img  = Image.new("RGB", (W, H))
-    draw = ImageDraw.Draw(img)
+    try:
+        import regen_thumbnails as rt
+        W, H = 1200, 630
+        accent_color, icon_type = rt.get_theme(title)
+        bg = rt.accent_to_bg(accent_color)
 
-    # 그라디언트 배경 (파란색 계열)
-    for y in range(H):
-        t = y / H
-        r = int(26  + (41  - 26)  * t)
-        g = int(82  + (128 - 82)  * t)
-        b = int(118 + (185 - 118) * t)
-        draw.line([(0, y), (W, y)], fill=(r, g, b))
+        img  = Image.new("RGB", (W, H), bg)
+        draw = ImageDraw.Draw(img)
 
-    # 폰트 로드 (여러 경로 시도)
-    def load_font(size):
-        paths = [
-            "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf",
-            "/usr/share/fonts/nanum/NanumGothicBold.ttf",
-            "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-            "C:/Windows/Fonts/malgunbd.ttf",
-            "C:/Windows/Fonts/NanumGothicBold.ttf",
-        ]
-        for p in paths:
-            if os.path.exists(p):
-                try:
-                    return ImageFont.truetype(p, size)
-                except:
-                    continue
-        return ImageFont.load_default()
+        f_badge = rt.load_font(27)
+        f_sub   = rt.load_font(29, bold=False)
+        f_logo  = rt.load_font(21, bold=False)
 
-    font_title = load_font(52)
-    font_cat   = load_font(30)
-    font_date  = load_font(22)
+        # 카테고리 배지
+        badge = f" {category} "
+        bb  = draw.textbbox((0, 0), badge, font=f_badge)
+        bw  = bb[2] - bb[0] + 24
+        bh  = bb[3] - bb[1] + 12
+        draw.rounded_rectangle([44, 40, 44 + bw, 40 + bh], radius=7, fill=accent_color)
+        draw.text((56, 46), badge.strip(), font=f_badge, fill="white")
 
-    # 카테고리 배지 (상단 왼쪽)
-    badge_text = f"  {category}  "
-    draw.rounded_rectangle([(50, 50), (50 + len(badge_text) * 18, 100)],
-                           radius=8, fill="#1a5276")
-    draw.text((55, 60), badge_text.strip(), fill="white", font=font_cat)
+        # 후킹 문구 생성 (Claude Haiku)
+        hook1, hook2, sub1, sub2 = rt.generate_hook_text(title)
 
-    # 제목 텍스트 (중앙, 최대 2줄)
-    max_chars = 18
-    if len(title) <= max_chars:
-        lines = [title]
-    elif len(title) <= max_chars * 2:
-        lines = [title[:max_chars], title[max_chars:]]
-    else:
-        lines = [title[:max_chars], title[max_chars:max_chars*2] + "…"]
+        MAX_TW = 720
 
-    total_h = len(lines) * 75
-    y_start = (H - total_h) // 2 - 20
-    for line in lines:
-        # 텍스트 경계 계산
-        bbox  = draw.textbbox((0, 0), line, font=font_title)
-        tw    = bbox[2] - bbox[0]
-        x_pos = (W - tw) // 2
-        # 그림자
-        draw.text((x_pos + 2, y_start + 2), line, fill=(0, 0, 0, 100), font=font_title)
-        draw.text((x_pos, y_start), line, fill="white", font=font_title)
-        y_start += 75
+        def fit_font(text, start_size=68):
+            for sz in range(start_size, 30, -3):
+                f = rt.load_font(sz)
+                bb2 = draw.textbbox((0, 0), text, font=f)
+                if (bb2[2] - bb2[0]) <= MAX_TW:
+                    return f, sz
+            return rt.load_font(32), 32
 
-    # 사이트 & 날짜 (하단 중앙)
-    foot_text = f"hijanee.com  |  {today_str}"
-    bbox  = draw.textbbox((0, 0), foot_text, font=font_date)
-    tw    = bbox[2] - bbox[0]
-    draw.text(((W - tw) // 2, H - 60), foot_text, fill="#aed6f1", font=font_date)
+        f_title,  _ = fit_font(hook1)
+        f_accent, _ = fit_font(hook2)
 
-    # WebP 저장
-    buf = io.BytesIO()
-    img.save(buf, format="WEBP", quality=90)
-    buf.seek(0)
-    return buf.read()
+        # 줄1 (진한 다크)
+        y = 118
+        draw.text((48, y), hook1, font=f_title, fill=(28, 28, 28))
+        b1 = draw.textbbox((48, y), hook1, font=f_title)
+        y += b1[3] - b1[1] + 6
+
+        # 줄2 (강조색 + 밑줄)
+        draw.text((48, y), hook2, font=f_accent, fill=accent_color)
+        b2 = draw.textbbox((48, y), hook2, font=f_accent)
+        draw.line([(48, b2[3] + 5), (b2[2], b2[3] + 5)], fill=accent_color, width=4)
+        y += b2[3] - b2[1] + 30
+
+        # 구분선
+        div_color = tuple(int(c * 0.5 + bg[i] * 0.5) for i, c in enumerate(accent_color))
+        draw.line([(48, y), (700, y)], fill=div_color, width=2)
+        y += 20
+
+        # 부제목
+        gray = (85, 85, 85)
+        if sub1:
+            draw.text((48, y), sub1, font=f_sub, fill=gray)
+            y += 40
+        if sub2:
+            draw.text((48, y), sub2, font=f_sub, fill=gray)
+
+        # 로고 박스 (왼쪽 하단)
+        draw.rounded_rectangle([40, H - 72, 248, H - 32], radius=7, fill="white")
+        draw.text((54, H - 62), "하이자니 정보마당", font=f_logo, fill=(70, 70, 70))
+
+        # 오른쪽 컬러 일러스트
+        rt.draw_icon(draw, icon_type, 970, H // 2 + 20, 200, accent_color)
+
+        buf = io.BytesIO()
+        img.save(buf, format="WEBP", quality=92)
+        buf.seek(0)
+        return buf.read()
+
+    except Exception as e:
+        print(f"  ⚠️ 썸네일 생성 오류 ({e}) - 기본 썸네일로 대체")
+        # 폴백: 단순 파란 그라디언트
+        try:
+            from PIL import Image, ImageDraw
+            W, H = 1200, 630
+            img  = Image.new("RGB", (W, H))
+            draw = ImageDraw.Draw(img)
+            for y in range(H):
+                t = y / H
+                r = int(26  + (41  - 26)  * t)
+                g = int(82  + (128 - 82)  * t)
+                b = int(118 + (185 - 118) * t)
+                draw.line([(0, y), (W, y)], fill=(r, g, b))
+            buf = io.BytesIO()
+            img.save(buf, format="WEBP", quality=90)
+            buf.seek(0)
+            return buf.read()
+        except Exception:
+            return None
 
 
 # ================================================
