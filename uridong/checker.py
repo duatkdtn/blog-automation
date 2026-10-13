@@ -106,6 +106,11 @@ def check_html(html, ctx):
     if legal: res.append(("S16", "FAIL", "법 판단을 단정하는 표현: " + ", ".join(dict.fromkeys(legal))[:80] + " → '~로 안내돼 있어요, 공단에 확인하세요'로"))
     vague = re.findall(r"수(?:십|백|천)만\s*원|수억", text)
     if vague: res.append(("S16", "FAIL", "근거 없는 어림 금액: " + ", ".join(dict.fromkeys(vague))[:60]))
+    # S17 같은 말 반복·확인 안내문이 단위 옆에 끼어든 깨진 문장
+    dup = re.findall(r"((?:[가-힣]{2,}\s+){1,3}[가-힣]{2,})\s+\1(?![가-힣])", text)
+    if dup: res.append(("S17", "FAIL", "같은 말이 연달아 반복됨: " + str(dup[0])[:40]))
+    if re.search(r"\(공단[^)]{0,12}확인\)\s*[일년월개명원%]", text) or "(공단·요양원에 확인)" in text:
+        res.append(("S17", "FAIL", "숫자 자리에 '확인' 안내문이 끼어든 문장"))
     # S14
     if soup.find("style") or soup.find("script"): res.append(("S14", "FAIL", "style/script 태그 사용"))
     # S1 요약 박스
