@@ -71,7 +71,7 @@ def result_mail(rows, held, lacks, cost, remaining, extra_notes):
         cards += card("#e74c3c", "⛔ 보류", h["title"], "공개하지 않고 멈춤", note(h["fails"][:8]))
     foot = (f'<div style="font-size:13px;color:#666;margin-top:8px">모델 비용 추정: {e(cost)} · 남은 주제 {remaining}개</div>{extra_notes}')
     subj = f"[우리동네 요양원] 결과 — 발행 {ok} / 보류 {hold} / 경고 있음 {warns}"
-    return send(subj, wrap("🚀 우리동네 요양원 자동 발행 결과", f"{C.now_kst().strftime("%Y-%m-%d")} · 발행 {ok}/{total}개", cards + foot))
+    return send(subj, wrap("🚀 우리동네 요양원 자동 발행 결과", C.now_kst().strftime("%Y-%m-%d") + f" · 발행 {ok}/{total}개", cards + foot))
 
 def hold_mail(title, fails, warns, topic):
     body = card("#e74c3c", "⛔ 보류", title, f'주제 {e(topic["main"])} / {e(topic["detail"])}',
