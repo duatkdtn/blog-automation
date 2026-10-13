@@ -11,9 +11,31 @@
    "date": "2026-10-13T21:44:59.910453+09:00",
    "topic": 4,
    "id": 480
+  },
+  {
+   "title": "장기요양등급 갱신 신청 기간, 유효기간 3가지 확인",
+   "slug": "care-grade-renewal-timing-validity-3",
+   "pattern": "체크형",
+   "combo": [
+    "딸과 어머니",
+    "밝은 거실"
+   ],
+   "date": "2026-10-13T23:01:58.758016+09:00",
+   "topic": 11,
+   "id": 488
   }
  ],
  "site_posts": [
+  {
+   "id": 486,
+   "slug": "care-grade-renewal-timing-validity-2",
+   "link": "https://uridongneyoyangwon.com/?p=486",
+   "status": "draft",
+   "title": "[보류] 장기요양등급 갱신 신청 시기와 유효기간, 등급별 2가지",
+   "categories": [
+    4
+   ]
+  },
   {
    "id": 485,
    "slug": "care-grade-renewal-timing-validity",
@@ -202,6 +224,16 @@
    "title": "요양원 비용 2026 총정리, 한 달 얼마?",
    "categories": [
     3
+   ]
+  },
+  {
+   "id": 488,
+   "slug": "care-grade-renewal-timing-validity-3",
+   "link": "https://uridongneyoyangwon.com/care-grade-renewal-timing-validity-3/",
+   "status": "publish",
+   "title": "장기요양등급 갱신 신청 기간, 유효기간 3가지 확인",
+   "categories": [
+    4
    ]
   }
  ]
