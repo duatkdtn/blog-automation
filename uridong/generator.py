@@ -82,6 +82,8 @@ def extract_json(s):
 
 def tag(s, name):
     m = re.search(rf"<{name}>(.*?)</{name}>", s, re.S)
+    if not m:  # 닫는 태그가 빠진 경우: 다음 태그 시작 전까지(없으면 끝까지)
+        m = re.search(rf"<{name}>(.*?)(?=<(?:summary|intro|body|meta|mistakes|faq|who|cta)>|\Z)", s, re.S)
     return m.group(1).strip() if m else ""
 
 PATTERNS = ["쉼표형", "연도형", "질문형", "기준 제시형", "비교형", "순서형", "체크형", "단순형"]
@@ -144,8 +146,12 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
     mj = {}
     try: mj = json.loads(tag(out, "meta"))
     except Exception: pass
+    body = tag(out, "body")
+    print(f"[2단계 진단] 응답 {len(out)}자 / body {len(body)}자 / 응답 속 <table {out.count('<table')}개 / body 속 <table {body.count('<table')}개 / </body> {'있음' if '</body>' in out else '없음'}", flush=True)
+    if body.count("<table") < 2:
+        print("[2단계 진단] 표 부족. body 앞 300자:", body[:300].replace("\n", " "), flush=True)
     return {"summary": [x.strip(" -·✅") for x in tag(out, "summary").split("\n") if x.strip()],
-            "intro": tag(out, "intro"), "body": tag(out, "body"), "meta": mj}
+            "intro": tag(out, "intro"), "body": body, "meta": mj}
 
 def stage3(topic, facts, today, meta, title, part1, feedback=""):
     sys3 = SYSTEM_BASE + """

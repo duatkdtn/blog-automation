@@ -141,6 +141,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         res += K.check_links_alive(before + after)
         fails = [f"{x[0]} {x[2]}" for x in res if x[1] == "FAIL"]
         warns = [f"{x[0]} {x[2]}" for x in res if x[1] == "WARN"]
+        C.log(f"[시도 {attempt+1}] 실패 {len(fails)}개:", "; ".join(fails)[:600], "| 경고", len(warns))
         if not fails: break
         if attempt < 2:
             revisions += 1; feedback = "; ".join(fails)[:900]
