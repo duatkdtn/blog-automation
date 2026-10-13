@@ -86,7 +86,7 @@ def main():
     if a.check_existing:
         return check_existing(posts, facts)
     today = C.today_label(); year = C.now_kst().year
-    existing_titles = [p["title"] for p in posts]; existing_slugs = {p["slug"] for p in posts}
+    existing_titles = [p["title"] for p in posts if not p["title"].startswith("[보류]")]; existing_slugs = {p["slug"] for p in posts if not p["title"].startswith("[보류]")}
     pending = [t for t in topics if t["status"] == "대기"]
     if len(pending) <= 12:
         pending = replenish(topics, facts, existing_titles) or pending
@@ -148,8 +148,8 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
     meta = dict(meta); meta["meta_description"] = G.fix_meta(meta, t, title)
     for attempt in range(3):               # 처음 + 고쳐쓰기 최대 2회
         codes = {f.split()[0] for f in fails}
-        redo1 = attempt == 0 or not codes <= {"S5", "S6"}      # 뒷부분(FAQ·이런분들) 문제만이면 앞부분은 그대로 둔다(비용 절약)
-        redo3 = attempt == 0 or not codes <= {"S4", "K1", "K1b", "K2"}   # 본문 표·분량·키워드 문제만이면 뒷부분은 그대로 둔다
+        redo1 = attempt == 0 or not codes <= {"S5", "S6", "K4"}      # 뒷부분(FAQ·이런분들) 문제만이면 앞부분은 그대로 둔다(비용 절약)
+        redo3 = attempt == 0 or not codes <= {"S4", "K1", "K1b", "K2", "K4"}   # 본문 표·분량·키워드 문제만이면 뒷부분은 그대로 둔다
         if redo1: p1 = G.stage2(t, facts_for(t, facts), today, meta, title, feedback)
         if redo3: p3 = G.stage3(t, facts_for(t, facts), today, meta, title, p1, feedback)
         links = pick_links(t["category"], posts)
@@ -179,6 +179,11 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
                 before, after, res, lack = b2, a2, res2, lack2
                 fails = []; warns = [f"{x[0]} {x[2]}" for x in res2 if x[1] == "WARN"] + [f"자동 정리: 숫자 든 문장 {n1+n2}개 삭제"]
         if not fails: break
+        if attempt < 2 and any(f.startswith("K4") for f in fails):       # 제목 개수 불일치: 제목만 새로 쓴다
+            k4 = next(f for f in fails if f.startswith("K4"))
+            nt = G.fix_title(t, title, k4, before, after)
+            if nt != title:
+                C.log("[제목 수정]", title, "→", nt); title = nt
         if attempt < 2:
             revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,800자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."
     if fails or len(warns) >= 4:
@@ -189,7 +194,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         if not (C.DRY_RUN or os.environ.get("URI_MOCK")):      # 보류 글도 버리지 않고 임시글로 저장(공개 안 됨) → 사람이 고쳐서 공개
             try:
                 import wp_client as W
-                dp = W.create_post("[보류] " + title, meta["slug"], G.wrap_blocks(before, after), C.CATEGORIES[t["category"]], "draft", None, None, meta["meta_description"])
+                dp = W.create_post("[보류] " + title, meta["slug"] + "-hold", G.wrap_blocks(before, after), C.CATEGORIES[t["category"]], "draft", None, None, meta["meta_description"])
                 held[-1]["draft"] = dp["link"]; C.log("임시글 저장:", dp["link"])
             except Exception as e:
                 C.log("임시글 저장 실패", type(e).__name__, str(e)[:150])

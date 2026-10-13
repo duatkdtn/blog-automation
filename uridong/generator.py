@@ -115,6 +115,25 @@ HTML만 답하세요(설명 금지). 형식:
     return after[:at] + tbl + after[at:]
 
 
+def fix_title(t, title, why, before, after):
+    """제목의 개수 숫자가 본문과 안 맞을 때, 본문 소제목을 보고 제목만 새로 쓴다(본문은 그대로). 조건에 안 맞으면 원래 제목."""
+    from bs4 import BeautifulSoup
+    heads = [h.get_text(" ", strip=True) for h in BeautifulSoup(after, "html.parser").find_all("h2")][:10]
+    usr = f"""현재 제목: {title}
+메인 키워드: {t['main']} / 세부: {t['detail']}
+문제: {why}
+본문 소제목: {' | '.join(heads)}
+
+본문 내용과 개수가 맞도록 제목만 다시 쓰세요. 규칙: 메인 키워드가 맨 앞, 숫자 1개 이상(개수를 쓸 땐 본문에서 실제로 다루는 개수나 '2가지'처럼 소제목에서 셀 수 있는 개수, 확신이 없으면 개수 대신 연도·등급 같은 숫자), 공백 포함 18~30자, 느낌표·이모지·대괄호 금지. 제목 한 줄만 답하세요."""
+    try:
+        r = call(SYSTEM_BASE, usr, max_tokens=200, temperature=0.4).strip().splitlines()[0].strip().strip('"\'')
+    except Exception:
+        return title
+    if t["main"] and r.startswith(t["main"]) and 18 <= len(r) <= 30 and re.search(r"\d", r) and not re.search(r"[!\[\]]", r):
+        return r
+    return title
+
+
 def clean_text(h):
     """AI가 단위를 겹쳐 쓴 흔한 실수 정리: 558,420원원 → 558,420원, 12%% → 12%."""
     h = re.sub(r"(?<=[\d,])원원", "원", h)
