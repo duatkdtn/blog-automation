@@ -74,6 +74,14 @@ def main():
     a = ap.parse_args()
     import wp_client as W
     facts = C.load_json("facts.json"); topics = C.load_json("topics.json"); hist = C.load_json("history.json", {"posts": []})
+    if not (C.DRY_RUN or os.environ.get("URI_MOCK") or a.check_existing):     # 발행 전 로그인 점검(실패하면 글을 만들기 전에 멈춤 → 비용 절약)
+        r = W._req("GET", "/wp/v2/users/me", params={"context": "edit"})
+        code = ""
+        try: code = r.json().get("code", "")
+        except Exception: pass
+        C.log("[로그인 점검] 상태", r.status_code, code, "| 아이디 칸 길이", len(C.WP_USER), "| 아이디에 @ 포함", "@" in C.WP_USER, "| 비밀번호 길이", len(C.WP_APP_PASSWORD))
+        if r.status_code != 200:
+            raise SystemExit("워드프레스 로그인 실패 — URI_WP_USER / URI_WP_APP_PASSWORD 확인 필요")
     posts = W.list_posts() if (C.WP_USER and not os.environ.get("URI_MOCK")) else hist.get("site_posts", [])
     if a.check_existing:
         return check_existing(posts, facts)
