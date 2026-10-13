@@ -89,6 +89,32 @@ def fill_slots(text, facts):
         return _fmt(v, unit)
     return re.sub(r"\{\{\s*([fc])\s*:\s*(.+?)\s*\}\}", one, text)
 
+def add_table(t, title, before, after, facts):
+    """표가 2개 미만이면 표 1개만 따로 만들어 본문 중간에 넣는다(실패해도 글은 그대로)."""
+    from bs4 import BeautifulSoup
+    heads = [h.get_text(" ", strip=True) for h in BeautifulSoup(after, "html.parser").find_all("h2")][:8]
+    usr = f"""글 제목: {title}
+메인 키워드: {t['main']} / 세부: {t['detail']}
+본문 소제목: {' | '.join(heads)}
+
+사실표:
+{facts_text(facts)}
+
+이 글 내용을 한눈에 정리하는 표 1개를 만드세요. 3~6행, 2~3열(예: 구분 / 내용 / 확인할 곳). 사실표에 없는 내용은 쓰지 말고 '국민건강보험공단(1577-1000)에 확인'으로 씁니다. 금액·비율은 {{{{f:id}}}}로만 씁니다. 법·의료 판단은 단정하지 않습니다.
+HTML만 답하세요(설명 금지). 형식:
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff"><tr><th style="padding:10px;border:1px solid #ddd">구분</th><th style="padding:10px;border:1px solid #ddd">내용</th></tr></thead><tbody><tr style="background:#fff"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr><tr style="background:#f8f9fa">…</tr></tbody></table></div>"""
+    try:
+        r = call(SYSTEM_BASE, usr, max_tokens=1500, temperature=0.4)
+    except Exception:
+        return after
+    m = re.search(r"<div style=\"overflow-x:auto\">.*?</table></div>", r, re.S)
+    if not m: return after
+    tbl = fill_slots(m.group(0), facts)
+    pos = [x.start() for x in re.finditer(r"<h2", after)]
+    at = pos[1] if len(pos) > 1 else 0
+    return after[:at] + tbl + after[at:]
+
+
 def clean_text(h):
     """AI가 단위를 겹쳐 쓴 흔한 실수 정리: 558,420원원 → 558,420원, 12%% → 12%."""
     h = re.sub(r"(?<=[\d,])원원", "원", h)

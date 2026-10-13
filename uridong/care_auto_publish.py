@@ -156,6 +156,9 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         before, after = G.clean_text(before), G.clean_text(after)
         after = G.trim_keyword(before, after, t["main"])
+        if (before + after).count("<table") < 2:
+            after = G.add_table(t, title, before, after, facts_for(t, facts))
+            C.log("[표 보충] 표가 모자라 1개를 따로 만들어 넣음")
         after = G.boost_keyword(before, after, t["main"])
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)
         res += [("S0", "WARN", w) for w in dict.fromkeys(G.SLOT_WARN)]; G.SLOT_WARN.clear()
