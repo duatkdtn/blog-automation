@@ -32,6 +32,8 @@ SYSTEM_BASE = """당신은 '우리동네 요양원'(요양원 비용·장기요�
 7. 면회·외출처럼 법에 정한 것이 없는 내용은 '법에 정해진 시간이 없고 시설 운영규정에 따르니 입소 전에 확인하세요'로 씁니다.
 8. 어려운 말은 쉬운 말로 풀어 씁니다. 예시와 계산 예시를 넣습니다.
 9. 스타일은 inline style만 씁니다. <style>, <script>, class 사용 금지.
+10. 표·본문·FAQ 어디에서든 숫자(금액·%·일수·개수)는 사실표에 있는 값 또는 사실표 값으로 계산한 값만 씁니다. 사실표에 없는 '대략 ○○만원', '월 ○○만~○○만원', '100%' 같은 숫자는 쓰지 않습니다. 비급여 항목(식재료비·간식비·상급침실료·이미용비 등)은 항목 이름과 '요양원마다 다르니 확인하세요'만 쓰고 금액은 쓰지 않습니다. 합계는 사실표 값끼리만 더하고 calcs에 식을 적습니다.
+11. 말투 점검: 문장 끝이 '~입니다/합니다/습니다'이면 '~이에요/해요/어요'로 바꿔 씁니다. 표 안의 설명 문장도 같습니다.
 """
 
 def facts_text(facts):
@@ -108,7 +110,7 @@ JSON 형식:
 {{"titles":[{{"title":"","pattern":"쉼표형|연도형|질문형|기준 제시형|비교형|순서형|체크형|단순형"}},{{}},{{}}],
 "slug":"영문 소문자와 하이픈만, 3~6단어",
 "tags":["","",""],
-"meta_description":"120자 안팎, 메인 키워드 포함, 수치는 사실표 값만",
+"meta_description":"공백 포함 110~135자(너무 짧거나 길면 안 됨), 메인 키워드 포함, 수치는 사실표 값만",
 "outline":["본문 h2 소제목 4~6개 (연관검색어를 소제목에 나눠 넣기)"],
 "sources":["근거로 쓸 기관 이름 (국민건강보험공단|건강보험심사평가원|보건복지부 고시|법제처 국가법령정보센터|중앙치매센터|치매안심센터 안내|복지로|정부24 중에서 실제 근거로 쓴 것만)"],
 "button":"longtermcare|bokjiro|law|nid|nhis 중 하나",
@@ -124,7 +126,10 @@ def stage2(topic, facts, today, meta, title, feedback=""):
 <body>본문 HTML. 구성: h2 소제목(스타일 지정) 안에 내용. 소주제는 h3. 표 2개 이상(반드시 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff">…</thead><tbody> 행은 번갈아 background:#fff / #f8f9fa), 리스트 박스(background:#f0f8ff;border-left:4px solid #2980b9;padding:14px 18px), 공식 출처 인라인 링크 1~2개(<a href="https://www.longtermcare.or.kr" target="_blank" rel="noopener">구체적 키워드 앵커</a>, 앵커에 '여기 클릭' '바로가기' 금지), 단계가 필요한 글은 <ol>. 예시와 계산 예시 포함.</body>
 <meta>{"numbers":[{"값":"본문에 쓴 숫자","근거":"사실표 id"}],"calcs":[{"식":"","결과":""}],"lacking":["사실표에 없어 쓰지 못한 정보"]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스타일: style="color:#2c3e50;font-size:19px;margin:24px 0 8px;"
-본문(<body>)은 공백 포함 순수 글자 3,000자 이상으로 충분히 자세히 씁니다. 같은 말을 반복해서 늘리지 마세요."""
+본문(<body>)은 공백 포함 순수 글자 3,800자 이상으로 충분히 자세히 씁니다(소제목마다 3~4문단 + 예시). 같은 말을 반복해서 늘리지 마세요.
+[표 필수] <body> 안에 표(<table>)를 반드시 2개 이상 넣습니다. 표가 없으면 글이 불합격입니다. 표 모양 예시(내용만 바꿔 복사해서 쓰세요):
+<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff"><tr><th style="padding:10px;border:1px solid #ddd">구분</th><th style="padding:10px;border:1px solid #ddd">내용</th></tr></thead><tbody><tr style="background:#fff"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr><tr style="background:#f8f9fa"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr></tbody></table></div>
+표는 사실표의 값을 그대로 옮기거나(금액·한도액·비율), 숫자가 필요 없는 비교·절차·체크 표로 만듭니다."""
     usr = f"""오늘: {today}  글 제목: {title}
 메인 키워드(본문에 6~9회, 너무 많으면 '비용' 등으로 줄임): {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
 이 글이 답하는 질문: {topic['question']}  /  작성 주의: {topic.get('fact_status','')}
@@ -151,7 +156,7 @@ def stage3(topic, facts, today, meta, title, part1, feedback=""):
 <cta>JSON {"head":"핵심 행동 촉구 한 문장(굵게 표시될 문구)","summary":"이 글 요약 + 행동 독려 1~2문장","related":"비슷한 주제로 정리해 둔 관련 키워드 한 개"}</cta>
 <meta>{"numbers":[{"값":"","근거":""}],"calcs":[{"식":"","결과":""}],"lacking":[]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
-이 뒷부분은 공백 포함 순수 글자 1,500자 이상이 되게 충분히 자세히 씁니다(FAQ 답변을 구체적으로)."""
+이 뒷부분은 공백 포함 순수 글자 1,800자 이상이 되게 충분히 자세히 씁니다(오해 박스는 ❌ 4개 이상, FAQ 답변은 한 질문당 3~4문장으로 구체적으로, 질문은 6~7개)."""
     usr = f"""오늘: {today}  글 제목: {title}
 메인 키워드: {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
 이 글이 답하는 질문: {topic['question']} / 작성 주의: {topic.get('fact_status','')}
