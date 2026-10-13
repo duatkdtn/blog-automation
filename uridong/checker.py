@@ -41,6 +41,7 @@ def build_allowed(facts, extra=()):
     for i, a in enumerate(vals):
         for b in vals[i + 1:]:
             allowed.add(a + b); allowed.add(abs(a - b))
+    allowed.update({80.0, 60.0, 40.0})   # 본인부담 20%·40%·60%의 반대편(공단 부담 80% 등)
     for v in extra: allowed.add(float(v))
     return allowed
 
@@ -231,9 +232,17 @@ def sanitize(html, ctx):
     soup = BeautifulSoup(html, "html.parser")
     n = 0
     for node in list(soup.find_all(string=True)):
-        if node.parent is None or node.parent.name in ("a", "h1", "h2", "h3", "th", "script", "style"): continue
+        if node.parent is None or node.parent.name in ("script", "style"): continue
         txt = str(node)
-        if not find_bad(txt, ctx): continue
+        bads = find_bad(txt, ctx)
+        if not bads: continue
+        if node.parent.name in ("a", "h1", "h2", "h3", "th", "strong", "b"):   # 문장을 지울 수 없는 자리: 숫자만 말로 바꾼다
+            new = txt
+            for b_ in dict.fromkeys(bads):
+                pat = r"\s*".join(re.escape(ch) for ch in b_.replace(" ", ""))
+                new = re.sub(pat, "일정 비율" if b_.endswith("%") else "정해진 금액" if "원" in b_ else "일정 수", new, count=0)
+            if new != txt: node.replace_with(NavigableString(new)); n += 1
+            continue
         if node.parent.name == "td":
             node.replace_with(NavigableString("요양원에 확인")); n += 1; continue
         sents = re.split(r"(?<=[.!?요다])\s+", txt)
