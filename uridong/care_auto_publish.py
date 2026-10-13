@@ -144,7 +144,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         C.log(f"[시도 {attempt+1}] 실패 {len(fails)}개:", "; ".join(fails)[:600], "| 경고", len(warns))
         if not fails: break
         if attempt < 2:
-            revisions += 1; feedback = "; ".join(fails)[:900]
+            revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,800자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."
     if fails or len(warns) >= 4:
         reason = fails or ["경고 4개 이상(품질 흔들림): " + "; ".join(warns[:4])]
         C.log("보류:", title, reason, warns)

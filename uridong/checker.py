@@ -33,6 +33,14 @@ def build_allowed(facts, extra=()):
             allowed.add(v)
             if v >= 10000: allowed.add(v / 10000.0)          # 2,331,200원 → 233.12만원 형태 대비
             if v >= 10000 and v % 10000 == 0: allowed.add(v // 10000)
+    # 사실표 금액끼리의 합·차, 그리고 비율(10~90%)·12개월·30일 곱으로 만든 값은 '계산해 낸 숫자'로 허용한다.
+    vals = sorted({float(f["값"]) for f in facts if isinstance(f.get("값"), (int, float)) and f["값"] >= 1000})
+    ratios = (0.05, 0.06, 0.09, 0.1, 0.15, 0.16, 0.2, 0.4, 0.6, 0.8, 0.9, 12, 30, 31)
+    for a in vals:
+        for r in ratios: allowed.add(round(a * r, 2))
+    for i, a in enumerate(vals):
+        for b in vals[i + 1:]:
+            allowed.add(a + b); allowed.add(abs(a - b))
     for v in extra: allowed.add(float(v))
     return allowed
 
