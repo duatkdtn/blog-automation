@@ -1,6 +1,29 @@
 {
- "posts": [],
+ "posts": [
+  {
+   "title": "요양원 입소보증금 받아도 되나요, 법 규정 3가지",
+   "slug": "nursing-home-deposit-legal-rule",
+   "pattern": "질문형",
+   "combo": [
+    "중년 아들과 노부모",
+    "요양원 상담실"
+   ],
+   "date": "2026-10-13T21:44:59.910453+09:00",
+   "topic": 4,
+   "id": 480
+  }
+ ],
  "site_posts": [
+  {
+   "id": 478,
+   "slug": "nursing-home-cost-grade-1-2026",
+   "link": "https://uridongneyoyangwon.com/?p=478",
+   "status": "draft",
+   "title": "[보류] 요양원 비용 2026, 1등급 한 달 얼마?",
+   "categories": [
+    3
+   ]
+  },
   {
    "id": 99,
    "slug": "dementia-nursing-home-admission",
@@ -139,6 +162,16 @@
    "title": "요양원 비용 2026 총정리, 한 달 얼마?",
    "categories": [
     3
+   ]
+  },
+  {
+   "id": 480,
+   "slug": "nursing-home-deposit-legal-rule",
+   "link": "https://uridongneyoyangwon.com/nursing-home-deposit-legal-rule/",
+   "status": "publish",
+   "title": "요양원 입소보증금 받아도 되나요, 법 규정 3가지",
+   "categories": [
+    6
    ]
   }
  ]
