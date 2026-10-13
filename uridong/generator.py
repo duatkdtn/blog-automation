@@ -36,6 +36,7 @@ SYSTEM_BASE = """당신은 '우리동네 요양원'(요양원 비용·장기요�
 9. 스타일은 inline style만 씁니다. <style>, <script>, class 사용 금지.
 10. 표·본문·FAQ 어디에서든 금액·비율은 {{f:id}}나 {{c:식}}으로만 씁니다. '대략 ○○만원', '월 ○○만~○○만원', '100%', '월 280만원을 쓰는 경우', '소득이 200만원이면' 같은 숫자와 예시·가정 금액은 만들지 않습니다. 예시가 필요하면 {{f:id}}로 가져온 값으로만 설명하고, 없으면 금액 없이 말로 설명합니다. 비급여 항목(식재료비·간식비·상급침실료·이미용비 등)은 항목 이름과 '요양원마다 다르니 확인하세요'만 쓰고 금액은 쓰지 않습니다. 제목·슬러그·메타 설명에는 {{ }}를 쓰지 않습니다.
 12. 법·제도 판단은 단정하지 않습니다. '법 위반이에요', '법으로 금지', '불법', '단호히 거절', '처벌·폐쇄·시정명령' 같은 표현과 근거 없는 원인 설명·어림 금액('보통 수백만 원대')은 쓰지 않습니다. 대신 '~로 안내돼 있어요', '정확한 내용은 국민건강보험공단(1577-1000)에 확인하세요'로 씁니다. 신고·분쟁은 기관 이름만 안내하고 결과를 예측하지 않습니다.
+13. 제도가 생긴 해·개정 연도(예: '2024년부터 시작')처럼 사실표에 없는 연도는 쓰지 않습니다. 필요하면 '최근 새로 생긴', '개정 이후'처럼 연도 없이 씁니다.
 11. 말투 점검: 문장 끝이 '~입니다/합니다/습니다'이면 '~이에요/해요/어요'로 바꿔 씁니다. 표 안의 설명 문장도 같습니다.
 """
 
@@ -321,22 +322,44 @@ JSON만: {{"K4":{{"ok":true,"why":""}},"B4":{{"ok":true,"why":""}},"B5":{{"ok":t
 
 
 def trim_keyword(before, after, kw, keep=8):
-    """포커스 키워드가 너무 많이 나오면 초과분을 키워드의 마지막 낱말로 줄인다(링크·소제목은 건드리지 않음)."""
+    """포커스 키워드가 너무 많이 나오면 초과분을 줄인다. 두 낱말 이상이면 마지막 낱말로, 한 낱말이면 '이 등급·이 제도' 같은 대신 말로 바꾼다.
+    소제목(h2)·링크는 건드리지 않고, 그래도 9회를 넘으면 FAQ 질문(h3)까지 줄인다."""
     from bs4 import BeautifulSoup, NavigableString
-    tail = kw.split()[-1] if " " in kw else None
-    if not tail: return after
+    if " " in kw:
+        sub = kw.split()[-1]
+    else:
+        sub = "이 제도"
+        for end, w in (("등급", "이 등급"), ("센터", "이 센터"), ("용구", "이 용구"), ("서비스", "이 서비스"), ("제도", "이 제도")):
+            if kw.endswith(end): sub = w; break
     soup = BeautifulSoup(after, "html.parser")
     n = BeautifulSoup(before, "html.parser").get_text(" ", strip=True).count(kw)
     for node in soup.find_all(string=True):
-        if node.parent.name in ("a", "h1", "h2", "h3") and kw in node: n += node.count(kw)
-    for node in soup.find_all(string=True):
-        if node.parent.name in ("a", "h1", "h2", "h3", "script", "style") or kw not in node:
-            continue
-        parts = node.split(kw); out = parts[0]
-        for seg in parts[1:]:
-            n += 1
-            out += (kw if n <= keep else tail) + seg
-        if out != str(node): node.replace_with(NavigableString(out))
+        if node.parent.name in ("a", "h1", "h2") and kw in node: n += node.count(kw)
+    def run(skip, n):
+        for node in soup.find_all(string=True):
+            if node.parent.name in skip or kw not in node or n <= keep and False:
+                continue
+            parts = node.split(kw); out = parts[0]
+            for seg in parts[1:]:
+                n += 1
+                out += (kw if n <= keep else sub) + seg
+            if out != str(node): node.replace_with(NavigableString(out))
+        return n
+    n = run(("a", "h1", "h2", "h3", "script", "style"), n)
+    total = (BeautifulSoup(before, "html.parser").get_text(" ", strip=True) + " " + soup.get_text(" ", strip=True)).count(kw)
+    if total > 9:
+        # 아직 많으면 FAQ 질문(h3)도 줄인다: 앞쪽 keep개만 남김
+        seen = (BeautifulSoup(before, "html.parser").get_text(" ", strip=True)).count(kw)
+        for node in soup.find_all(string=True):
+            c = node.count(kw)
+            if not c: continue
+            if node.parent.name in ("a", "h1", "h2", "script", "style"):
+                seen += c; continue
+            parts = node.split(kw); out = parts[0]
+            for seg in parts[1:]:
+                seen += 1
+                out += (kw if seen <= keep else sub) + seg
+            if out != str(node): node.replace_with(NavigableString(out))
     return str(soup)
 
 
