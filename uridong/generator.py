@@ -47,14 +47,25 @@ def client():
     return anthropic.Anthropic(api_key=C.CLAUDE_API_KEY)
 
 USAGE = {"in": 0, "out": 0}
+NO_TEMP = [False]
 
 def call(system, user, max_tokens=4096, temperature=0.6):
     cl = client()
     last = None
     for i in range(3):
         try:
-            r = cl.messages.create(model=C.MODEL, max_tokens=max_tokens, temperature=temperature,
-                                   system=system, messages=[{"role": "user", "content": user}])
+            kw = dict(model=C.MODEL, max_tokens=max_tokens, system=system,
+                      messages=[{"role": "user", "content": user}])
+            if not NO_TEMP[0]:
+                kw["temperature"] = temperature
+            try:
+                r = cl.messages.create(**kw)
+            except TypeError as te:
+                if "temperature" in str(te) and not NO_TEMP[0]:
+                    NO_TEMP[0] = True; kw.pop("temperature", None)
+                    r = cl.messages.create(**kw)
+                else:
+                    raise
             USAGE["in"] += r.usage.input_tokens; USAGE["out"] += r.usage.output_tokens
             return "".join(b.text for b in r.content if getattr(b, "type", "") == "text")
         except Exception as e:  # 과부하·일시 오류 재시도
