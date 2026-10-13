@@ -1,0 +1,63 @@
+name: 우리동네 요양원 글 자동 발행
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "publish=실제 발행 / dry=시험(워드프레스에 쓰지 않음) / check=기존 글 검수 시험"
+        default: "dry"
+      n:
+        description: "이번에 쓸 글 수"
+        default: "1"
+  # 시험이 끝나고 사용자가 승인하면 아래 두 줄의 주석을 풀어 매일 07:00(한국 시간)에 실행한다.
+  # schedule:
+  #   - cron: "0 22 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uri-care-publish
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 한글 폰트
+        run: sudo apt-get install -y fonts-nanum
+      - name: 패키지
+        run: pip install anthropic requests pillow beautifulsoup4
+      - name: 실행
+        working-directory: uridong
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          URI_WP_USER: ${{ secrets.URI_WP_USER }}
+          URI_WP_APP_PASSWORD: ${{ secrets.URI_WP_APP_PASSWORD }}
+          URI_DRY_RUN: ${{ github.event.inputs.mode == 'dry' && '1' || '0' }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'publish' }}"
+          N="${{ github.event.inputs.n || '4' }}"
+          if [ "$MODE" = "check" ]; then python care_auto_publish.py --check-existing; else python care_auto_publish.py --n "$N"; fi
+      - name: 기록 파일 저장(커밋)
+        if: ${{ github.event.inputs.mode != 'dry' && github.event.inputs.mode != 'check' }}
+        run: |
+          git config user.name "uri-care-bot"
+          git config user.email "uri-care-bot@users.noreply.github.com"
+          git add uridong/data/topics.json uridong/data/history.json
+          git diff --cached --quiet || (git commit -m "uridong: 발행 기록 갱신" && git push)
+      - name: 시험 결과물 보관(dry 모드)
+        if: ${{ github.event.inputs.mode == 'dry' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dry-run-output
+          path: uridong/out/

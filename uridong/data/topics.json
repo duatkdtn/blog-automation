@@ -1,0 +1,674 @@
+[
+ {
+  "no": 1,
+  "main": "요양원 비용",
+  "detail": "1등급 한 달",
+  "related": [
+   "요양원 한달 비용",
+   "1등급 요양원 비용"
+  ],
+  "type": "정보",
+  "question": "1등급이면 한 달에 얼마를 내나요?",
+  "category": "nursing-home-cost",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 2,
+  "main": "요양원 비용",
+  "detail": "3~5등급 한 달",
+  "related": [
+   "3등급 요양원 비용",
+   "5등급 요양원 비용"
+  ],
+  "type": "정보",
+  "question": "3·4·5등급은 1등급과 얼마나 달라요?",
+  "category": "nursing-home-cost",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 3,
+  "main": "요양원 비용",
+  "detail": "본인부담금 말고 따로 내는 돈",
+  "related": [
+   "요양원 비급여",
+   "요양원 식비"
+  ],
+  "type": "정보",
+  "question": "급여비용 말고 따로 내는 돈이 있나요?",
+  "category": "nursing-home-cost",
+  "fact_status": "✅ (금액 쓰지 않음)",
+  "status": "대기"
+ },
+ {
+  "no": 4,
+  "main": "요양원 입소보증금",
+  "detail": "받아도 되나요",
+  "related": [
+   "요양원 보증금",
+   "요양원 입소 비용"
+  ],
+  "type": "정보",
+  "question": "입소보증금을 내야 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 5,
+  "main": "요양원 본인부담금",
+  "detail": "한 달 중간 입소·퇴소 일할 계산",
+  "related": [
+   "요양원 본인부담금 일수",
+   "요양원 중도 퇴소"
+  ],
+  "type": "계산",
+  "question": "월 중간에 들어가면 얼마를 내나요?",
+  "category": "nursing-home-cost",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 6,
+  "main": "요양원 본인부담금",
+  "detail": "재가와 시설 부담률 차이",
+  "related": [
+   "재가급여 본인부담률",
+   "시설급여 본인부담률"
+  ],
+  "type": "비교",
+  "question": "집에서 받을 때와 요양원에서 받을 때 부담이 어떻게 달라요?",
+  "category": "compare",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 7,
+  "main": "요양원 본인부담금",
+  "detail": "면제 대상",
+  "related": [
+   "본인부담금 면제",
+   "기초생활수급자 요양원"
+  ],
+  "type": "정보",
+  "question": "본인부담금이 0원이 되는 경우가 있나요?",
+  "category": "subsidy",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 8,
+  "main": "장기요양등급",
+  "detail": "1~5등급 차이",
+  "related": [
+   "장기요양등급 종류",
+   "장기요양 1등급 2등급 차이"
+  ],
+  "type": "비교",
+  "question": "등급마다 무엇이 달라요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 9,
+  "main": "인지지원등급",
+  "detail": "치매 초기",
+  "related": [
+   "인지지원등급 혜택",
+   "인지지원등급 한도"
+  ],
+  "type": "정보",
+  "question": "인지지원등급이 뭔가요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 10,
+  "main": "장기요양 5등급",
+  "detail": "치매 인정 시",
+  "related": [
+   "장기요양 5등급 혜택",
+   "5등급 요양원"
+  ],
+  "type": "정보",
+  "question": "5등급도 요양원에 갈 수 있나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 11,
+  "main": "장기요양등급 갱신",
+  "detail": "시기와 유효기간",
+  "related": [
+   "장기요양등급 갱신 방법",
+   "장기요양등급 유효기간"
+  ],
+  "type": "절차",
+  "question": "언제 갱신하고 유효기간은 얼마나 되나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 12,
+  "main": "장기요양등급 심사청구",
+  "detail": "이의신청 90일",
+  "related": [
+   "장기요양등급 이의신청",
+   "장기요양등급 재심사"
+  ],
+  "type": "절차",
+  "question": "등급 결과가 불만이면 어떻게 하나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 13,
+  "main": "장기요양등급",
+  "detail": "등급외 판정 후",
+  "related": [
+   "등급외 판정",
+   "장기요양 등급외"
+  ],
+  "type": "정보",
+  "question": "등급외가 나오면 어떻게 해야 하나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 14,
+  "main": "장기요양등급",
+  "detail": "의사소견서 발급",
+  "related": [
+   "장기요양 의사소견서",
+   "의사소견서 비용"
+  ],
+  "type": "절차",
+  "question": "의사소견서는 누가 어디서 받나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 15,
+  "main": "장기요양등급",
+  "detail": "판정 30일, 늦어질 때",
+  "related": [
+   "장기요양등급 판정 기간",
+   "등급 판정 연장"
+  ],
+  "type": "정보",
+  "question": "결과가 늦으면 어떻게 되나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 16,
+  "main": "장기요양등급 변경",
+  "detail": "건강이 나빠졌을 때",
+  "related": [
+   "장기요양등급 변경 신청",
+   "등급 상향"
+  ],
+  "type": "절차",
+  "question": "건강이 나빠지면 등급을 바꿀 수 있나요?",
+  "category": "care-grade",
+  "fact_status": "✅ (법 제21조)",
+  "status": "대기"
+ },
+ {
+  "no": 17,
+  "main": "장기요양등급 신청",
+  "detail": "자녀가 대신 신청",
+  "related": [
+   "장기요양 대리 신청",
+   "장기요양등급 신청 자격"
+  ],
+  "type": "절차",
+  "question": "부모님이 직접 못 하면 자녀가 신청할 수 있나요?",
+  "category": "care-grade",
+  "fact_status": "✅ (법 제22조)",
+  "status": "대기"
+ },
+ {
+  "no": 18,
+  "main": "요양원 입소 대상",
+  "detail": "65세 미만도 가능한지",
+  "related": [
+   "요양원 입소 나이",
+   "요양원 60세"
+  ],
+  "type": "정보",
+  "question": "몇 살부터 입소할 수 있나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 19,
+  "main": "요양원 입소",
+  "detail": "계약서 확인할 것",
+  "related": [
+   "요양원 계약서",
+   "요양원 계약 주의사항"
+  ],
+  "type": "체크리스트",
+  "question": "계약서에서 무엇을 봐야 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 20,
+  "main": "요양원 입소",
+  "detail": "준비물",
+  "related": [
+   "요양원 입소 준비물",
+   "요양원 입소 서류"
+  ],
+  "type": "체크리스트",
+  "question": "입소할 때 뭘 챙겨야 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음)",
+  "status": "대기"
+ },
+ {
+  "no": 21,
+  "main": "요양원 요양병원",
+  "detail": "어디로 모실지 상태별",
+  "related": [
+   "요양원 요양병원 선택",
+   "요양병원 입원 기준"
+  ],
+  "type": "비교",
+  "question": "우리 부모님은 어느 쪽이 맞나요?",
+  "category": "compare",
+  "fact_status": "✅ (의료 단정 금지)",
+  "status": "대기"
+ },
+ {
+  "no": 22,
+  "main": "요양원 평가등급",
+  "detail": "A~E 뜻",
+  "related": [
+   "요양원 평가 결과",
+   "요양원 평가등급 보는 법"
+  ],
+  "type": "정보",
+  "question": "평가등급은 무엇을 보고 매기나요?",
+  "category": "compare",
+  "fact_status": "✅ (평가방법 고시 제2025-209호: A~E 점수 구간은 고시에 없고 평가 계획 공고로 정함 → 구간 숫자 쓰지 않음, 평가는 공단 정기평가·수시평가·가산금 구조만 설명)",
+  "status": "대기"
+ },
+ {
+  "no": 23,
+  "main": "요양원 평가등급",
+  "detail": "전국 등급 분포",
+  "related": [
+   "요양원 A등급",
+   "요양원 평가 통계"
+  ],
+  "type": "통계",
+  "question": "A등급 요양원은 얼마나 되나요?",
+  "category": "compare",
+  "fact_status": "✅ (시설 데이터)",
+  "status": "통계글(별도 단계)"
+ },
+ {
+  "no": 24,
+  "main": "치매치료관리비",
+  "detail": "신청방법",
+  "related": [
+   "치매치료관리비 지원",
+   "치매약 지원금"
+  ],
+  "type": "절차",
+  "question": "치매 약값을 지원받으려면 어떻게 하나요?",
+  "category": "subsidy",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 25,
+  "main": "요양원 비용",
+  "detail": "연말정산 의료비 공제",
+  "related": [
+   "요양원 연말정산",
+   "요양원 세액공제"
+  ],
+  "type": "정보",
+  "question": "요양원 비용도 연말정산에서 공제되나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (시행령 제118조의5)",
+  "status": "대기"
+ },
+ {
+  "no": 26,
+  "main": "요양원 찾기",
+  "detail": "우리 사이트 지역·평가등급으로 찾는 법",
+  "related": [
+   "요양원 찾기",
+   "우리동네 요양원"
+  ],
+  "type": "안내",
+  "question": "사이트에서 요양원을 어떻게 찾나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (시설 데이터)",
+  "status": "대기"
+ },
+ {
+  "no": 27,
+  "main": "주야간보호센터 비용",
+  "detail": "등급별 한도와 본인부담",
+  "related": [
+   "주야간보호 비용",
+   "데이케어센터 비용"
+  ],
+  "type": "정보",
+  "question": "한 달에 얼마가 드나요?",
+  "category": "nursing-home-cost",
+  "fact_status": "✅ (고시 제31조)",
+  "status": "대기"
+ },
+ {
+  "no": 28,
+  "main": "주야간보호센터",
+  "detail": "이용 시간과 신청",
+  "related": [
+   "주야간보호 이용 시간",
+   "데이케어센터 신청"
+  ],
+  "type": "절차",
+  "question": "어떻게 신청하고 몇 시간 이용하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (고시 제30조)",
+  "status": "대기"
+ },
+ {
+  "no": 29,
+  "main": "주야간보호 요양원",
+  "detail": "차이와 선택",
+  "related": [
+   "주야간보호 요양원 비교",
+   "데이케어 요양원"
+  ],
+  "type": "비교",
+  "question": "낮에만 맡기는 것과 요양원은 뭐가 달라요?",
+  "category": "compare",
+  "fact_status": "✅ (법 제23조·고시)",
+  "status": "대기"
+ },
+ {
+  "no": 30,
+  "main": "방문요양",
+  "detail": "시간과 월 한도",
+  "related": [
+   "방문요양 시간",
+   "방문요양 한도액"
+  ],
+  "type": "정보",
+  "question": "하루 몇 시간까지 받을 수 있나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (고시 제13·17·18조)",
+  "status": "대기"
+ },
+ {
+  "no": 31,
+  "main": "방문요양 비용",
+  "detail": "시간당 본인부담",
+  "related": [
+   "방문요양 비용",
+   "방문요양 본인부담금"
+  ],
+  "type": "계산",
+  "question": "한 달에 얼마를 내나요?",
+  "category": "nursing-home-cost",
+  "fact_status": "✅ (고시 제18조)",
+  "status": "대기"
+ },
+ {
+  "no": 32,
+  "main": "방문요양 요양원",
+  "detail": "집에서 모실지",
+  "related": [
+   "재가급여 시설급여 차이",
+   "방문요양 요양원 비교"
+  ],
+  "type": "비교",
+  "question": "집에서 모시는 것과 요양원은 어떻게 다르죠?",
+  "category": "compare",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 33,
+  "main": "가족요양",
+  "detail": "가족이 돌볼 때 받는 급여(가족요양비·가족 요양보호사)",
+  "related": [
+   "가족요양비",
+   "가족 요양보호사 급여"
+  ],
+  "type": "정보",
+  "question": "가족이 돌보면 급여를 받을 수 있나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (법 제24조, 고시 제23조; 가족요양비 금액은 쓰지 않음)",
+  "status": "대기"
+ },
+ {
+  "no": 34,
+  "main": "복지용구",
+  "detail": "대여 품목",
+  "related": [
+   "복지용구 대여",
+   "복지용구 급여 품목"
+  ],
+  "type": "정보",
+  "question": "어떤 용구를 빌릴 수 있나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (연 한도 160만원·구입/대여·급여확인서만 사용, 품목 이름은 나열하지 않음)",
+  "status": "대기"
+ },
+ {
+  "no": 35,
+  "main": "복지용구",
+  "detail": "구입 품목과 연 한도",
+  "related": [
+   "복지용구 구입",
+   "복지용구 한도"
+  ],
+  "type": "정보",
+  "question": "연간 얼마까지 쓸 수 있나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (연 160만원, 고시 제2026-13호) / 품목 이름은 나열하지 않음",
+  "status": "대기"
+ },
+ {
+  "no": 36,
+  "main": "노인장기요양 단기보호",
+  "detail": "이용 조건",
+  "related": [
+   "단기보호센터",
+   "단기보호 비용"
+  ],
+  "type": "정보",
+  "question": "며칠 맡기고 싶을 때 가능한가요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (고시 제36~38조)",
+  "status": "대기"
+ },
+ {
+  "no": 37,
+  "main": "치매 어머니 요양원",
+  "detail": "고르는 법",
+  "related": [
+   "치매 요양원 선택",
+   "치매 부모님 요양원"
+  ],
+  "type": "체크리스트",
+  "question": "치매 어머니는 어떤 곳이 맞나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 38,
+  "main": "치매전담실",
+  "detail": "정원과 시설 기준",
+  "related": [
+   "치매전담실 요양원",
+   "치매전담실 뜻"
+  ],
+  "type": "정보",
+  "question": "치매전담실은 뭐가 다른가요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (16명·1.65㎡)",
+  "status": "대기"
+ },
+ {
+  "no": 39,
+  "main": "치매안심센터",
+  "detail": "하는 일과 등록",
+  "related": [
+   "치매안심센터 등록",
+   "치매안심센터 지원"
+  ],
+  "type": "정보",
+  "question": "치매안심센터에서 무엇을 받을 수 있나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (치매관리법 제17조)",
+  "status": "대기"
+ },
+ {
+  "no": 40,
+  "main": "치매검사비",
+  "detail": "지원 대상",
+  "related": [
+   "치매검진 지원",
+   "치매 조기검진"
+  ],
+  "type": "정보",
+  "question": "치매 검사비도 지원되나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (감별검사비 평생 1회 상한 8만원·중위소득 120%, 지자체 안내 기준 → 보건소 확인 병기)",
+  "status": "대기"
+ },
+ {
+  "no": 41,
+  "main": "노인요양공동생활가정",
+  "detail": "일반 요양원과 차이",
+  "related": [
+   "노인요양공동생활가정",
+   "그룹홈 요양"
+  ],
+  "type": "비교",
+  "question": "소규모 요양 시설은 뭐가 다른가요?",
+  "category": "compare",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 42,
+  "main": "요양원 종류",
+  "detail": "요양원 주야간보호 요양병원",
+  "related": [
+   "요양시설 종류",
+   "노인복지시설 종류"
+  ],
+  "type": "비교",
+  "question": "시설 종류가 헷갈려요",
+  "category": "compare",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 43,
+  "main": "요양원 통계",
+  "detail": "전국 시설 수와 정원",
+  "related": [
+   "요양원 몇 곳",
+   "요양원 정원"
+  ],
+  "type": "통계",
+  "question": "전국에 요양원이 몇 곳인가요?",
+  "category": "monthly-report",
+  "fact_status": "✅ (시설 데이터)",
+  "status": "통계글(별도 단계)"
+ },
+ {
+  "no": 44,
+  "main": "요양원 평가등급",
+  "detail": "좋은 요양원 찾기",
+  "related": [
+   "좋은 요양원 기준",
+   "요양원 평가 확인"
+  ],
+  "type": "체크리스트",
+  "question": "평가등급을 어떻게 활용하죠?",
+  "category": "compare",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 45,
+  "main": "노인맞춤돌봄서비스",
+  "detail": "대상과 신청",
+  "related": [
+   "노인맞춤돌봄",
+   "독거노인 돌봄"
+  ],
+  "type": "정보",
+  "question": "등급이 없어도 받을 수 있는 돌봄은?",
+  "category": "subsidy",
+  "fact_status": "✅ (정부24 노인맞춤돌봄서비스, 노인복지법 제27조의2)",
+  "status": "대기"
+ },
+ {
+  "no": 46,
+  "main": "치매가족휴가제",
+  "detail": "이용 방법",
+  "related": [
+   "치매가족휴가",
+   "단기쉼터"
+  ],
+  "type": "정보",
+  "question": "가족이 쉴 수 있는 제도가 있나요?",
+  "category": "subsidy",
+  "fact_status": "✅ (고시 제36조의2, 연 12일)",
+  "status": "대기"
+ },
+ {
+  "no": 47,
+  "main": "요양보호사",
+  "detail": "집으로 오는 요양보호사 고르는 법",
+  "related": [
+   "방문요양센터 고르는 법",
+   "요양보호사"
+  ],
+  "type": "체크리스트",
+  "question": "어떤 센터를 골라야 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음)",
+  "status": "대기"
+ },
+ {
+  "no": 48,
+  "main": "요양원 방문",
+  "detail": "면회와 외출",
+  "related": [
+   "요양원 면회",
+   "요양원 외박"
+  ],
+  "type": "정보",
+  "question": "면회·외출은 어떻게 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (법에 면회 규정 없음 → 운영규정·입소 전 확인, 숫자 없음)",
+  "status": "대기"
+ }
+]
