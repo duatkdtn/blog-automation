@@ -142,6 +142,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         links = pick_links(t["category"], posts)
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         after = G.trim_keyword(before, after, t["main"])
+        after = G.boost_keyword(before, after, t["main"])
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)
         res += [("S0", "WARN", w) for w in dict.fromkeys(G.SLOT_WARN)]; G.SLOT_WARN.clear()
         rv = G.reviewer(t, title, K.BeautifulSoup(before + after, "html.parser").get_text(" ", strip=True), today)
@@ -166,8 +167,17 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
     if fails or len(warns) >= 4:
         reason = fails or ["경고 4개 이상(품질 흔들림): " + "; ".join(warns[:4])]
         C.log("보류:", title, reason, warns)
-        held.append({"title": title, "fails": reason}); M.hold_mail(title, reason, warns, t)
-        t["status"] = "보류"; return None
+        held.append({"title": title, "fails": reason})
+        t["status"] = "보류"
+        if not (C.DRY_RUN or os.environ.get("URI_MOCK")):      # 보류 글도 버리지 않고 임시글로 저장(공개 안 됨) → 사람이 고쳐서 공개
+            try:
+                import wp_client as W
+                dp = W.create_post("[보류] " + title, meta["slug"], G.wrap_blocks(before, after), C.CATEGORIES[t["category"]], "draft", None, None, meta["meta_description"])
+                held[-1]["draft"] = dp["link"]; C.log("임시글 저장:", dp["link"])
+            except Exception as e:
+                C.log("임시글 저장 실패", type(e).__name__, str(e)[:150])
+        M.hold_mail(title, reason, warns, t, held[-1].get("draft", ""))
+        return None
     # 썸네일
     art, combo, tries, note = T.make_art(t, title, recent_combos, G.call)
     png = T.compose(art, title, t["detail"], today)

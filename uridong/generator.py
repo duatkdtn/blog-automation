@@ -332,6 +332,33 @@ def trim_keyword(before, after, kw, keep=8):
     return str(soup)
 
 
+def boost_keyword(before, after, kw, target=7):
+    """포커스 키워드가 모자라면(6회 미만) 본문 문장 속 낱말을 키워드로 바꿔 채운다. 그래도 모자라면 한 문장을 덧붙인다."""
+    from bs4 import BeautifulSoup, NavigableString
+    tail = kw.split()[-1] if " " in kw else kw
+    soup = BeautifulSoup(after, "html.parser")
+    n = (BeautifulSoup(before, "html.parser").get_text(" ", strip=True) + " " + soup.get_text(" ", strip=True)).count(kw)
+    if n >= 6: return after
+    for node in soup.find_all(string=True):
+        if n >= target: break
+        if node.parent.name not in ("p", "li", "td") or tail not in node: continue
+        s = str(node); out = ""; i = 0
+        while i < len(s) and n < target:
+            j = s.find(tail, i)
+            if j < 0: break
+            if s[max(0, j - len(kw) + len(tail)):j + len(tail)] == kw:   # 이미 키워드의 일부
+                out += s[i:j + len(tail)]; i = j + len(tail); continue
+            out += s[i:j] + kw; i = j + len(tail); n += 1
+        out += s[i:]
+        if out != s: node.replace_with(NavigableString(out))
+    if n < 6:
+        p = soup.find("p")
+        if p is not None:
+            add = soup.new_tag("p"); add.string = f"{kw}은(는) 시설마다 다를 수 있으니 입소 전에 꼭 직접 확인해 보세요."
+            p.insert_after(add); n += 1
+    return str(soup)
+
+
 def fix_meta(meta, topic, title):
     """검색 설명문이 100~140자를 벗어나면 Haiku로 다시 쓴다(최대 2회). 실패하면 원래 문구."""
     cur = meta.get("meta_description", "")

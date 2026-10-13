@@ -73,9 +73,9 @@ def result_mail(rows, held, lacks, cost, remaining, extra_notes):
     subj = f"[우리동네 요양원] 결과 — 발행 {ok} / 보류 {hold} / 경고 있음 {warns}"
     return send(subj, wrap("🚀 우리동네 요양원 자동 발행 결과", C.now_kst().strftime("%Y-%m-%d") + f" · 발행 {ok}/{total}개", cards + foot))
 
-def hold_mail(title, fails, warns, topic):
+def hold_mail(title, fails, warns, topic, draft=""):
     body = card("#e74c3c", "⛔ 보류", title, f'주제 {e(topic["main"])} / {e(topic["detail"])}',
                 '<div style="font-size:13px;margin-top:8px"><b>실패 항목</b></div>' + note(fails) +
                 ('<div style="font-size:13px;margin-top:8px"><b>경고</b></div>' + note(warns, "#e67e22") if warns else "")) + \
-           '<div style="font-size:13px;color:#555">할 일: 다시 쓰기 요청 / 주제 제외 / 사실표에 숫자 추가 중 선택해서 알려 주세요.</div>'
+           ('<div style="font-size:13px;color:#555">임시글로 저장됨(공개 안 됨): <a href="' + e(draft) + '">' + e(draft) + '</a> — 고쳐서 공개하거나 버리면 돼요.</div>' if draft else '') + '<div style="font-size:13px;color:#555">할 일: 다시 쓰기 요청 / 주제 제외 / 사실표에 숫자 추가 중 선택해서 알려 주세요.</div>'
     return send(f"[우리동네 요양원] ⚠️ 보류 — {title}", wrap("⚠️ 글 보류 알림", e(title), body))
