@@ -157,8 +157,15 @@ def stage3(topic, facts, today, meta, title, part1, feedback=""):
     sys3 = SYSTEM_BASE + """
 지금은 3단계입니다. 글의 뒷부분을 씁니다. 아래 태그 형식으로만 답하세요.
 <mistakes>오해/주의사항 HTML. ❌ 오해 → 올바른 설명 박스 1개(style="background:#fdf2f8;border:1px solid #d2b4de;border-radius:8px;padding:18px 22px;margin:18px 0") 안에 ❌ 줄 3개 이상 + ✅ 올바른 경우 박스 1개(style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:18px 22px;margin:18px 0"). 앞에 h2(스타일 지정) 소제목.</mistakes>
-<faq>JSON 배열 [{"q":"질문","a":"답변 2~3문장, 근거 기관 표기"}] 5~7개. 연관검색어를 질문에 나눠 넣음. 질문에 'Q.'는 붙이지 않음.</faq>
-<who>이 글이 도움 되는 사람 5~6가지를 한 줄씩(👉는 붙이지 않음)</who>
+<faq>
+Q. 첫 번째 질문
+A. 답변 2~3문장, 근거 기관 표기
+(빈 줄)
+Q. 두 번째 질문
+A. 답변
+위 형식(줄 시작이 'Q. ' 와 'A. ')으로 6~7개. 연관검색어를 질문에 나눠 넣음. JSON을 쓰지 않습니다.
+</faq>
+<who>이 글이 도움 되는 사람 6가지를 한 줄에 하나씩(👉는 붙이지 않음). 반드시 6줄.</who>
 <cta>JSON {"head":"핵심 행동 촉구 한 문장(굵게 표시될 문구)","summary":"이 글 요약 + 행동 독려 1~2문장","related":"비슷한 주제로 정리해 둔 관련 키워드 한 개"}</cta>
 <meta>{"numbers":[{"값":"","근거":""}],"calcs":[{"식":"","결과":""}],"lacking":[]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
@@ -173,12 +180,23 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
 
 사실표:
 {facts_text(facts)}"""
-    out = call(sys3, usr, max_tokens=5000)
-    def j(name, default):
-        try: return json.loads(tag(out, name))
-        except Exception: return default
-    return {"mistakes": tag(out, "mistakes"), "faq": j("faq", []), "who": [x.strip(" -·👉") for x in tag(out, "who").split("\n") if x.strip()],
-            "cta": j("cta", {}), "meta": j("meta", {})}
+    def parse(out):
+        def j(name, default):
+            try: return json.loads(tag(out, name))
+            except Exception: return default
+        ftxt = tag(out, "faq")
+        faq = [{"q": q.strip(), "a": a.strip()} for q, a in re.findall(r"Q\.\s*(.+?)\s*\n\s*A\.\s*(.+?)(?=\n\s*Q\.|\Z)", ftxt, re.S)]
+        if not faq:  # 혹시 JSON으로 왔을 때
+            try: faq = [{"q": x.get("q", ""), "a": x.get("a", "")} for x in json.loads(ftxt)]
+            except Exception: faq = []
+        who = [x.strip(" -·👉") for x in tag(out, "who").split("\n") if x.strip()]
+        return {"mistakes": tag(out, "mistakes"), "faq": faq, "who": who, "cta": j("cta", {}), "meta": j("meta", {})}
+    for k in range(3):   # 자주묻는질문 5개·이런분들 5개가 안 나오면 다시 요청(최대 2번 더)
+        out = call(sys3, usr, max_tokens=6000)
+        res = parse(out)
+        print(f"[3단계 진단] 응답 {len(out)}자 / 오해박스 {len(res['mistakes'])}자 / FAQ {len(res['faq'])}개 / 이런분들 {len(res['who'])}개", flush=True)
+        if len(res["faq"]) >= 5 and len(res["who"]) >= 5 and res["mistakes"]: break
+    return res
 
 def h(s): return H.escape(str(s), quote=False)
 
