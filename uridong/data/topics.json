@@ -140,62 +140,6 @@
   "status": "보류"
  },
  {
-  "no": 11,
-  "main": "장기요양등급 갱신",
-  "detail": "시기와 유효기간",
-  "related": [
-   "장기요양등급 갱신 방법",
-   "장기요양등급 유효기간"
-  ],
-  "type": "절차",
-  "question": "언제 갱신하고 유효기간은 얼마나 되나요?",
-  "category": "care-grade",
-  "fact_status": "✅",
-  "status": "대기"
- },
- {
-  "no": 12,
-  "main": "장기요양등급 심사청구",
-  "detail": "이의신청 90일",
-  "related": [
-   "장기요양등급 이의신청",
-   "장기요양등급 재심사"
-  ],
-  "type": "절차",
-  "question": "등급 결과가 불만이면 어떻게 하나요?",
-  "category": "care-grade",
-  "fact_status": "✅",
-  "status": "대기"
- },
- {
-  "no": 13,
-  "main": "장기요양등급",
-  "detail": "등급외 판정 후",
-  "related": [
-   "등급외 판정",
-   "장기요양 등급외"
-  ],
-  "type": "정보",
-  "question": "등급외가 나오면 어떻게 해야 하나요?",
-  "category": "care-grade",
-  "fact_status": "✅",
-  "status": "대기"
- },
- {
-  "no": 14,
-  "main": "장기요양등급",
-  "detail": "의사소견서 발급",
-  "related": [
-   "장기요양 의사소견서",
-   "의사소견서 비용"
-  ],
-  "type": "절차",
-  "question": "의사소견서는 누가 어디서 받나요?",
-  "category": "care-grade",
-  "fact_status": "✅",
-  "status": "대기"
- },
- {
   "no": 15,
   "main": "장기요양등급",
   "detail": "판정 30일, 늦어질 때",
@@ -208,48 +152,6 @@
   "category": "care-grade",
   "fact_status": "✅",
   "status": "제외-기존글과 중복"
- },
- {
-  "no": 16,
-  "main": "장기요양등급 변경",
-  "detail": "건강이 나빠졌을 때",
-  "related": [
-   "장기요양등급 변경 신청",
-   "등급 상향"
-  ],
-  "type": "절차",
-  "question": "건강이 나빠지면 등급을 바꿀 수 있나요?",
-  "category": "care-grade",
-  "fact_status": "✅ (법 제21조)",
-  "status": "대기"
- },
- {
-  "no": 17,
-  "main": "장기요양등급 신청",
-  "detail": "자녀가 대신 신청",
-  "related": [
-   "장기요양 대리 신청",
-   "장기요양등급 신청 자격"
-  ],
-  "type": "절차",
-  "question": "부모님이 직접 못 하면 자녀가 신청할 수 있나요?",
-  "category": "care-grade",
-  "fact_status": "✅ (법 제22조)",
-  "status": "대기"
- },
- {
-  "no": 18,
-  "main": "요양원 입소 대상",
-  "detail": "65세 미만도 가능한지",
-  "related": [
-   "요양원 입소 나이",
-   "요양원 60세"
-  ],
-  "type": "정보",
-  "question": "몇 살부터 입소할 수 있나요?",
-  "category": "nursing-home-guide",
-  "fact_status": "✅",
-  "status": "대기"
  },
  {
   "no": 19,
@@ -294,20 +196,6 @@
   "status": "제외-기존글과 중복"
  },
  {
-  "no": 22,
-  "main": "요양원 평가등급",
-  "detail": "A~E 뜻",
-  "related": [
-   "요양원 평가 결과",
-   "요양원 평가등급 보는 법"
-  ],
-  "type": "정보",
-  "question": "평가등급은 무엇을 보고 매기나요?",
-  "category": "compare",
-  "fact_status": "✅ (평가방법 고시 제2025-209호: A~E 점수 구간은 고시에 없고 평가 계획 공고로 정함 → 구간 숫자 쓰지 않음, 평가는 공단 정기평가·수시평가·가산금 구조만 설명)",
-  "status": "대기"
- },
- {
   "no": 23,
   "main": "요양원 평가등급",
   "detail": "전국 등급 분포",
@@ -320,6 +208,132 @@
   "category": "compare",
   "fact_status": "✅ (시설 데이터)",
   "status": "통계글(별도 단계)"
+ },
+ {
+  "no": 37,
+  "main": "치매 어머니 요양원",
+  "detail": "고르는 법",
+  "related": [
+   "치매 요양원 선택",
+   "치매 부모님 요양원"
+  ],
+  "type": "체크리스트",
+  "question": "치매 어머니는 어떤 곳이 맞나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅",
+  "status": "제외-기존글과 중복"
+ },
+ {
+  "no": 43,
+  "main": "요양원 통계",
+  "detail": "전국 시설 수와 정원",
+  "related": [
+   "요양원 몇 곳",
+   "요양원 정원"
+  ],
+  "type": "통계",
+  "question": "전국에 요양원이 몇 곳인가요?",
+  "category": "monthly-report",
+  "fact_status": "✅ (시설 데이터)",
+  "status": "통계글(별도 단계)"
+ },
+ {
+  "no": 44,
+  "main": "요양원 평가등급",
+  "detail": "좋은 요양원 찾기",
+  "related": [
+   "좋은 요양원 기준",
+   "요양원 평가 확인"
+  ],
+  "type": "체크리스트",
+  "question": "평가등급을 어떻게 활용하죠?",
+  "category": "compare",
+  "fact_status": "✅",
+  "status": "제외-기존글과 중복"
+ },
+ {
+  "no": 11,
+  "main": "장기요양등급 갱신",
+  "detail": "시기와 유효기간",
+  "related": [
+   "장기요양등급 갱신 방법",
+   "장기요양등급 유효기간"
+  ],
+  "type": "절차",
+  "question": "언제 갱신하고 유효기간은 얼마나 되나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 12,
+  "main": "장기요양등급 심사청구",
+  "detail": "이의신청 90일",
+  "related": [
+   "장기요양등급 이의신청",
+   "장기요양등급 재심사"
+  ],
+  "type": "절차",
+  "question": "등급 결과가 불만이면 어떻게 하나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 14,
+  "main": "장기요양등급",
+  "detail": "의사소견서 발급",
+  "related": [
+   "장기요양 의사소견서",
+   "의사소견서 비용"
+  ],
+  "type": "절차",
+  "question": "의사소견서는 누가 어디서 받나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 16,
+  "main": "장기요양등급 변경",
+  "detail": "건강이 나빠졌을 때",
+  "related": [
+   "장기요양등급 변경 신청",
+   "등급 상향"
+  ],
+  "type": "절차",
+  "question": "건강이 나빠지면 등급을 바꿀 수 있나요?",
+  "category": "care-grade",
+  "fact_status": "✅ (법 제21조)",
+  "status": "대기"
+ },
+ {
+  "no": 17,
+  "main": "장기요양등급 신청",
+  "detail": "자녀가 대신 신청",
+  "related": [
+   "장기요양 대리 신청",
+   "장기요양등급 신청 자격"
+  ],
+  "type": "절차",
+  "question": "부모님이 직접 못 하면 자녀가 신청할 수 있나요?",
+  "category": "care-grade",
+  "fact_status": "✅ (법 제22조)",
+  "status": "대기"
+ },
+ {
+  "no": 22,
+  "main": "요양원 평가등급",
+  "detail": "A~E 뜻",
+  "related": [
+   "요양원 평가 결과",
+   "요양원 평가등급 보는 법"
+  ],
+  "type": "정보",
+  "question": "평가등급은 무엇을 보고 매기나요?",
+  "category": "compare",
+  "fact_status": "✅ (평가방법 고시 제2025-209호: A~E 점수 구간은 고시에 없고 평가 계획 공고로 정함 → 구간 숫자 쓰지 않음, 평가는 공단 정기평가·수시평가·가산금 구조만 설명)",
+  "status": "대기"
  },
  {
   "no": 24,
@@ -504,20 +518,6 @@
   "status": "대기"
  },
  {
-  "no": 37,
-  "main": "치매 어머니 요양원",
-  "detail": "고르는 법",
-  "related": [
-   "치매 요양원 선택",
-   "치매 부모님 요양원"
-  ],
-  "type": "체크리스트",
-  "question": "치매 어머니는 어떤 곳이 맞나요?",
-  "category": "nursing-home-guide",
-  "fact_status": "✅",
-  "status": "제외-기존글과 중복"
- },
- {
   "no": 38,
   "main": "치매전담실",
   "detail": "정원과 시설 기준",
@@ -586,34 +586,6 @@
   "category": "compare",
   "fact_status": "✅",
   "status": "대기"
- },
- {
-  "no": 43,
-  "main": "요양원 통계",
-  "detail": "전국 시설 수와 정원",
-  "related": [
-   "요양원 몇 곳",
-   "요양원 정원"
-  ],
-  "type": "통계",
-  "question": "전국에 요양원이 몇 곳인가요?",
-  "category": "monthly-report",
-  "fact_status": "✅ (시설 데이터)",
-  "status": "통계글(별도 단계)"
- },
- {
-  "no": 44,
-  "main": "요양원 평가등급",
-  "detail": "좋은 요양원 찾기",
-  "related": [
-   "좋은 요양원 기준",
-   "요양원 평가 확인"
-  ],
-  "type": "체크리스트",
-  "question": "평가등급을 어떻게 활용하죠?",
-  "category": "compare",
-  "fact_status": "✅",
-  "status": "제외-기존글과 중복"
  },
  {
   "no": 45,
@@ -767,6 +739,34 @@
   "question": "이용계획서는 어디서 받고 어떻게 보나요?",
   "category": "care-grade",
   "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 13,
+  "main": "장기요양등급",
+  "detail": "등급외 판정 후",
+  "related": [
+   "등급외 판정",
+   "장기요양 등급외"
+  ],
+  "type": "정보",
+  "question": "등급외가 나오면 어떻게 해야 하나요?",
+  "category": "care-grade",
+  "fact_status": "✅",
+  "status": "대기"
+ },
+ {
+  "no": 18,
+  "main": "요양원 입소 대상",
+  "detail": "65세 미만도 가능한지",
+  "related": [
+   "요양원 입소 나이",
+   "요양원 60세"
+  ],
+  "type": "정보",
+  "question": "몇 살부터 입소할 수 있나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅",
   "status": "대기"
  }
 ]
