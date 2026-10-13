@@ -118,6 +118,7 @@ def main():
             held.append({"title": t["_title"], "fails": [f"실행 오류 {type(e).__name__}"]})
             M.hold_mail(t["_title"], [f"실행 오류 {type(e).__name__}"], [], t)
     cost_in, cost_out = G.USAGE["in"], G.USAGE["out"]
+    C.log(f"[비용] 입력 {cost_in:,} / 출력 {cost_out:,} 토큰 → 약 ${cost_in*1e-6*1.0 + cost_out*1e-6*5.0:.2f} (약 {int((cost_in*1e-6*1.0 + cost_out*1e-6*5.0)*1400):,}원)")
     cost = f"입력 {cost_in:,} / 출력 {cost_out:,} 토큰 (Haiku 단가 기준 추정 약 ${cost_in*1e-6*1.0 + cost_out*1e-6*5.0:.2f})"
     remaining = len([x for x in topics if x["status"] == "대기"])
     lacks = [l for r in rows for l in r["lack"]]
@@ -133,8 +134,11 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
     feedback = ""; revisions = 0; fails = []; warns = []
     meta = dict(meta); meta["meta_description"] = G.fix_meta(meta, t, title)
     for attempt in range(3):               # 처음 + 고쳐쓰기 최대 2회
-        p1 = G.stage2(t, facts, today, meta, title, feedback)
-        p3 = G.stage3(t, facts, today, meta, title, p1, feedback)
+        codes = {f.split()[0] for f in fails}
+        redo1 = attempt == 0 or not codes <= {"S5", "S6"}      # 뒷부분(FAQ·이런분들) 문제만이면 앞부분은 그대로 둔다(비용 절약)
+        redo3 = attempt == 0 or not codes <= {"S4", "K1", "K1b", "K2"}   # 본문 표·분량·키워드 문제만이면 뒷부분은 그대로 둔다
+        if redo1: p1 = G.stage2(t, facts, today, meta, title, feedback)
+        if redo3: p3 = G.stage3(t, facts, today, meta, title, p1, feedback)
         links = pick_links(t["category"], posts)
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         after = G.trim_keyword(before, after, t["main"])

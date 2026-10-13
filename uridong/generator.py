@@ -180,7 +180,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff"><tr><th style="padding:10px;border:1px solid #ddd">구분</th><th style="padding:10px;border:1px solid #ddd">내용</th></tr></thead><tbody><tr style="background:#fff"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr><tr style="background:#f8f9fa"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr></tbody></table></div>
 표는 사실표의 값을 그대로 옮기거나(금액·한도액·비율), 숫자가 필요 없는 비교·절차·체크 표로 만듭니다."""
     usr = f"""오늘: {today}  글 제목: {title}
-메인 키워드(본문 전체에서 정확히 7회 안팎(최대 9회). 그 이상 쓰지 말고 '이 비용', '비용', '이 금액'처럼 줄여 씁니다): {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
+메인 키워드(본문 전체에서 7~8회(최소 6회, 최대 9회). 9회를 넘기지 말고 넘길 것 같으면 '이 비용', '비용', '이 금액'처럼 줄여 씁니다): {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
 이 글이 답하는 질문: {topic['question']}  /  작성 주의: {topic.get('fact_status','')}
 본문 소제목 구성(이 순서·의미로): {json.dumps(meta['outline'], ensure_ascii=False)}
 {'인포그래픽(STEP1→STEP4 카드, 바깥 div style="overflow-x:auto", 카드 min-height:100px, 배경 #eaf4fb/#d6eaf8 번갈아)을 본문 중간에 넣으세요.' if meta.get('infographic') else '인포그래픽은 넣지 않습니다.'}
@@ -189,7 +189,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
 
 사실표:
 {facts_text(facts)}"""
-    out = call(sys2, usr, max_tokens=8192)
+    out = call(sys2, usr, max_tokens=7000)
     mj = {}
     try: mj = json.loads(tag(out, "meta"))
     except Exception: pass
@@ -242,7 +242,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
         who = [fill_slots(x, facts) for x in who]
         return {"mistakes": fill_slots(tag(out, "mistakes"), facts), "faq": faq, "who": who, "cta": cta, "meta": j("meta", {})}
     for k in range(3):   # 자주묻는질문 5개·이런분들 5개가 안 나오면 다시 요청(최대 2번 더)
-        out = call(sys3, usr, max_tokens=6000)
+        out = call(sys3, usr, max_tokens=5000)
         res = parse(out)
         print(f"[3단계 진단] 응답 {len(out)}자 / 오해박스 {len(res['mistakes'])}자 / FAQ {len(res['faq'])}개 / 이런분들 {len(res['who'])}개", flush=True)
         if len(res["faq"]) >= 5 and len(res["who"]) >= 5 and res["mistakes"]: break
