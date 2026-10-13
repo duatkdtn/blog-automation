@@ -48,6 +48,8 @@ def select_title(cands, topic, today_year, yt, recent_patterns):
         if best is None or score < best[0]: best = (score, c, res)
     return best
 
+LAST_CTX = None
+
 def run_check(topic, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs):
     full = before + after
     allowed = K.build_allowed(facts)
@@ -59,6 +61,8 @@ def run_check(topic, facts, today, meta, title, before, after, p1, p3, posts, ex
     lack = (p1["meta"].get("lacking") or []) + (p3["meta"].get("lacking") or [])
     ctx = {"topic": topic, "facts": facts, "allowed": allowed, "today_label": today, "internal_urls": internal,
            "calc_url": calc_for(meta, topic), "calcs": calcs, "lacking": lack, "year": int(today[:4])}
+    global LAST_CTX
+    LAST_CTX = ctx
     res = K.check_html(full, ctx)
     res += K.check_meta(meta["slug"], existing_slugs, meta["meta_description"])
     res += K.check_title(title, topic, ctx["year"], year_topic(topic), [], None)[:0]
@@ -127,6 +131,7 @@ def main():
 def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, hist, held):
     meta = t["_meta"]; title = t["_title"]
     feedback = ""; revisions = 0; fails = []; warns = []
+    meta = dict(meta); meta["meta_description"] = G.fix_meta(meta, t, title)
     for attempt in range(3):               # 처음 + 고쳐쓰기 최대 2회
         p1 = G.stage2(t, facts, today, meta, title, feedback)
         p3 = G.stage3(t, facts, today, meta, title, p1, feedback)
@@ -142,6 +147,14 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         fails = [f"{x[0]} {x[2]}" for x in res if x[1] == "FAIL"]
         warns = [f"{x[0]} {x[2]}" for x in res if x[1] == "WARN"]
         C.log(f"[시도 {attempt+1}] 실패 {len(fails)}개:", "; ".join(fails)[:600], "| 경고", len(warns))
+        if fails and attempt == 2 and all(f.startswith("F1") for f in fails):
+            b2, n1 = K.sanitize(before, LAST_CTX); a2, n2 = K.sanitize(after, LAST_CTX)
+            res2, lack2 = run_check(t, facts, today, meta, title, b2, a2, p1, p3, posts, existing_slugs)
+            f2 = [f"{x[0]} {x[2]}" for x in res2 if x[1] == "FAIL"]
+            C.log(f"[자동 정리] 사실표에 없는 숫자가 든 문장 {n1+n2}개 삭제 → 남은 실패 {len(f2)}개")
+            if not f2:
+                before, after, res, lack = b2, a2, res2, lack2
+                fails = []; warns = [f"{x[0]} {x[2]}" for x in res2 if x[1] == "WARN"] + [f"자동 정리: 숫자 든 문장 {n1+n2}개 삭제"]
         if not fails: break
         if attempt < 2:
             revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,800자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."

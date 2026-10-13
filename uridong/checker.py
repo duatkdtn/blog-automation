@@ -191,8 +191,8 @@ def check_html(html, ctx):
         res.append(("F5", "FAIL", "시설별 값 언급은 '요양원마다 다르다' 문구가 필요"))
     return res
 
-def check_numbers(text, ctx):
-    res, bad = [], []
+def find_bad(text, ctx):
+    bad = []
     allowed = ctx["allowed"]
     yr = ctx["year"]
     t = re.sub(r"\d{4}-\d{3,4}|\d{2,4}-\d{3,4}-\d{4}", lambda m: " ", text)  # 전화번호 제거
@@ -213,10 +213,34 @@ def check_numbers(text, ctx):
         if v in allowed or (v / 10000.0) in allowed or (v * 10000.0) in allowed: continue
         if unit == "" and not (v >= 10000): continue
         bad.append(f"{raw}{unit}")
+    return bad
+
+def check_numbers(text, ctx):
+    res = []
+    bad = find_bad(text, ctx)
     if bad:
         uniq = list(dict.fromkeys(bad))
         res.append(("F1", "FAIL", "사실표에 없는 숫자: " + ", ".join(uniq[:8])))
     return res
+
+def sanitize(html, ctx):
+    """사실표에 없는 숫자가 든 문장을 지운다(표 칸은 '요양원에 확인'으로). 제목·링크 안은 건드리지 않는다. 반환: (html, 정리한 건수)"""
+    from bs4 import NavigableString
+    soup = BeautifulSoup(html, "html.parser")
+    n = 0
+    for node in list(soup.find_all(string=True)):
+        if node.parent is None or node.parent.name in ("a", "h1", "h2", "h3", "th", "script", "style"): continue
+        txt = str(node)
+        if not find_bad(txt, ctx): continue
+        if node.parent.name == "td":
+            node.replace_with(NavigableString("요양원에 확인")); n += 1; continue
+        sents = re.split(r"(?<=[.!?요다])\s+", txt)
+        keep = [x for x in sents if not find_bad(x, ctx)]
+        n += len(sents) - len(keep)
+        node.replace_with(NavigableString(" ".join(keep)))
+    for tag_ in soup.find_all(["p", "li"]):
+        if not tag_.get_text(strip=True) and not tag_.find(["a", "img", "table"]): tag_.decompose()
+    return str(soup), n
 
 def check_links_alive(html):
     res = []
