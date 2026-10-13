@@ -100,7 +100,7 @@ def main():
     for t in plan_topics:
         fb = ""
         for attempt in range(3):
-            meta = G.stage1(t, facts, today, year_topic(t), recent_patterns, existing_titles, fb)
+            meta = G.stage1(t, facts_for(t, facts), today, year_topic(t), recent_patterns, existing_titles, fb)
             score, cand, res = select_title(meta["titles"], t, year, year_topic(t), recent_patterns)
             if score[0] == 0: break
             fb = "; ".join(f"{x[0]} {x[2]}" for x in res if x[1] == "FAIL")
@@ -137,6 +137,11 @@ def main():
     hist["site_posts"] = [{"id": p["id"], "slug": p["slug"], "link": p["link"], "status": p["status"], "title": p["title"], "categories": p["categories"]} for p in posts]
     C.save_json("history.json", hist)
 
+def facts_for(t, facts):
+    """주제와 상관없는 법 규정 사실은 프롬프트에서 뺀다(AI가 모든 글에 끼워 넣어 단정 표현이 반복되는 것 방지)."""
+    key = (t.get("main", "") + t.get("detail", ""))
+    return [f for f in facts if f["id"] != "rule_no_deposit" or "보증금" in key]
+
 def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, hist, held):
     meta = t["_meta"]; title = t["_title"]
     feedback = ""; revisions = 0; fails = []; warns = []
@@ -145,8 +150,8 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         codes = {f.split()[0] for f in fails}
         redo1 = attempt == 0 or not codes <= {"S5", "S6"}      # 뒷부분(FAQ·이런분들) 문제만이면 앞부분은 그대로 둔다(비용 절약)
         redo3 = attempt == 0 or not codes <= {"S4", "K1", "K1b", "K2"}   # 본문 표·분량·키워드 문제만이면 뒷부분은 그대로 둔다
-        if redo1: p1 = G.stage2(t, facts, today, meta, title, feedback)
-        if redo3: p3 = G.stage3(t, facts, today, meta, title, p1, feedback)
+        if redo1: p1 = G.stage2(t, facts_for(t, facts), today, meta, title, feedback)
+        if redo3: p3 = G.stage3(t, facts_for(t, facts), today, meta, title, p1, feedback)
         links = pick_links(t["category"], posts)
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         before, after = G.clean_text(before), G.clean_text(after)
