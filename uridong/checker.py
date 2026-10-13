@@ -101,6 +101,11 @@ def check_html(html, ctx):
         if len(tx) > 30 and re.search(r"[가-힣0-9A-Za-z]$", tx) and tx[-1] not in "요다죠까네음함":
             cut.append(tx[-25:])
     if cut: res.append(("S15", "FAIL", "문장이 끊긴 문단 " + str(len(cut)) + "개: …" + cut[0]))
+    # S16 법 판단 단정·근거 없는 어림 금액 (YMYL)
+    legal = re.findall(r"법\s*위반|위법|불법|법으로\s*(?:엄격히\s*)?(?:금지|받을 수 없)|법이\s*(?:명확히\s*)?금지|단호히\s*거절|거짓이에요|처벌|폐쇄|시정\s*명령|행정\s*처분", text)
+    if legal: res.append(("S16", "FAIL", "법 판단을 단정하는 표현: " + ", ".join(dict.fromkeys(legal))[:80] + " → '~로 안내돼 있어요, 공단에 확인하세요'로"))
+    vague = re.findall(r"수(?:십|백|천)만\s*원|수억", text)
+    if vague: res.append(("S16", "FAIL", "근거 없는 어림 금액: " + ", ".join(dict.fromkeys(vague))[:60]))
     # S14
     if soup.find("style") or soup.find("script"): res.append(("S14", "FAIL", "style/script 태그 사용"))
     # S1 요약 박스
