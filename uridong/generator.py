@@ -87,6 +87,13 @@ def fill_slots(text, facts):
         return _fmt(v, unit)
     return re.sub(r"\{\{\s*([fc])\s*:\s*(.+?)\s*\}\}", one, text)
 
+def clean_text(h):
+    """AI가 단위를 겹쳐 쓴 흔한 실수 정리: 558,420원원 → 558,420원, 12%% → 12%."""
+    h = re.sub(r"(?<=[\d,])원원", "원", h)
+    h = re.sub(r"%{2,}", "%", h)
+    h = re.sub(r"(\d)%이 ", r"\1%가 ", h)
+    return h
+
 def client():
     import anthropic
     return anthropic.Anthropic(api_key=C.CLAUDE_API_KEY)

@@ -149,6 +149,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         if redo3: p3 = G.stage3(t, facts, today, meta, title, p1, feedback)
         links = pick_links(t["category"], posts)
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
+        before, after = G.clean_text(before), G.clean_text(after)
         after = G.trim_keyword(before, after, t["main"])
         after = G.boost_keyword(before, after, t["main"])
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)

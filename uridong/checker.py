@@ -93,6 +93,14 @@ def check_html(html, ctx):
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text(" ", strip=True)
     topic = ctx["topic"]
+    # S15 문장이 중간에 끊긴 문단(분량 제한 등으로 잘림)
+    cut = []
+    for p in soup.find_all("p"):
+        tx = p.get_text(" ", strip=True)
+        if tx.startswith(("👉", "·", "✅", "📋", "❌")): continue
+        if len(tx) > 30 and re.search(r"[가-힣0-9A-Za-z]$", tx) and tx[-1] not in "요다죠까네음함":
+            cut.append(tx[-25:])
+    if cut: res.append(("S15", "FAIL", "문장이 끊긴 문단 " + str(len(cut)) + "개: …" + cut[0]))
     # S14
     if soup.find("style") or soup.find("script"): res.append(("S14", "FAIL", "style/script 태그 사용"))
     # S1 요약 박스
@@ -223,7 +231,11 @@ def check_numbers(text, ctx):
     bad = find_bad(text, ctx)
     if bad:
         uniq = list(dict.fromkeys(bad))
-        res.append(("F1", "FAIL", "사실표에 없는 숫자: " + ", ".join(uniq[:8])))
+        ctxs = []
+        for b in uniq[:3]:
+            i = text.find(b)
+            if i >= 0: ctxs.append(text[max(0, i - 15):i + len(b) + 10].replace("\n", " "))
+        res.append(("F1", "FAIL", "사실표에 없는 숫자: " + ", ".join(uniq[:8]) + (" | 앞뒤: " + " / ".join(ctxs) if ctxs else "")))
     return res
 
 def sanitize(html, ctx):
