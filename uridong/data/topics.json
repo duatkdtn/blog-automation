@@ -11,7 +11,7 @@
   "question": "1등급이면 한 달에 얼마를 내나요?",
   "category": "nursing-home-cost",
   "fact_status": "✅",
-  "status": "보류"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 2,
@@ -25,7 +25,7 @@
   "question": "3·4·5등급은 1등급과 얼마나 달라요?",
   "category": "nursing-home-cost",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 3,
@@ -39,7 +39,7 @@
   "question": "급여비용 말고 따로 내는 돈이 있나요?",
   "category": "nursing-home-cost",
   "fact_status": "✅ (금액 쓰지 않음)",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 4,
@@ -67,7 +67,7 @@
   "question": "월 중간에 들어가면 얼마를 내나요?",
   "category": "nursing-home-cost",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 6,
@@ -81,7 +81,7 @@
   "question": "집에서 받을 때와 요양원에서 받을 때 부담이 어떻게 달라요?",
   "category": "compare",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 7,
@@ -95,7 +95,7 @@
   "question": "본인부담금이 0원이 되는 경우가 있나요?",
   "category": "subsidy",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 8,
@@ -109,7 +109,7 @@
   "question": "등급마다 무엇이 달라요?",
   "category": "care-grade",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 9,
@@ -207,7 +207,7 @@
   "question": "결과가 늦으면 어떻게 되나요?",
   "category": "care-grade",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 16,
@@ -263,7 +263,7 @@
   "question": "계약서에서 무엇을 봐야 하나요?",
   "category": "nursing-home-guide",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 20,
@@ -277,7 +277,7 @@
   "question": "입소할 때 뭘 챙겨야 하나요?",
   "category": "nursing-home-guide",
   "fact_status": "✅ (숫자 없음)",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 21,
@@ -291,7 +291,7 @@
   "question": "우리 부모님은 어느 쪽이 맞나요?",
   "category": "compare",
   "fact_status": "✅ (의료 단정 금지)",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 22,
@@ -515,7 +515,7 @@
   "question": "치매 어머니는 어떤 곳이 맞나요?",
   "category": "nursing-home-guide",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 38,
@@ -613,7 +613,7 @@
   "question": "평가등급을 어떻게 활용하죠?",
   "category": "compare",
   "fact_status": "✅",
-  "status": "대기"
+  "status": "제외-기존글과 중복"
  },
  {
   "no": 45,
@@ -669,6 +669,104 @@
   "question": "면회·외출은 어떻게 하나요?",
   "category": "nursing-home-guide",
   "fact_status": "✅ (법에 면회 규정 없음 → 운영규정·입소 전 확인, 숫자 없음)",
+  "status": "대기"
+ },
+ {
+  "no": 49,
+  "main": "장기요양인정서",
+  "detail": "보는 법",
+  "related": [
+   "장기요양인정서",
+   "장기요양 인정서 보는 법"
+  ],
+  "type": "정보",
+  "question": "인정서에 뭐가 적혀 있나요?",
+  "category": "care-grade",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 50,
+  "main": "부모님 요양원 입소",
+  "detail": "거부할 때",
+  "related": [
+   "부모님 요양원 거부",
+   "요양원 입소 설득"
+  ],
+  "type": "정보",
+  "question": "부모님이 안 가신다고 하면 어떡하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 51,
+  "main": "요양원 적응",
+  "detail": "입소 후 첫 한 달",
+  "related": [
+   "요양원 적응",
+   "요양원 입소 후"
+  ],
+  "type": "정보",
+  "question": "입소 후 처음에는 어떻게 지내시나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 52,
+  "main": "요양원 사고",
+  "detail": "낙상 등 사고 시 보호자 대처",
+  "related": [
+   "요양원 사고 대처",
+   "요양원 낙상"
+  ],
+  "type": "정보",
+  "question": "요양원에서 사고가 나면 어떻게 해야 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 53,
+  "main": "요양원 퇴소",
+  "detail": "절차와 확인할 것",
+  "related": [
+   "요양원 퇴소",
+   "요양원 옮기기"
+  ],
+  "type": "절차",
+  "question": "요양원을 옮기거나 나올 때 어떻게 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 54,
+  "main": "요양원 진료",
+  "detail": "투약과 병원 진료 확인",
+  "related": [
+   "요양원 투약",
+   "요양원 병원 진료"
+  ],
+  "type": "정보",
+  "question": "아프실 때 요양원에서는 어떻게 하나요?",
+  "category": "nursing-home-guide",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
+  "status": "대기"
+ },
+ {
+  "no": 55,
+  "main": "표준장기요양이용계획서",
+  "detail": "받는 법과 보는 법",
+  "related": [
+   "표준장기요양이용계획서",
+   "장기요양 이용계획서"
+  ],
+  "type": "정보",
+  "question": "이용계획서는 어디서 받고 어떻게 보나요?",
+  "category": "care-grade",
+  "fact_status": "✅ (숫자 없음, 숫자 쓰지 않고 확인처 안내)",
   "status": "대기"
  }
 ]
