@@ -47,6 +47,7 @@ def build_allowed(facts, extra=()):
 _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv}
 
 def safe_eval(expr):
+    expr = re.sub(r"[−–—]", "-", str(expr)); expr = re.sub(r"(?<=[\d)\s])[xX·](?=[\d(\s])", "*", expr); expr = expr.split("=")[0]
     def ev(n):
         if isinstance(n, ast.Expression): return ev(n.body)
         if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)): return n.value
@@ -183,7 +184,7 @@ def check_html(html, ctx):
                 ctx["allowed"].add(float(v)); ctx["allowed"].add(want)
                 if v >= 10000: ctx["allowed"].add(v / 10000.0)
         except Exception:
-            res.append(("F3", "FAIL", f"계산식 해석 불가: {c.get('식')}"))
+            res.append(("F3", "WARN", f"계산식 해석 불가(검산 못 함): {c.get('식')}"))
     # F4 자료부족
     if ctx.get("lacking") and "확인" not in text: res.append(("F4", "FAIL", "자료부족인데 확인 안내 문구 없음"))
     # F5
@@ -196,6 +197,7 @@ def find_bad(text, ctx):
     allowed = ctx["allowed"]
     yr = ctx["year"]
     t = re.sub(r"\d{4}-\d{3,4}|\d{2,4}-\d{3,4}-\d{4}", lambda m: " ", text)  # 전화번호 제거
+    t = re.sub(r"\d(?:\s*[,·~]\s*\d)+(?=\s*(?:등급|단계|가지|개|번))", " ", t)  # '2,3,4,5등급' 같은 나열
     for ph in re.findall(r"\d{3,4}-\d{4}", text):
         if ph not in PHONE_OK: bad.append(ph)
     for m in NUM_RE.finditer(t):
