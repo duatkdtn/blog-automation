@@ -146,7 +146,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)
         res += [("S0", "WARN", w) for w in dict.fromkeys(G.SLOT_WARN)]; G.SLOT_WARN.clear()
         rv = G.reviewer(t, title, K.BeautifulSoup(before + after, "html.parser").get_text(" ", strip=True), today)
-        for k, lvl in (("K4", "FAIL"), ("B4", "FAIL"), ("B5", "FAIL"), ("F5", "FAIL"), ("B6", "WARN")):
+        for k, lvl in (("K4", "FAIL"), ("B4", "FAIL"), ("B5", "FAIL"), ("F5", "WARN"), ("B6", "WARN")):
             v = rv.get(k)
             if isinstance(v, dict) and v.get("ok") is False: res.append((k, lvl, v.get("why", "")))
         res += K.check_links_alive(before + after)
