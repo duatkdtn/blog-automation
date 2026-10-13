@@ -52,7 +52,7 @@ LAST_CTX = None
 
 def run_check(topic, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs):
     full = before + after
-    allowed = K.build_allowed(facts)
+    allowed = K.build_allowed(facts, extra=G.SLOT_NUMS)
     internal = {u.rstrip("/") for u in category_urls()} | {C.WP_URL, C.WP_URL + "/"}
     for p in posts: internal.add(p["link"].rstrip("/")); internal.add(p["link"])
     for u in C.CALC.values(): internal.add(u.rstrip("/")); internal.add(u)
@@ -139,6 +139,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         after = G.trim_keyword(before, after, t["main"])
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)
+        res += [("S0", "WARN", w) for w in dict.fromkeys(G.SLOT_WARN)]; G.SLOT_WARN.clear()
         rv = G.reviewer(t, title, K.BeautifulSoup(before + after, "html.parser").get_text(" ", strip=True), today)
         for k, lvl in (("K4", "FAIL"), ("B4", "FAIL"), ("B5", "FAIL"), ("F5", "FAIL"), ("B6", "WARN")):
             v = rv.get(k)

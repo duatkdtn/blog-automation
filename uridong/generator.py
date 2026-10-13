@@ -23,16 +23,18 @@ SYSTEM_BASE = """당신은 '우리동네 요양원'(요양원 비용·장기요�
 말투는 ~더라고요, ~이에요, ~해요 (친근한 존댓말). '~습니다/합니다' 체는 쓰지 않습니다.
 
 [절대 규칙]
-1. 숫자·금액·비율·기한·일수는 아래 '사실표'에 있는 것만 씁니다. 기억으로 채우지 않습니다. 사실표에 없는 숫자가 필요하면 쓰지 않고 '정확한 내용은 국민건강보험공단(1577-1000)이나 입소할 요양원에 확인하세요'처럼 확인처를 쓰고, 자료부족 목록에 무엇이 필요했는지 적습니다.
+1. 사실표의 금액·비율·일수 같은 숫자는 직접 쓰지 않고 {{f:사실표id}} 표시로 씁니다. 코드가 정확한 값으로 바꿔 줍니다. 예: 1등급 재가급여 월 한도액은 {{f:home_limit_1}}이에요. (사실표에서 숫자 값은 일부러 가려 두었습니다. 값을 짐작해서 쓰면 안 됩니다.)
+   계산이 필요하면 {{c:식}}으로 씁니다. 식에는 사실표 id와 + - * / 괄호와 소수만 쓸 수 있어요. 예: 30일 총액에서 본인부담 {{c:calc_month30_1*rate_fac_일반}}, 연간은 {{c:calc_copay_1_normal*12}}.
+   사실표에 없는 금액·비율은 만들지 않고 '정확한 내용은 국민건강보험공단(1577-1000)이나 입소할 요양원에 확인하세요'처럼 확인처를 씁니다. 그리고 자료부족 목록에 무엇이 필요했는지 적습니다. 등급(1~5등급), '3가지'·'4단계' 같은 개수, 연·월은 직접 써도 됩니다.
 2. 요양원마다 다른 값(비급여 식재료비·간식비·상급침실료·시설별 비용)은 단정하지 않습니다. 이런 말을 쓸 때는 '요양원마다 다르니 입소할 곳에서 확인하세요'를 본문에 씁니다.
-3. 계산이 필요한 숫자는 사실표 값으로만 계산하고, 계산식을 본문에 보여 줍니다. 계산한 것은 calcs 목록에 {"식": "2331200*0.2", "결과": "466240"} 형태로 적습니다.
+3. 계산이 필요한 숫자는 {{c:식}}으로만 만듭니다(위 1번). 직접 계산한 숫자를 쓰지 않습니다.
 4. 글쓴이가 겪은 일처럼 지어내지 않습니다. '제가 ~했을 때', '저희 부모님은' 금지. 도입부는 공감형으로 씁니다.
 5. 진단·치료·약 복용을 권하지 않습니다. 의료·법률 판단은 '전문가·공단에 확인'으로 안내합니다.
 6. 근거로 쓰지 않은 기관 이름은 적지 않습니다. '마치며'·파트너스 안내·'최신 내용입니다' 같은 문구 금지.
 7. 면회·외출처럼 법에 정한 것이 없는 내용은 '법에 정해진 시간이 없고 시설 운영규정에 따르니 입소 전에 확인하세요'로 씁니다.
 8. 어려운 말은 쉬운 말로 풀어 씁니다. 예시와 계산 예시를 넣습니다.
 9. 스타일은 inline style만 씁니다. <style>, <script>, class 사용 금지.
-10. 표·본문·FAQ 어디에서든 숫자(금액·%·일수·개수)는 사실표에 있는 값 또는 사실표 값으로 계산한 값만 씁니다. 사실표에 없는 '대략 ○○만원', '월 ○○만~○○만원', '100%' 같은 숫자는 쓰지 않습니다. 비급여 항목(식재료비·간식비·상급침실료·이미용비 등)은 항목 이름과 '요양원마다 다르니 확인하세요'만 쓰고 금액은 쓰지 않습니다. 합계는 사실표 값끼리만 더하고 calcs에 식을 적습니다. 예시·가정 금액('월 280만원을 쓰는 경우', '소득이 200만원이면' 같은 것)도 만들지 않습니다. 예시가 필요하면 사실표의 금액(한도액 등)만 사용하고, 없으면 금액 없이 말로 설명합니다.
+10. 표·본문·FAQ 어디에서든 금액·비율은 {{f:id}}나 {{c:식}}으로만 씁니다. '대략 ○○만원', '월 ○○만~○○만원', '100%', '월 280만원을 쓰는 경우', '소득이 200만원이면' 같은 숫자와 예시·가정 금액은 만들지 않습니다. 예시가 필요하면 {{f:id}}로 가져온 값으로만 설명하고, 없으면 금액 없이 말로 설명합니다. 비급여 항목(식재료비·간식비·상급침실료·이미용비 등)은 항목 이름과 '요양원마다 다르니 확인하세요'만 쓰고 금액은 쓰지 않습니다. 제목·슬러그·메타 설명에는 {{ }}를 쓰지 않습니다.
 11. 말투 점검: 문장 끝이 '~입니다/합니다/습니다'이면 '~이에요/해요/어요'로 바꿔 씁니다. 표 안의 설명 문장도 같습니다.
 """
 
@@ -40,9 +42,50 @@ def facts_text(facts):
     lines = []
     for f in facts:
         v = f.get("값")
-        v = f"{v:,}" if isinstance(v, int) else v
-        lines.append(f"- [{f['id']}] {f['항목']}: {v}{f.get('단위','')} (기준:{f.get('기준','')}; 출처:{f.get('출처','')}; 비고:{f.get('비고','')})")
+        if isinstance(v, (int, float)):
+            val = f"[값은 {{{{f:{f['id']}}}}} 로 씀]"
+        else:
+            val = f"{v}{f.get('단위','')}"
+        lines.append(f"- [{f['id']}] {f['항목']}: {val} (기준:{f.get('기준','')}; 출처:{f.get('출처','')}; 비고:{f.get('비고','')})")
     return "\n".join(lines)
+
+SLOT_NUMS = set()     # 코드가 계산해 채운 숫자(검사기가 허용)
+SLOT_WARN = []        # 알 수 없는 표시 등
+
+def _fmt(v, unit):
+    if unit == "비율": return f"{round(v * 100, 2):g}%"
+    if unit.startswith("원"): return f"{int(round(v)):,}원"
+    if unit == "%": return f"{v:g}%"
+    if unit in ("점", "명", "개", "곳", "년", "일", "세 이상"): return f"{int(v):,}{unit}" if float(v).is_integer() else f"{v:g}{unit}"
+    return f"{int(v):,}" if float(v).is_integer() else f"{v:g}"
+
+def fill_slots(text, facts):
+    """{{f:id}} → 사실표 값, {{c:식}} → 코드가 계산한 값. 알 수 없으면 확인 안내로 바꾼다."""
+    if not text or "{{" not in text: return text
+    by = {f["id"]: f for f in facts}
+    ids = sorted(by, key=len, reverse=True)
+    def one(m):
+        kind, body = m.group(1), m.group(2).strip()
+        if kind == "f":
+            f = by.get(body)
+            if f is None: SLOT_WARN.append("알 수 없는 표시 " + body); return "(공단·요양원에 확인)"
+            v = f["값"]
+            if isinstance(v, (int, float)):
+                SLOT_NUMS.add(float(v)); return _fmt(v, f.get("단위", ""))
+            return str(v)
+        expr, units = body, []
+        for i in ids:
+            if i in expr and isinstance(by[i]["값"], (int, float)):
+                expr = expr.replace(i, repr(float(by[i]["값"]))); units.append(by[i].get("단위", ""))
+        try:
+            import checker as K
+            v = K.safe_eval(expr)
+        except Exception:
+            SLOT_WARN.append("계산 표시 해석 불가 " + body); return "(공단·요양원에 확인)"
+        unit = "원" if any(u.startswith("원") for u in units) else ("비율" if units and all(u == "비율" for u in units) else "")
+        SLOT_NUMS.add(float(round(v, 2))); SLOT_NUMS.add(float(int(round(v))))
+        return _fmt(v, unit)
+    return re.sub(r"\{\{\s*([fc])\s*:\s*(.+?)\s*\}\}", one, text)
 
 def client():
     import anthropic
@@ -118,7 +161,11 @@ JSON 형식:
 "button":"longtermcare|bokjiro|law|nid|nhis 중 하나",
 "calculator":"copayment|care-grade|none (본인부담금·비용 계산 주제면 copayment, 등급 판정 주제면 care-grade, 아니면 none)",
 "infographic":true 또는 false (신청방법·절차·단계 4단계 이상 글이면 true)}}"""
-    return extract_json(call(sys1, usr, max_tokens=1500, temperature=0.8))
+    m = extract_json(call(sys1, usr, max_tokens=1500, temperature=0.8))
+    m["meta_description"] = fill_slots(m.get("meta_description", ""), facts)
+    for t_ in m.get("titles", []):
+        if isinstance(t_, dict) and "title" in t_: t_["title"] = fill_slots(t_["title"], facts)
+    return m
 
 def stage2(topic, facts, today, meta, title, feedback=""):
     sys2 = SYSTEM_BASE + """
@@ -126,7 +173,7 @@ def stage2(topic, facts, today, meta, title, feedback=""):
 <summary>요약 항목 5개, 한 줄에 하나씩(문장 끝 마침표 없이). 이 글에서 알 수 있는 핵심</summary>
 <intro>공감형 도입부 2~3문단. 각 문단은 <p style="line-height:1.85;font-size:16px;margin:0 0 16px">...</p>. 첫 문장에서 검색한 사람의 궁금증을 바로 건드림. 지어낸 경험담 금지.</intro>
 <body>본문 HTML. 구성: h2 소제목(스타일 지정) 안에 내용. 소주제는 h3. 표 2개 이상(반드시 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff">…</thead><tbody> 행은 번갈아 background:#fff / #f8f9fa), 리스트 박스(background:#f0f8ff;border-left:4px solid #2980b9;padding:14px 18px), 공식 출처 인라인 링크 1~2개(<a href="https://www.longtermcare.or.kr" target="_blank" rel="noopener">구체적 키워드 앵커</a>, 앵커에 '여기 클릭' '바로가기' 금지), 단계가 필요한 글은 <ol>. 예시와 계산 예시 포함.</body>
-<meta>{"numbers":[{"값":"본문에 쓴 숫자","근거":"사실표 id"}],"calcs":[{"식":"","결과":""}],"lacking":["사실표에 없어 쓰지 못한 정보"]}</meta>
+<meta>{"lacking":["사실표에 없어 쓰지 못한 정보"]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스타일: style="color:#2c3e50;font-size:19px;margin:24px 0 8px;"
 본문(<body>)은 공백 포함 순수 글자 3,800자 이상으로 충분히 자세히 씁니다(소제목마다 3~4문단 + 예시). 같은 말을 반복해서 늘리지 마세요.
 [표 필수] <body> 안에 표(<table>)를 반드시 2개 이상 넣습니다. 표가 없으면 글이 불합격입니다. 표 모양 예시(내용만 바꿔 복사해서 쓰세요):
@@ -150,8 +197,8 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
     print(f"[2단계 진단] 응답 {len(out)}자 / body {len(body)}자 / 응답 속 <table {out.count('<table')}개 / body 속 <table {body.count('<table')}개 / </body> {'있음' if '</body>' in out else '없음'}", flush=True)
     if body.count("<table") < 2:
         print("[2단계 진단] 표 부족. body 앞 300자:", body[:300].replace("\n", " "), flush=True)
-    return {"summary": [x.strip(" -·✅") for x in tag(out, "summary").split("\n") if x.strip()],
-            "intro": tag(out, "intro"), "body": body, "meta": mj}
+    return {"summary": [fill_slots(x.strip(" -·✅"), facts) for x in tag(out, "summary").split("\n") if x.strip()],
+            "intro": fill_slots(tag(out, "intro"), facts), "body": fill_slots(body, facts), "meta": mj}
 
 def stage3(topic, facts, today, meta, title, part1, feedback=""):
     sys3 = SYSTEM_BASE + """
@@ -167,7 +214,7 @@ A. 답변
 </faq>
 <who>이 글이 도움 되는 사람 6가지를 한 줄에 하나씩(👉는 붙이지 않음). 반드시 6줄.</who>
 <cta>JSON {"head":"핵심 행동 촉구 한 문장(굵게 표시될 문구)","summary":"이 글 요약 + 행동 독려 1~2문장","related":"비슷한 주제로 정리해 둔 관련 키워드 한 개"}</cta>
-<meta>{"numbers":[{"값":"","근거":""}],"calcs":[{"식":"","결과":""}],"lacking":[]}</meta>
+<meta>{"lacking":[]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
 이 뒷부분은 공백 포함 순수 글자 1,800자 이상이 되게 충분히 자세히 씁니다(오해 박스는 ❌ 4개 이상, FAQ 답변은 한 질문당 3~4문장으로 구체적으로, 질문은 6~7개)."""
     usr = f"""오늘: {today}  글 제목: {title}
@@ -190,7 +237,10 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
             try: faq = [{"q": x.get("q", ""), "a": x.get("a", "")} for x in json.loads(ftxt)]
             except Exception: faq = []
         who = [x.strip(" -·👉") for x in tag(out, "who").split("\n") if x.strip()]
-        return {"mistakes": tag(out, "mistakes"), "faq": faq, "who": who, "cta": j("cta", {}), "meta": j("meta", {})}
+        cta = {k_: fill_slots(v_, facts) if isinstance(v_, str) else v_ for k_, v_ in j("cta", {}).items()}
+        faq = [{"q": fill_slots(x["q"], facts), "a": fill_slots(x["a"], facts)} for x in faq]
+        who = [fill_slots(x, facts) for x in who]
+        return {"mistakes": fill_slots(tag(out, "mistakes"), facts), "faq": faq, "who": who, "cta": cta, "meta": j("meta", {})}
     for k in range(3):   # 자주묻는질문 5개·이런분들 5개가 안 나오면 다시 요청(최대 2번 더)
         out = call(sys3, usr, max_tokens=6000)
         res = parse(out)
