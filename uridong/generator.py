@@ -40,6 +40,15 @@ SYSTEM_BASE = """당신은 '우리동네 요양원'(요양원 비용·장기요�
 11. 말투 점검: 문장 끝이 '~입니다/합니다/습니다'이면 '~이에요/해요/어요'로 바꿔 씁니다. 표 안의 설명 문장도 같습니다.
 """
 
+def basis_text(topic):
+    """주제별 '근거 문단'(공식 법령 원문으로 확인한 내용). 있으면 이 안의 내용만 사실로 쓰게 한다."""
+    b = topic.get("basis")
+    if not b: return ""
+    return ("\n\n[근거 문단] 이 글의 사실은 아래에서만 가져옵니다. 아래 내용을 쉬운 말로 풀어 쓰고 예시를 더하는 것은 좋지만, "
+            "여기에 없는 법·절차·기한·금액·조건·결과 주장을 새로 만들지 마세요. '이 글에서 쓰지 말 것'에 적힌 내용은 쓰지 않습니다. "
+            "{{f:...}} 표시는 단위까지 포함해 채워지니 뒤에 년·일·원을 다시 붙이지 말고 그대로 옮깁니다. "
+            "근거 문단끼리 서로 어긋나게 쓰지 마세요.\n" + b)
+
 def facts_text(facts):
     lines = []
     for f in facts:
@@ -242,7 +251,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
 {('이전 시도 실패 이유(고쳐서 다시 쓰기): ' + feedback) if feedback else ''}
 
 사실표:
-{facts_text(facts)}"""
+{facts_text(facts)}{basis_text(topic)}"""
     out = call(sys2, usr, max_tokens=7000)
     mj = {}
     try: mj = json.loads(tag(out, "meta"))
@@ -280,7 +289,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
 {('이전 시도 실패 이유(고쳐서 다시 쓰기): ' + feedback) if feedback else ''}
 
 사실표:
-{facts_text(facts)}"""
+{facts_text(facts)}{basis_text(topic)}"""
     def parse(out):
         def j(name, default):
             try: return json.loads(tag(out, name))
