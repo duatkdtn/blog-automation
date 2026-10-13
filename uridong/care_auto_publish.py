@@ -132,6 +132,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         p3 = G.stage3(t, facts, today, meta, title, p1, feedback)
         links = pick_links(t["category"], posts)
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
+        after = G.trim_keyword(before, after, t["main"])
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)
         rv = G.reviewer(t, title, K.BeautifulSoup(before + after, "html.parser").get_text(" ", strip=True), today)
         for k, lvl in (("K4", "FAIL"), ("B4", "FAIL"), ("B5", "FAIL"), ("F5", "FAIL"), ("B6", "WARN")):

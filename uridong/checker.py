@@ -45,7 +45,7 @@ def safe_eval(expr):
         if isinstance(n, ast.BinOp) and type(n.op) in _OPS: return _OPS[type(n.op)](ev(n.left), ev(n.right))
         if isinstance(n, ast.UnaryOp) and isinstance(n.op, ast.USub): return -ev(n.operand)
         raise ValueError("bad expr")
-    return ev(ast.parse(expr.replace(",", "").replace("×", "*").replace("÷", "/").strip(), mode="eval"))
+    return ev(ast.parse(re.sub(r"[원약\s]+(?=[-+*/×÷)]|$)", "", expr.replace(",", "")).replace("원", "").strip().replace("×", "*").replace("÷", "/").strip(), mode="eval"))
 
 def _text(html):
     return BeautifulSoup(html, "html.parser").get_text(" ", strip=True)

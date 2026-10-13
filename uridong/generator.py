@@ -131,7 +131,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff"><tr><th style="padding:10px;border:1px solid #ddd">구분</th><th style="padding:10px;border:1px solid #ddd">내용</th></tr></thead><tbody><tr style="background:#fff"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr><tr style="background:#f8f9fa"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr></tbody></table></div>
 표는 사실표의 값을 그대로 옮기거나(금액·한도액·비율), 숫자가 필요 없는 비교·절차·체크 표로 만듭니다."""
     usr = f"""오늘: {today}  글 제목: {title}
-메인 키워드(본문에 6~9회, 너무 많으면 '비용' 등으로 줄임): {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
+메인 키워드(본문 전체에서 정확히 7회 안팎(최대 9회). 그 이상 쓰지 말고 '이 비용', '비용', '이 금액'처럼 줄여 씁니다): {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
 이 글이 답하는 질문: {topic['question']}  /  작성 주의: {topic.get('fact_status','')}
 본문 소제목 구성(이 순서·의미로): {json.dumps(meta['outline'], ensure_ascii=False)}
 {'인포그래픽(STEP1→STEP4 카드, 바깥 div style="overflow-x:auto", 카드 min-height:100px, 배경 #eaf4fb/#d6eaf8 번갈아)을 본문 중간에 넣으세요.' if meta.get('infographic') else '인포그래픽은 넣지 않습니다.'}
@@ -219,14 +219,14 @@ def wrap_blocks(before, after):
 
 def reviewer(topic, title, html_text, today):
     """A 항목(의미 판단): K4 제목 숫자=본문 개수, B4 의료·법률 단정, B5 질문 답함, F5 단정 금지, S10 출처."""
-    sys_r = "당신은 글 검수자입니다. 지침 위반 여부만 JSON으로 답합니다. 의심스러우면 위반으로 봅니다."
+    sys_r = "당신은 글 검수자입니다. 지침 위반 여부만 JSON으로 답합니다. 명백한 위반만 위반으로 봅니다(애매하면 통과)."
     usr = f"""제목: {title}
 이 글이 답해야 하는 질문: {topic['question']}
 검사 항목:
 K4: 제목에 개수 숫자(예: 5가지, 4단계)가 있다면 본문에 그 개수의 항목이 정확히 있는가? (없으면 해당 없음=통과)
 B4: 진단·치료·약 복용을 권하거나 의료·법률 판단을 단정하는 문장이 있는가? (있으면 위반)
 B5: 본문이 위 '답해야 하는 질문'에 실제로 답하는가?
-F5: 요양원마다 다른 값(비급여 식재료비·간식비·상급침실료 등)을 시설 기준으로 단정하는가? (단정하면 위반)
+F5: 요양원마다 다른 값(비급여 식재료비·간식비·상급침실료 등)의 금액을 '모든 요양원이 이렇다'는 식으로 확정해 쓰는가? ('요양원마다 다르니 확인하세요' 안내가 함께 있거나 금액을 쓰지 않았으면 통과. 확정해 쓴 경우만 위반)
 B6: 풀어 쓰지 않은 어려운 전문용어가 많은가?
 JSON만: {{"K4":{{"ok":true,"why":""}},"B4":{{"ok":true,"why":""}},"B5":{{"ok":true,"why":""}},"F5":{{"ok":true,"why":""}},"B6":{{"ok":true,"why":""}}}}
 
@@ -236,3 +236,23 @@ JSON만: {{"K4":{{"ok":true,"why":""}},"B4":{{"ok":true,"why":""}},"B5":{{"ok":t
         return extract_json(call(sys_r, usr, max_tokens=700, temperature=0.0))
     except Exception:
         return {}
+
+
+def trim_keyword(before, after, kw, keep=8):
+    """포커스 키워드가 너무 많이 나오면 초과분을 키워드의 마지막 낱말로 줄인다(링크·소제목은 건드리지 않음)."""
+    from bs4 import BeautifulSoup, NavigableString
+    tail = kw.split()[-1] if " " in kw else None
+    if not tail: return after
+    soup = BeautifulSoup(after, "html.parser")
+    n = BeautifulSoup(before, "html.parser").get_text(" ", strip=True).count(kw)
+    for node in soup.find_all(string=True):
+        if node.parent.name in ("a", "h1", "h2", "h3") and kw in node: n += node.count(kw)
+    for node in soup.find_all(string=True):
+        if node.parent.name in ("a", "h1", "h2", "h3", "script", "style") or kw not in node:
+            continue
+        parts = node.split(kw); out = parts[0]
+        for seg in parts[1:]:
+            n += 1
+            out += (kw if n <= keep else tail) + seg
+        if out != str(node): node.replace_with(NavigableString(out))
+    return str(soup)
