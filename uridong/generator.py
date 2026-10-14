@@ -168,10 +168,14 @@ NO_TEMP = [False]
 def call(system, user, max_tokens=4096, temperature=0.6):
     cl = client()
     last = None
+    big = "haiku" not in C.MODEL            # Sonnet 등은 '생각' 토큰이 글자 수 한도를 먹어 본문이 비는 일이 있어 끄고, 한도도 넉넉히 준다
+    use_think_off = big
+    mt = max_tokens * 2 if big else max_tokens
     for i in range(3):
         try:
-            kw = dict(model=C.MODEL, max_tokens=max_tokens, system=system,
+            kw = dict(model=C.MODEL, max_tokens=mt, system=system,
                       messages=[{"role": "user", "content": user}])
+            if use_think_off: kw["thinking"] = {"type": "disabled"}
             if not NO_TEMP[0]:
                 kw["temperature"] = temperature
             try:
@@ -182,8 +186,23 @@ def call(system, user, max_tokens=4096, temperature=0.6):
                     r = cl.messages.create(**kw)
                 else:
                     raise
+            except Exception as e2:
+                msg = str(e2)
+                if "thinking" in msg and use_think_off:
+                    use_think_off = False; kw.pop("thinking", None); mt = max_tokens * 3
+                    kw["max_tokens"] = mt
+                    r = cl.messages.create(**kw)
+                elif "temperature" in msg and not NO_TEMP[0]:
+                    NO_TEMP[0] = True; kw.pop("temperature", None)
+                    r = cl.messages.create(**kw)
+                else:
+                    raise
             USAGE["in"] += r.usage.input_tokens; USAGE["out"] += r.usage.output_tokens
-            return "".join(b.text for b in r.content if getattr(b, "type", "") == "text")
+            text = "".join(b.text for b in r.content if getattr(b, "type", "") == "text")
+            if not text.strip():
+                print(f"[AI 응답 비어 있음] stop_reason={getattr(r, 'stop_reason', '')} 블록={[getattr(b, 'type', '') for b in r.content]} max_tokens={mt}", flush=True)
+                mt = mt * 2; last = RuntimeError("빈 응답"); time.sleep(2); continue
+            return text
         except Exception as e:  # 과부하·일시 오류 재시도
             last = e; print(f"[AI 오류 {i+1}/3] {type(e).__name__}: {str(e)[:300]}", flush=True)
             time.sleep(5 * (i + 1))
@@ -191,7 +210,7 @@ def call(system, user, max_tokens=4096, temperature=0.6):
 
 def extract_json(s):
     m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", s, re.S) or re.search(r"(\{.*\})", s, re.S)
-    if not m: raise ValueError("JSON 없음")
+    if not m: raise ValueError("JSON 없음 / 응답 앞부분: " + s[:200].replace("\n", " "))
     return json.loads(m.group(1))
 
 def tag(s, name):
