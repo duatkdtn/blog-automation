@@ -29,14 +29,21 @@ def load(fac_csv, phone_csv=None):
         rows.append(r)
     return rows
 
+def _last(w):
+    for c in reversed(w.strip()):
+        if 0xAC00 <= ord(c) <= 0xD7A3 or c.isalnum(): return c
+    return "가"
 def _jong(w):
-    c = w.strip()[-1]
+    c = _last(w)
+    if c.isdigit(): return c in "0136478"[:0] or c in "013678"
     return 0xAC00 <= ord(c) <= 0xD7A3 and (ord(c) - 0xAC00) % 28 != 0
+def q(w): return "‘" + w + "’"
+def ie(w): return w + ("이에요" if _jong(w) else "예요")
 def eun(w): return w + ("은" if _jong(w) else "는")
 def i_(w): return w + ("이" if _jong(w) else "가")
 def eul(w): return w + ("을" if _jong(w) else "를")
 def ro(w):
-    c = w.strip()[-1]
+    c = _last(w)
     return w + ("로" if not (0xAC00 <= ord(c) <= 0xD7A3) or (ord(c) - 0xAC00) % 28 in (0, 8) else "으로")
 def gwa(w): return w + ("과" if _jong(w) else "와")
 
@@ -98,7 +105,7 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
     items = [pick([f"{place}에는 노인요양시설(요양원)이 {n}곳 있어요", f"{eul(place)} 기준으로 요양원은 {n}곳이에요"], K + "s1"),
              pick([f"시설 규모는 {size_word}이에요", f"정원으로 보면 {size_word}이에요"], K + "s2"),
              f"평가등급은 {gtxt}",
-             pick([f"정원이 가장 큰 곳은 {big['name']}이에요", f"가장 큰 시설은 {big['name']}이에요"], K + "s4"),
+             pick([f"정원이 가장 큰 곳은 {ie(q(big['name']))}", f"가장 큰 시설은 {ie(q(big['name']))}"], K + "s4"),
              pick(["시설별 비용과 빈자리는 공공 자료에 없어서 전화로 확인해야 해요", "비용과 빈자리는 공공 자료에 없으니 전화로 물어보세요"], K + "s5")]
     before = f'<div style="{S["summary"]}"><p style="margin:0 0 12px;font-weight:bold;font-size:18px;color:#2c3e50">{h(pick(["이 글에서 알 수 있어요", "먼저 핵심만 볼까요", "한눈에 보는 핵심"], K+"k5"))}</p>' + \
              "".join(f'<p style="margin:0 0 8px;font-size:16px;line-height:1.7">✅ {h(x)}</p>' for x in items) + "</div>"
@@ -185,18 +192,20 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
         def line(r, i):
             dn = r["dong"] or sigungu
             g = f"{r['grade']}등급" if r["grade"] in GRADES else None
-            t = [f"{r['name']}은(는) {dn}에 있고 정원이 {r['cap']}명이에요." + (f" 평가는 {g}예요." if g else " 평가 정보는 없어요."),
-                 f"{dn}의 {r['name']}은(는) 정원 {r['cap']}명 규모예요." + (f" 평가등급은 {g}로 나와 있어요." if g else ""),
-                 f"{r['name']}({dn})은(는) {r['cap']}명까지 모실 수 있는 시설이에요." + (f" {g}를 받았어요." if g else ""),
-                 f"정원 {r['cap']}명인 {r['name']}은(는) {dn}에 자리해 있어요." + (f" 평가 결과는 {g}예요." if g else ""),
-                 f"{dn}에서는 {r['name']}이(가) 정원 {r['cap']}명으로 알려져 있어요." + (f" 등급은 {g}예요." if g else "")]
+            nm = r["name"]; Q = q(nm)
+            t = [f"{dn}의 {eun(Q)} 정원이 {r['cap']}명이에요." + (f" 평가는 {ie(g)}." if g else " 평가 정보는 없어요."),
+                 f"{dn}에 있는 {eun(Q)} 정원 {r['cap']}명 규모예요." + (f" 평가등급은 {ro(g)} 나와 있어요." if g else ""),
+                 f"{eun(Q)} {dn}에 있고, {r['cap']}명까지 모실 수 있어요." + (f" {eul(g)} 받았어요." if g else ""),
+                 f"정원 {r['cap']}명인 {eun(Q)} {dn}에 자리해 있어요." + (f" 평가 결과는 {ie(g)}." if g else ""),
+                 f"{dn}에서는 {i_(Q)} 정원 {r['cap']}명으로 알려져 있어요." + (f" 등급은 {ie(g)}." if g else "")]
             return pick(t, K + r["code"] + str(i))
         spot = f'<h3 style="{S["h3"]}">{h(pick(["정원이 큰 곳 세 군데", "먼저 눈에 띄는 큰 시설들", "규모 순으로 세 곳만 짚어 보면"], K+"h10"))}</h3>' + \
-               "".join(P(h(line(r, i)).replace("은(는)", "은" if _jong(r["name"]) else "는").replace("이(가)", "이" if _jong(r["name"]) else "가")) for i, r in enumerate(top3))
+               "".join(P(h(line(r, i))) for i, r in enumerate(top3))
         if newest and oldest and newest["code"] != oldest["code"]:
-            sp2 = pick([f"가장 최근에 지정된 곳은 {newest['name']}이고 {newest['year']}년에 지정됐어요. 가장 오래된 곳은 {ro(oldest['name'])} {oldest['year']}년이에요.",
-                        f"지정 시기로 보면 {oldest['name']}이 {oldest['year']}년으로 가장 앞서고, {newest['name']}이 {newest['year']}년으로 가장 최근이에요.",
-                        f"{newest['year']}년에 지정된 {newest['name']}이 가장 새 시설이고, {oldest['year']}년 지정의 {oldest['name']}이 가장 오래됐어요."], K+"sp2")
+            nn, on = q(newest["name"]), q(oldest["name"])
+            sp2 = pick([f"가장 최근에 지정된 곳은 {ie(nn)} {newest['year']}년에 지정됐어요. 가장 오래된 곳은 {ro(on)} {oldest['year']}년이에요.",
+                        f"지정 시기로 보면 {i_(on)} {oldest['year']}년으로 가장 앞서고, {i_(nn)} {newest['year']}년으로 가장 최근이에요.",
+                        f"{newest['year']}년에 지정된 {eun(nn)} 가장 새 시설이고, {oldest['year']}년 지정의 {i_(on)} 가장 오래됐어요."], K+"sp2")
             spot += P(h(sp2))
     # ── 동별
     sec6 = ""
@@ -249,7 +258,7 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
     big_name = big["name"]
     faq_items = [(pick([f"{place}에는 요양원이 몇 곳 있나요?", f"{skw}은 모두 몇 곳이에요?"], K + "q1"), pick([f"공공 자료 기준으로 {n}곳이에요.", f"노인요양시설로 등록된 곳은 {n}곳이에요."], K + "a1")),
                  (pick([f"{sigungu} 요양원 비용은 얼마인가요?", f"{sigungu}에서 한 달 비용은 어느 정도예요?", f"{skw} 비용은 어디서 알 수 있나요?"], K+"q2"), pick(["시설별 비용은 공공 자료에 없어요. 본인부담금은 계산기로 미리 계산해 보시고, 입소할 곳에는 전화로 확인하세요.", "정해진 금액을 알려드리기 어려워요. 나라가 정한 부분은 계산기로 보시고, 식비 같은 비급여는 시설에 직접 물어보세요."], K + "a2")),
-                 (pick([f"{sigungu}에서 정원이 가장 큰 요양원은 어디인가요?", f"{sigungu}에서 제일 큰 시설은 어디예요?", f"가장 많은 분을 모실 수 있는 곳은 어디인가요?"], K+"q3"), pick([f"공공 자료 기준으로 {big_name}이에요. 정원이 크다고 빈자리가 있다는 뜻은 아니에요.", f"{big_name}이 가장 커요. 다만 빈자리는 전화로 확인하셔야 해요.", f"정원으로는 {big_name}이 가장 커요. 규모와 빈자리는 별개예요."], K+"a3")),
+                 (pick([f"{sigungu}에서 정원이 가장 큰 요양원은 어디인가요?", f"{sigungu}에서 제일 큰 시설은 어디예요?", f"가장 많은 분을 모실 수 있는 곳은 어디인가요?"], K+"q3"), pick([f"공공 자료 기준으로 {ie(q(big_name))}. 정원이 크다고 빈자리가 있다는 뜻은 아니에요.", f"{i_(q(big_name))} 가장 커요. 다만 빈자리는 전화로 확인하셔야 해요.", f"정원으로는 {i_(q(big_name))} 가장 커요. 규모와 빈자리는 별개예요."], K+"a3")),
                  (pick(["평가등급은 무엇인가요?", "평가등급은 어떻게 보는 건가요?", "A등급이면 가장 좋은 건가요?"], K+"q4"), pick(["장기요양기관 평가에서 받은 등급이에요. A가 가장 높은 등급이에요.", "시설 운영을 평가해서 매긴 등급이에요. A부터 E까지 있고 A가 가장 좋아요."], K + "a4"))]
     faq = f'<h2 style="{S["h2"]}">{h(pick(["자주 묻는 질문", "많이 물어보시는 것들", "궁금한 점 짚어보기", place+" 요양원, 이것이 궁금해요"], K+"h9"))}</h2>' + "".join(
         f'<h3 style="{S["h3"]}">Q. {h(q)}</h3><div style="{S["faq"]}"><p style="margin:0;line-height:1.85;font-size:16px">A. {h(a)}</p></div>' for q, a in faq_items)
