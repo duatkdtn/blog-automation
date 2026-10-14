@@ -1,0 +1,65 @@
+name: 우리동네 요양원 지역 글 발행
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry=시험(워드프레스에 안 씀) / draft=임시글로 저장(공개 안 됨) / publish=바로 공개"
+        default: "dry"
+      n:
+        description: "이번에 만들 글 수"
+        default: "1"
+      region:
+        description: "지역 지정(비우면 아직 안 쓴 지역 순서대로). 예: 서울특별시|종로구"
+        default: ""
+  # 시험이 끝나고 사용자가 승인하면 아래 줄의 주석을 풀어 매일 실행한다.
+  # schedule:
+  #   - cron: "30 22 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uri-regional-publish
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 한글 폰트
+        run: sudo apt-get install -y fonts-nanum
+      - name: 패키지
+        run: pip install anthropic requests pillow beautifulsoup4
+      - name: 실행
+        working-directory: uridong
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          URI_WP_USER: ${{ secrets.URI_WP_USER }}
+          URI_WP_APP_PASSWORD: ${{ secrets.URI_WP_APP_PASSWORD }}
+          URI_DRY_RUN: ${{ github.event.inputs.mode == 'dry' && '1' || '0' }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'draft' }}"
+          N="${{ github.event.inputs.n || '1' }}"
+          REGION="${{ github.event.inputs.region }}"
+          if [ -n "$REGION" ]; then python care_regional_publish.py --mode "$MODE" --n "$N" --region "$REGION"; else python care_regional_publish.py --mode "$MODE" --n "$N"; fi
+      - name: 기록 파일 저장(커밋)
+        if: ${{ github.event.inputs.mode != 'dry' }}
+        run: |
+          git config user.name "uri-care-bot"
+          git config user.email "uri-care-bot@users.noreply.github.com"
+          git add uridong/data/regional_history.json
+          git diff --cached --quiet || (git commit -m "uridong: 지역 글 발행 기록 갱신" && git pull --rebase && git push)
+      - name: 시험 결과물 보관(dry 모드)
+        if: ${{ github.event.inputs.mode == 'dry' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: regional-dry-output
+          path: uridong/out/
