@@ -39,6 +39,16 @@
  ],
  "site_posts": [
   {
+   "id": 493,
+   "slug": "care-grade-renewal-timing-validity-3-hold-2",
+   "link": "https://uridongneyoyangwon.com/?p=493",
+   "status": "draft",
+   "title": "[보류] 장기요양등급 갱신, 시기와 유효기간 2가지",
+   "categories": [
+    4
+   ]
+  },
+  {
    "id": 491,
    "slug": "long-term-care-grade-renewal-period-hold",
    "link": "https://uridongneyoyangwon.com/?p=491",
@@ -256,16 +266,6 @@
    "title": "요양원 비용 2026 총정리, 한 달 얼마?",
    "categories": [
     3
-   ]
-  },
-  {
-   "id": 493,
-   "slug": "care-grade-renewal-timing-validity-3",
-   "link": "https://uridongneyoyangwon.com/care-grade-renewal-timing-validity-3/",
-   "status": "publish",
-   "title": "장기요양등급 갱신, 시기와 유효기간 2가지",
-   "categories": [
-    4
    ]
   }
  ]
