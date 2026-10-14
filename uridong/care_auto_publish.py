@@ -82,6 +82,8 @@ def main():
         C.log("[로그인 점검] 상태", r.status_code, code, "| 아이디 칸 길이", len(C.WP_USER), "| 아이디에 @ 포함", "@" in C.WP_USER, "| 비밀번호 길이", len(C.WP_APP_PASSWORD))
         if r.status_code != 200:
             raise SystemExit("워드프레스 로그인 실패 — URI_WP_USER / URI_WP_APP_PASSWORD 확인 필요")
+    if not os.environ.get("URI_MOCK"):
+        G.preflight()          # 선택한 모델이 실제로 답하는지 먼저 확인(글 만들기 전에 멈추거나 대체)
     posts = W.list_posts() if (C.WP_USER and not os.environ.get("URI_MOCK")) else hist.get("site_posts", [])
     if a.check_existing:
         return check_existing(posts, facts)
@@ -101,11 +103,17 @@ def main():
     staged = []
     for t in plan_topics:
         fb = ""
+        meta = None
         for attempt in range(3):
-            meta = G.stage1(t, facts_for(t, facts), today, year_topic(t), recent_patterns, existing_titles, fb)
+            try:
+                meta = G.stage1(t, facts_for(t, facts), today, year_topic(t), recent_patterns, existing_titles, fb)
+            except Exception as e:      # 한 번 형식이 틀려도 다시 요청
+                C.log("[1단계 재시도]", type(e).__name__, str(e)[:200]); fb = "JSON 형식으로만 답하세요"; continue
             score, cand, res = select_title(meta["titles"], t, year, year_topic(t), recent_patterns)
             if score[0] == 0: break
             fb = "; ".join(f"{x[0]} {x[2]}" for x in res if x[1] == "FAIL")
+        if meta is None:
+            C.log("[1단계 실패] 이 주제는 건너뜀:", t["main"]); M.hold_mail(t["main"], ["1단계(제목·구성) 생성 실패"], [], t); continue
         t["_meta"] = meta; t["_title"] = cand["title"].strip(); t["_pattern"] = cand.get("pattern"); t["_title_res"] = res
         recent_patterns.append(cand.get("pattern"))
         staged.append(t)

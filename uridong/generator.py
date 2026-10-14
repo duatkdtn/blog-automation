@@ -512,3 +512,23 @@ def fix_meta(meta, topic, title):
 def facts_plain(facts):
     """검수자용: 숫자 값을 그대로 보여 주는 사실표."""
     return "\n".join(f"- {f['항목']}: {f.get('값')}{f.get('단위','')} ({f.get('비고','')})" for f in facts)
+
+
+def preflight():
+    """실행 맨 처음에 선택한 AI가 실제로 JSON을 제대로 돌려주는지 작은 질문으로 점검한다. 안 되면 설정을 바꿔 다시 해 보고, 그래도 안 되면 Haiku로 바꾼다(로그에 크게 남김)."""
+    usr = '다음 JSON만 그대로 답하세요(설명 금지): {"ok": true, "n": 3}'
+    tries = [("기본", None), ("한도 크게", 3)]
+    for label, mult in tries:
+        try:
+            out = call("당신은 JSON만 답하는 도우미입니다.", usr, max_tokens=60 if mult is None else 60 * mult, temperature=0.0)
+            j = extract_json(out)
+            if j.get("ok") is True:
+                print(f"[모델 점검] {C.MODEL} 정상 ({label})", flush=True); return C.MODEL
+        except Exception as e:
+            print(f"[모델 점검] {C.MODEL} 실패 ({label}): {type(e).__name__} {str(e)[:200]}", flush=True)
+    if "haiku" not in C.MODEL:
+        bad = C.MODEL
+        C.MODEL = "claude-haiku-4-5-20251001"
+        print(f"[모델 점검] ⚠️ {bad} 를 쓸 수 없어 {C.MODEL} 로 대신 진행합니다", flush=True)
+        return C.MODEL
+    raise RuntimeError("모델 점검 실패")
