@@ -148,6 +148,7 @@ def clean_text(h):
     h = re.sub(r"(?<=[\d,])원원", "원", h)
     h = re.sub(r"%{2,}", "%", h)
     h = re.sub(r"(\d)%이 ", r"\1%가 ", h)
+    h = re.sub(r"(?<=\d)(년|일|원|개월)예요", r"\1이에요", h)
     return h
 
 def client():
@@ -354,7 +355,7 @@ def wrap_blocks(before, after):
     return (f"<!-- wp:html -->\n{before}\n<!-- /wp:html -->\n\n<!-- wp:shortcode -->\n[toc]\n<!-- /wp:shortcode -->\n\n"
             f"<!-- wp:html -->\n{after}\n<!-- /wp:html -->")
 
-def reviewer(topic, title, html_text, today, facts_txt=""):
+def reviewer(topic, title, html_text, today, facts_txt="", basis=""):
     """A 항목(의미 판단): K4 제목 숫자=본문 개수, B4 의료·법률 단정, B5 질문 답함, F5 단정 금지, S10 출처."""
     sys_r = "당신은 글 검수자입니다. 지침 위반 여부만 JSON으로 답합니다. 명백한 위반만 위반으로 봅니다(애매하면 통과)."
     usr = f"""제목: {title}
@@ -366,15 +367,19 @@ B5: 본문이 위 '답해야 하는 질문'에 실제로 답하는가?
 F5: 요양원마다 다른 값(비급여 식재료비·간식비·상급침실료 등)의 금액을 '모든 요양원이 이렇다'는 식으로 확정해 쓰는가? ('요양원마다 다르니 확인하세요' 안내가 함께 있거나 금액을 쓰지 않았으면 통과. 확정해 쓴 경우만 위반. 법으로 정해진 급여 한도액·본인부담금·감경률 같은 공식 금액은 시설별 값이 아니므로 해당 없음)
 B6: 풀어 쓰지 않은 어려운 전문용어가 많은가?
 B7: 글 안에서 서로 모순되는 문장(같은 것을 두고 앞뒤가 다르게 말함), 아래 '사실표'와 어긋나는 내용, 말이 깨진 문장(같은 말 반복, 뜻이 안 통하는 목록, 숫자 자리에 '확인' 같은 안내문이 끼어든 문장)이 있는가? (있으면 위반, why에 해당 문장을 짧게 인용)
-JSON만: {{"K4":{{"ok":true,"why":""}},"B4":{{"ok":true,"why":""}},"B5":{{"ok":true,"why":""}},"F5":{{"ok":true,"why":""}},"B6":{{"ok":true,"why":""}},"B7":{{"ok":true,"why":""}}}}
+B8: 아래 '근거 문단'이 있다면, 그 '쓰지 말 것' 목록에 적힌 내용(예: 놓쳤을 때의 결과, 소요 기간, 확률, 비용 단정)이 글에 들어갔거나, 근거 문단·사실표에 없는 법·절차·기한·금액·이유를 사실처럼 단정했는가? (있으면 위반, why에 해당 문장을 짧게 인용. '공단에 확인하세요' 안내는 위반 아님. 근거 문단이 없으면 통과)
+JSON만: {{"K4":{{"ok":true,"why":""}},"B4":{{"ok":true,"why":""}},"B5":{{"ok":true,"why":""}},"F5":{{"ok":true,"why":""}},"B6":{{"ok":true,"why":""}},"B7":{{"ok":true,"why":""}},"B8":{{"ok":true,"why":""}}}}
 
 사실표:
 {facts_txt[:3000]}
 
+근거 문단:
+{basis[:2500]}
+
 글 본문(텍스트):
 {html_text[:12000]}"""
     try:
-        return extract_json(call(sys_r, usr, max_tokens=900, temperature=0.0))
+        return extract_json(call(sys_r, usr, max_tokens=1100, temperature=0.0))
     except Exception:
         return {}
 

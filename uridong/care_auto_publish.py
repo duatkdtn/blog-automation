@@ -162,8 +162,8 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         after = G.boost_keyword(before, after, t["main"])
         res, lack = run_check(t, facts, today, meta, title, before, after, p1, p3, posts, existing_slugs)
         res += [("S0", "FAIL", w) for w in dict.fromkeys(G.SLOT_WARN)]; G.SLOT_WARN.clear()
-        rv = G.reviewer(t, title, K.BeautifulSoup(before + after, "html.parser").get_text(" ", strip=True), today, G.facts_plain(facts_for(t, facts)))
-        for k, lvl in (("K4", "FAIL"), ("B4", "FAIL"), ("B5", "FAIL"), ("F5", "WARN"), ("B6", "WARN"), ("B7", "FAIL")):
+        rv = G.reviewer(t, title, K.BeautifulSoup(before + after, "html.parser").get_text(" ", strip=True), today, G.facts_plain(facts_for(t, facts)), t.get("basis", ""))
+        for k, lvl in (("K4", "FAIL"), ("B4", "FAIL"), ("B5", "FAIL"), ("F5", "WARN"), ("B6", "WARN"), ("B7", "FAIL"), ("B8", "FAIL")):
             v = rv.get(k)
             if isinstance(v, dict) and v.get("ok") is False: res.append((k, lvl, v.get("why", "")))
         res += K.check_links_alive(before + after)
