@@ -128,8 +128,10 @@ def main():
             held.append({"title": t["_title"], "fails": [f"실행 오류 {type(e).__name__}"]})
             M.hold_mail(t["_title"], [f"실행 오류 {type(e).__name__}"], [], t)
     cost_in, cost_out = G.USAGE["in"], G.USAGE["out"]
-    C.log(f"[비용] 입력 {cost_in:,} / 출력 {cost_out:,} 토큰 → 약 ${cost_in*1e-6*1.0 + cost_out*1e-6*5.0:.2f} (약 {int((cost_in*1e-6*1.0 + cost_out*1e-6*5.0)*1400):,}원)")
-    cost = f"입력 {cost_in:,} / 출력 {cost_out:,} 토큰 (Haiku 단가 기준 추정 약 ${cost_in*1e-6*1.0 + cost_out*1e-6*5.0:.2f})"
+    pin, pout = (3.0, 15.0) if "sonnet" in C.MODEL else ((15.0, 75.0) if "opus" in C.MODEL else (1.0, 5.0))      # 1백만 토큰당 달러(추정 단가)
+    usd = cost_in * 1e-6 * pin + cost_out * 1e-6 * pout
+    C.log(f"[비용] 모델 {C.MODEL} / 입력 {cost_in:,} / 출력 {cost_out:,} 토큰 → 약 ${usd:.2f} (약 {int(usd*1400):,}원, 글 {len(rows)+len(held)}개 기준 글당 약 {int(usd*1400/max(1,len(rows)+len(held))):,}원)")
+    cost = f"모델 {C.MODEL} / 입력 {cost_in:,} / 출력 {cost_out:,} 토큰 (추정 약 ${usd:.2f})"
     remaining = len([x for x in topics if x["status"] == "대기"])
     lacks = [l for r in rows for l in r["lack"]]
     M.result_mail(rows, held, lacks, cost, remaining, "")

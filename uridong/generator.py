@@ -185,9 +185,9 @@ def call(system, user, max_tokens=4096, temperature=0.6):
             USAGE["in"] += r.usage.input_tokens; USAGE["out"] += r.usage.output_tokens
             return "".join(b.text for b in r.content if getattr(b, "type", "") == "text")
         except Exception as e:  # 과부하·일시 오류 재시도
-            last = e; print(f"[Haiku 오류 {i+1}/3] {type(e).__name__}: {str(e)[:300]}", flush=True)
+            last = e; print(f"[AI 오류 {i+1}/3] {type(e).__name__}: {str(e)[:300]}", flush=True)
             time.sleep(5 * (i + 1))
-    raise RuntimeError(f"Haiku 호출 실패: {type(last).__name__}: {str(last)[:300]}")
+    raise RuntimeError(f"AI 호출 실패: {type(last).__name__}: {str(last)[:300]}")
 
 def extract_json(s):
     m = re.search(r"```(?:json)?\s*(\{.*\})\s*```", s, re.S) or re.search(r"(\{.*\})", s, re.S)

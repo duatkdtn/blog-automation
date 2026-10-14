@@ -9,6 +9,13 @@ on:
       n:
         description: "이번에 쓸 글 수"
         default: "1"
+      model:
+        description: "글 쓰는 AI (haiku=저렴 / sonnet=더 정확하지만 비용 약 3배)"
+        type: choice
+        default: "haiku"
+        options:
+          - haiku
+          - sonnet
   # 시험이 끝나고 사용자가 승인하면 아래 두 줄의 주석을 풀어 매일 07:00(한국 시간)에 실행한다.
   # schedule:
   #   - cron: "0 22 * * *"
@@ -43,6 +50,7 @@ jobs:
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
           URI_WP_USER: ${{ secrets.URI_WP_USER }}
           URI_WP_APP_PASSWORD: ${{ secrets.URI_WP_APP_PASSWORD }}
+          URI_MODEL: ${{ github.event.inputs.model == 'sonnet' && 'claude-sonnet-5-5' || 'claude-haiku-4-5-20251001' }}
           URI_DRY_RUN: ${{ github.event.inputs.mode == 'dry' && '1' || '0' }}
         run: |
           MODE="${{ github.event.inputs.mode || 'publish' }}"
