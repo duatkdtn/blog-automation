@@ -47,9 +47,31 @@
    "date": "2026-10-14T15:44:12.552178+09:00",
    "topic": 11,
    "id": 497
+  },
+  {
+   "title": "장기요양등급 심사청구, 이의신청 90일 안에 하세요",
+   "slug": "longterm-care-grade-appeal-guide",
+   "pattern": "쉼표형",
+   "combo": [
+    "중년 딸과 아버지(휠체어 이용), 그리고 서류를 함께 살펴주는 사회복지사",
+    "병원 상담실 (창가 쪽 상담 테이블이 있는 밝은 방)"
+   ],
+   "date": "2026-10-14T16:12:41.828455+09:00",
+   "topic": 12,
+   "id": 500
   }
  ],
  "site_posts": [
+  {
+   "id": 497,
+   "slug": "care-grade-renewal-period",
+   "link": "https://uridongneyoyangwon.com/care-grade-renewal-period/",
+   "status": "publish",
+   "title": "장기요양등급 갱신 시기와 유효기간, 90일 전부터",
+   "categories": [
+    4
+   ]
+  },
   {
    "id": 495,
    "slug": "longterm-care-grade-renewal-validity-period-hold",
@@ -291,11 +313,11 @@
    ]
   },
   {
-   "id": 497,
-   "slug": "care-grade-renewal-period",
-   "link": "https://uridongneyoyangwon.com/care-grade-renewal-period/",
+   "id": 500,
+   "slug": "longterm-care-grade-appeal-guide",
+   "link": "https://uridongneyoyangwon.com/longterm-care-grade-appeal-guide/",
    "status": "publish",
-   "title": "장기요양등급 갱신 시기와 유효기간, 90일 전부터",
+   "title": "장기요양등급 심사청구, 이의신청 90일 안에 하세요",
    "categories": [
     4
    ]
