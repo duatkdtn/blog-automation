@@ -87,7 +87,7 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
     K = place
     n, cap = st["n"], st["cap"]
     avg = round(cap / n) if n else 0
-    big = max(here, key=lambda r: r["cap"]); small = min(here, key=lambda r: r["cap"])
+    big = max(here, key=lambda r: r["cap"]); small = min([r for r in here if r["cap"] > 0] or here, key=lambda r: r["cap"])
     a_share, a_sido, a_nat = _pct(st["g"]["A"], st["graded"]), _pct(ss["g"]["A"], ss["graded"]), _pct(sn["g"]["A"], sn["graded"])
     rel = _rel(a_share, a_nat) if st["graded"] else "none"
     dong = collections.Counter(r["dong"] for r in here if r["dong"])
@@ -196,7 +196,7 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
         ph = r["phone_n"]
         tel = f'<a href="tel:{ph.replace("-", "")}" style="color:#2980b9">{h(ph)}</a>' if ph else "공단에 확인"
         gr = (f'{r["grade"]}등급' + ("" if str(r.get("eval_year")) == "2025" else f' ({r["eval_year"]}년)')) if r["grade"] in GRADES and r.get("eval_year") else "정보 없음"
-        body.append([h(r["name"]), h(r["dong"] or "-"), f'{r["cap"]}명', gr, tel])
+        body.append([h(r["name"]), h(r["dong"] or "-"), (f'{r["cap"]}명' if r["cap"] > 0 else "정보 없음"), gr, tel])
     sec3 += _table(["시설명", "동", "정원", "평가등급(2025년 기준)", "전화"], body)
     sec3 += NOTE(pick(["정원이 큰 순서로 정리했어요.", "큰 시설부터 차례로 실었어요.", "정원이 많은 곳이 위에 오도록 정리했어요."], K+"n4") + (f" {len(shown)}곳만 실었어요." if n > len(shown) else "") + " " + pick(["전화번호는 공공 자료에 올라 있는 번호 그대로예요.", "번호는 공공 자료에 나온 그대로 적었어요.", "연락처는 공개된 자료 기준이에요."], K+"n5"))
 
