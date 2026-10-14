@@ -227,8 +227,10 @@ def find_bad(text, ctx):
         if ph not in PHONE_OK: bad.append(ph)
     for m in NUM_RE.finditer(t):
         raw, unit = m.group(1), (m.group(2) or "").replace(" ", "")
+        raw = raw.rstrip(",")
         try: v = float(raw.replace(",", ""))
         except ValueError: continue
+        if 2000 <= v <= 2100 and unit in ("", "년", "점", "월") and abs(v - yr) <= 2: continue     # '판정 기준 2026, 점수…' 같은 제목 속 연도
         if unit in ("등급", "점") and v <= 5 and unit == "등급": continue
         if unit in ("가지", "단계", "개", "번째", "번", "위", "곳", "명", "회", "배") and v <= 20: continue
         if unit in ("시간", "분") and v <= 24: continue

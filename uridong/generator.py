@@ -46,7 +46,7 @@ def basis_text(topic, outline=False):
     if not b: return ""
     if outline:
         return ("\n\n[근거 문단] 본문 구성(outline)과 제목은 아래 근거 문단에 있는 내용의 범위 안에서만 짠다. "
-                "'이 글에서 쓰지 말 것'에 적힌 내용을 소제목으로 만들지 않는다. 제목의 개수 숫자는 소제목·항목 수와 맞춘다.\n" + b)
+                "'이 글에서 쓰지 말 것'에 적힌 내용을 소제목으로 만들지 않는다. 제목에 '~가지'·'~단계' 같은 개수 표현은 쓰지 않는다. 제목의 숫자는 근거 문단의 값({{f:...}} 표시, 예: 90일·5년)으로 넣는다.\n" + b)
     return ("\n\n[근거 문단] 이 글의 사실은 아래에서만 가져옵니다. 아래 내용을 쉬운 말로 풀어 쓰고 예시를 더하는 것은 좋지만, "
             "여기에 없는 법·절차·기한·금액·조건·결과 주장을 새로 만들지 마세요. '이 글에서 쓰지 말 것'에 적힌 내용은 쓰지 않습니다. "
             "{{f:...}} 표시는 단위까지 포함해 채워지니 뒤에 년·일·원을 다시 붙이지 말고 그대로 옮깁니다. "
@@ -271,7 +271,22 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스�
     return {"summary": [fill_slots(x.strip(" -·✅"), facts) for x in tag(out, "summary").split("\n") if x.strip()],
             "intro": fill_slots(tag(out, "intro"), facts), "body": fill_slots(body, facts), "meta": mj}
 
+def fixed_part3(topic, facts):
+    """사람이 법령 원문으로 확인해 둔 FAQ·오해·이런분들·결론을 그대로 쓴다(AI가 쓰지 않음)."""
+    S = STYLE
+    pk = topic["pack"]
+    f = lambda s: fill_slots(s, facts)
+    wrong = "".join(f'<p style="margin:0 0 12px;font-size:16px;line-height:1.8">❌ "{h(f(a))}" → {h(f(b))}</p>' for a, b in pk["pairs"])
+    mistakes = (f'<h2 style="{S["h2"]}">헷갈리기 쉬운 것들</h2>'
+                f'<div style="background:#fdf2f8;border:1px solid #d2b4de;border-radius:8px;padding:18px 22px;margin:18px 0">{wrong}</div>'
+                f'<div style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:18px 22px;margin:18px 0"><p style="margin:0;font-size:16px;line-height:1.8">✅ 올바른 순서: {h(f(pk["ok"]))}</p></div>')
+    cta = {k: f(v) for k, v in pk["cta"].items()}
+    return {"mistakes": mistakes, "faq": [{"q": f(x["q"]), "a": f(x["a"])} for x in pk["faq"]],
+            "who": [f(x) for x in pk["who"]], "cta": cta, "meta": {"lacking": [], "calcs": []}}
+
 def stage3(topic, facts, today, meta, title, part1, feedback=""):
+    if topic.get("pack"):
+        return fixed_part3(topic, facts)
     sys3 = SYSTEM_BASE + """
 지금은 3단계입니다. 글의 뒷부분을 씁니다. 아래 태그 형식으로만 답하세요.
 <mistakes>오해/주의사항 HTML. ❌ 오해 → 올바른 설명 박스 1개(style="background:#fdf2f8;border:1px solid #d2b4de;border-radius:8px;padding:18px 22px;margin:18px 0") 안에 ❌ 줄 3개 이상 + ✅ 올바른 경우 박스 1개(style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:18px 22px;margin:18px 0"). 앞에 h2(스타일 지정) 소제목.</mistakes>
