@@ -302,27 +302,27 @@ def fixed_part3(topic, facts):
                 f'<div style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:18px 22px;margin:18px 0"><p style="margin:0;font-size:16px;line-height:1.8">✅ 올바른 순서: {h(f(pk["ok"]))}</p></div>')
     cta = {k: f(v) for k, v in pk["cta"].items()}
     return {"mistakes": mistakes, "faq": [{"q": f(x["q"]), "a": f(x["a"])} for x in pk["faq"]],
-            "who": [f(x) for x in pk["who"]], "cta": cta, "meta": {"lacking": [], "calcs": []}}
+            "who": [f(x) for x in pk["who"]], "cta": cta, "laws": pk.get("laws", ""), "meta": {"lacking": [], "calcs": []}}
 
 def stage3(topic, facts, today, meta, title, part1, feedback=""):
     if topic.get("pack"):
         return fixed_part3(topic, facts)
     sys3 = SYSTEM_BASE + """
 지금은 3단계입니다. 글의 뒷부분을 씁니다. 아래 태그 형식으로만 답하세요.
-<mistakes>오해/주의사항 HTML. ❌ 오해 → 올바른 설명 박스 1개(style="background:#fdf2f8;border:1px solid #d2b4de;border-radius:8px;padding:18px 22px;margin:18px 0") 안에 ❌ 줄 3개 이상 + ✅ 올바른 경우 박스 1개(style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:18px 22px;margin:18px 0"). 앞에 h2(스타일 지정) 소제목.</mistakes>
+<mistakes>오해/주의사항 HTML. ❌ 오해 → 올바른 설명 박스 1개(style="background:#fdf2f8;border:1px solid #d2b4de;border-radius:8px;padding:18px 22px;margin:18px 0") 안에 ❌ 줄 2~3개 + ✅ 올바른 경우 박스 1개(style="background:#eafaf1;border:1px solid #a9dfbf;border-radius:8px;padding:18px 22px;margin:18px 0"). 앞에 h2(스타일 지정) 소제목.</mistakes>
 <faq>
 Q. 첫 번째 질문
-A. 답변 2~3문장, 근거 기관 표기
+A. 답변 1~2문장
 (빈 줄)
 Q. 두 번째 질문
 A. 답변
-위 형식(줄 시작이 'Q. ' 와 'A. ')으로 6~7개. 연관검색어를 질문에 나눠 넣음. JSON을 쓰지 않습니다.
+위 형식(줄 시작이 'Q. ' 와 'A. ')으로 4~5개(최소 3개). 연관검색어를 질문에 나눠 넣음. JSON을 쓰지 않습니다.
 </faq>
-<who>이 글이 도움 되는 사람 6가지를 한 줄에 하나씩(👉는 붙이지 않음). 반드시 6줄.</who>
+<who>이 글이 도움 되는 사람 3~5가지를 한 줄에 하나씩(👉는 붙이지 않음).</who>
 <cta>JSON {"head":"핵심 행동 촉구 한 문장(굵게 표시될 문구)","summary":"이 글 요약 + 행동 독려 1~2문장","related":"비슷한 주제로 정리해 둔 관련 키워드 한 개"}</cta>
 <meta>{"lacking":[]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
-이 뒷부분은 공백 포함 순수 글자 1,800자 이상이 되게 충분히 자세히 씁니다(오해 박스는 ❌ 4개 이상, FAQ 답변은 한 질문당 3~4문장으로 구체적으로, 질문은 6~7개)."""
+이 뒷부분은 공백 포함 순수 글자 1,200~1,600자로 간결하게 씁니다(오해 박스는 ❌ 2~3개, FAQ 답변은 한 질문당 1~2문장, 질문은 4~5개)."""
     usr = f"""오늘: {today}  글 제목: {title}
 메인 키워드: {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
 이 글이 답하는 질문: {topic['question']} / 작성 주의: {topic.get('fact_status','')}
@@ -351,7 +351,7 @@ h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
         out = call(sys3, usr, max_tokens=5000)
         res = parse(out)
         print(f"[3단계 진단] 응답 {len(out)}자 / 오해박스 {len(res['mistakes'])}자 / FAQ {len(res['faq'])}개 / 이런분들 {len(res['who'])}개", flush=True)
-        if len(res["faq"]) >= 5 and len(res["who"]) >= 5 and res["mistakes"]: break
+        if len(res["faq"]) >= 3 and len(res["who"]) >= 3 and res["mistakes"]: break
     return res
 
 def h(s): return H.escape(str(s), quote=False)
@@ -365,9 +365,9 @@ def assemble(topic, meta, title, p1, p3, today, internal_links, calc_url):
             f'· {h(topic["question"])} 궁금한 분<br>· 장기요양 제도가 아직 낯선 보호자</div>')
     faq = f'<h2 style="{S["h2"]}">자주 묻는 질문</h2>' + "".join(
         f'<h3 style="{S["h3"]}">Q. {h(x.get("q",""))}</h3><div style="{S["faq"]}"><p style="margin:0;line-height:1.85;font-size:16px">A. {h(x.get("a",""))}</p></div>'
-        for x in p3["faq"][:7])
+        for x in p3["faq"][:5])
     who = f'<div style="{S["who"]}"><p style="margin:0 0 12px;font-weight:bold;font-size:18px;color:#2c3e50">✅ 이런 분들 꼭 확인해보세요!</p>' + "".join(
-        f'<p style="margin:0 0 8px;font-size:16px;line-height:1.7">👉 {h(x)}</p>' for x in p3["who"][:6]) + '</div>'
+        f'<p style="margin:0 0 8px;font-size:16px;line-height:1.7">👉 {h(x)}</p>' for x in p3["who"][:5]) + '</div>'
     calc = ""
     if calc_url:
         nm = "본인부담금 계산기" if "copayment" in calc_url else "장기요양등급 자가진단"
@@ -385,7 +385,7 @@ def assemble(topic, meta, title, p1, p3, today, internal_links, calc_url):
     btxt, burl = C.HOT[key]
     button = f'<p style="text-align:center;margin:30px 0"><a href="{burl}" target="_blank" rel="noopener noreferrer" style="{S["btn"]}">{btxt}</a></p>'
     srcs = [s for s in meta.get("sources", []) if s in C.AGENCIES] or ["국민건강보험공단"]
-    src = f'<div style="{S["src"]}">📋 이 글의 정보 출처: {"·".join(srcs)} 자료 기준으로 작성되었습니다.</div>'
+    src = f'<div style="{S["src"]}">📋 이 글의 정보 출처: {"·".join(srcs)} 자료 기준으로 작성되었습니다.' + (f'<br>근거 조문: {h(p3["laws"])}' if p3.get("laws") else "") + '</div>'
     disc = (f'<div style="{S["disc"]}">{today} 기준 작성. 요양원 비용·장기요양등급·지원금 정보는 수시로 변경될 수 있으므로, 실제 이용·신청 전 '
             f'국민건강보험공단 및 해당 요양원에서 최신 정보를 반드시 확인하세요. 이 글은 정보 제공 목적으로 작성되었으며, 법적 효력이 없습니다.</div>')
     before = summary

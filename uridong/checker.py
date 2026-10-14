@@ -140,9 +140,9 @@ def check_html(html, ctx):
             res.append(("S4", "FAIL", "표가 overflow-x:auto div로 감싸지지 않음"))
     # S5 FAQ
     faq_h3 = [h for h in soup.find_all("h3") if re.match(r"\s*Q\s*[\.\d]", h.get_text())]
-    if len(faq_h3) < 5: res.append(("S5", "FAIL", f"FAQ 질문(h3 'Q.') {len(faq_h3)}개 (5개 이상)"))
+    if len(faq_h3) < 3: res.append(("S5", "FAIL", f"FAQ 질문(h3 'Q.') {len(faq_h3)}개 (3개 이상)"))
     # S6
-    if "이런 분들 꼭 확인해보세요" not in text or text.count("👉") < 5: res.append(("S6", "FAIL", "이런 분들 박스(👉 5개) 부족"))
+    if "이런 분들 꼭 확인해보세요" not in text or text.count("👉") < 3: res.append(("S6", "FAIL", "이런 분들 박스(👉 3개 이상) 부족"))
     # S7
     if "댓글로 남겨주세요" not in text or "background:#2980b9" not in html.replace(" ", ""): res.append(("S7", "FAIL", "결론 CTA 박스/댓글 유도 없음"))
     # S8
