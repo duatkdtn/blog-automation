@@ -203,7 +203,7 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
                "".join(P(h(line(r, i))) for i, r in enumerate(top3))
         if newest and oldest and newest["code"] != oldest["code"]:
             nn, on = q(newest["name"]), q(oldest["name"])
-            sp2 = pick([f"가장 최근에 지정된 곳은 {ie(nn)} {newest['year']}년에 지정됐어요. 가장 오래된 곳은 {ro(on)} {oldest['year']}년이에요.",
+            sp2 = pick([f"가장 최근에 지정된 곳은 {nn}{'이고' if _jong(newest['name']) else '고'} {newest['year']}년에 지정됐어요. 가장 오래된 곳은 {ro(on)} {oldest['year']}년이에요.",
                         f"지정 시기로 보면 {i_(on)} {oldest['year']}년으로 가장 앞서고, {i_(nn)} {newest['year']}년으로 가장 최근이에요.",
                         f"{newest['year']}년에 지정된 {eun(nn)} 가장 새 시설이고, {oldest['year']}년 지정의 {i_(on)} 가장 오래됐어요."], K+"sp2")
             spot += P(h(sp2))
