@@ -87,12 +87,14 @@ def main():
         return check_existing(posts, facts)
     today = C.today_label(); year = C.now_kst().year
     existing_titles = [p["title"] for p in posts if not p["title"].startswith("[보류]")]; existing_slugs = {p["slug"] for p in posts if not p["title"].startswith("[보류]")}
-    pending = [t for t in topics if t["status"] == "대기"]
-    if len(pending) <= 12:
-        pending = replenish(topics, facts, existing_titles) or pending
+    # 근거 문단(basis)이 있는 주제만 자동 발행한다. 없는 주제는 사람이 근거를 확인해 채운 뒤에만 나간다.
+    pending = [t for t in topics if t["status"] == "대기" and t.get("basis")]
+    nob = len([t for t in topics if t["status"] == "대기" and not t.get("basis")])
     plan_topics = pending[:a.n]
+    if len(pending) <= 3 and not (C.DRY_RUN or os.environ.get("URI_MOCK")):
+        M.send("[우리동네 요양원] 근거 문단이 필요해요", f"<p>자동 발행할 수 있는 주제(근거 문단 있음)가 {len(pending)}개 남았어요. 근거 문단 없는 대기 주제 {nob}개는 Claude에게 근거 문단 작성을 요청해 주세요.</p>")
     if not plan_topics:
-        M.send("[우리동네 요양원] 주제 없음", "<p>발행할 주제가 없습니다. 주제 목록을 보충해 주세요.</p>"); return
+        M.send("[우리동네 요양원] 주제 없음", "<p>발행할 주제(근거 문단 있음)가 없습니다. 근거 문단 작성을 요청해 주세요.</p>"); return
     recent_patterns = [p.get("pattern") for p in hist["posts"][-5:]]
     recent_combos = [p.get("combo") for p in hist["posts"][-5:] if p.get("combo")]
     # 1단계: 제목·메타 (4개 모두) → 사전 메일
@@ -140,10 +142,16 @@ def main():
 def facts_for(t, facts):
     """주제와 상관없는 법 규정 사실은 프롬프트에서 뺀다(AI가 모든 글에 끼워 넣어 단정 표현이 반복되는 것 방지)."""
     key = (t.get("main", "") + t.get("detail", ""))
-    return [f for f in facts if f["id"] != "rule_no_deposit" or "보증금" in key]
+    out = [f for f in facts if f["id"] != "rule_no_deposit" or "보증금" in key]
+    if t.get("basis"):      # 근거 문단이 있는 주제는 그 안에서 쓰는 사실만 보여 준다(관계없는 사실이 표에 끼어드는 것 방지)
+        used = set(re.findall(r"\{\{\s*f\s*:\s*([a-z0-9_]+)\s*\}\}", t["basis"]))
+        out = [f for f in out if f["id"] in used]
+    return out
 
 def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, hist, held):
     meta = t["_meta"]; title = t["_title"]
+    facts = facts_for(t, facts)
+    for n_ in re.findall(r"\d[\d,]*(?:\.\d+)?", t.get("basis", "")): G.SLOT_NUMS.add(float(n_.replace(",", "")))   # 근거 문단에 적힌 숫자(조문 번호·180일 등)는 허용
     feedback = ""; revisions = 0; fails = []; warns = []
     meta = dict(meta); meta["meta_description"] = G.fix_meta(meta, t, title)
     for attempt in range(3):               # 처음 + 고쳐쓰기 최대 2회

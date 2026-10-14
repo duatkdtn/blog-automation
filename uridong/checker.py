@@ -111,6 +111,12 @@ def check_html(html, ctx):
     if dup: res.append(("S17", "FAIL", "같은 말이 연달아 반복됨: " + str(dup[0])[:40]))
     if re.search(r"\(공단[^)]{0,12}확인\)\s*[일년월개명원%]", text) or "(공단·요양원에 확인)" in text:
         res.append(("S17", "FAIL", "숫자 자리에 '확인' 안내문이 끼어든 문장"))
+    # S18 주제별 금지 표현(근거 문단의 '쓰지 말 것'을 글자 단위로 막음) / S19 단위 겹침 흔적
+    for pat in (ctx.get("topic") or {}).get("ban", []):
+        mm = re.search(pat, text)
+        if mm: res.append(("S18", "FAIL", "이 주제에서 쓰면 안 되는 표현: …" + text[max(0, mm.start()-15):mm.end()+15]))
+    if re.search(r"(?<=\d)(점|개|세|명|곳|년|일|원|시간|개월)\1(?![가-힣])|(?:이상|미만|이하)(?:점|세)\b|(?<=\d)(?:년|일|원)예요", text):
+        res.append(("S19", "FAIL", "숫자 뒤에 단위·조사가 겹쳐 있음(예: 90개개, 95점 이상점)"))
     # S14
     if soup.find("style") or soup.find("script"): res.append(("S14", "FAIL", "style/script 태그 사용"))
     # S1 요약 박스
