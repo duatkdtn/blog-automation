@@ -35,9 +35,31 @@
    "date": "2026-10-14T14:41:10.589510+09:00",
    "topic": 11,
    "id": 493
+  },
+  {
+   "title": "장기요양등급 갱신 시기와 유효기간, 90일 전부터",
+   "slug": "care-grade-renewal-period",
+   "pattern": "기준 제시형",
+   "combo": [
+    "부부(할머니와 할아버지)",
+    "공단 지사 창구 앞 대기 공간"
+   ],
+   "date": "2026-10-14T15:44:12.552178+09:00",
+   "topic": 11,
+   "id": 497
   }
  ],
  "site_posts": [
+  {
+   "id": 495,
+   "slug": "longterm-care-grade-renewal-validity-period-hold",
+   "link": "https://uridongneyoyangwon.com/?p=495",
+   "status": "draft",
+   "title": "[보류] 장기요양등급 갱신, 유효기간과 신청 시기 3가지",
+   "categories": [
+    4
+   ]
+  },
   {
    "id": 493,
    "slug": "care-grade-renewal-timing-validity-3-hold-2",
@@ -266,6 +288,16 @@
    "title": "요양원 비용 2026 총정리, 한 달 얼마?",
    "categories": [
     3
+   ]
+  },
+  {
+   "id": 497,
+   "slug": "care-grade-renewal-period",
+   "link": "https://uridongneyoyangwon.com/care-grade-renewal-period/",
+   "status": "publish",
+   "title": "장기요양등급 갱신 시기와 유효기간, 90일 전부터",
+   "categories": [
+    4
    ]
   }
  ]
