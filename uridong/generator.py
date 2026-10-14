@@ -265,6 +265,7 @@ def stage2(topic, facts, today, meta, title, feedback=""):
 <meta>{"lacking":["사실표에 없어 쓰지 못한 정보"]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스타일: style="color:#2c3e50;font-size:19px;margin:24px 0 8px;"
 본문(<body>)은 공백 포함 순수 글자 1,500자 이상 2,300자 이하로 씁니다(소제목 4~5개, 소제목마다 1~2문단 + 필요한 표·예시, 2,300자를 넘기지 않음. FAQ·오해·결론은 코드가 따로 붙여 글 전체는 3,500~4,500자가 됩니다). 같은 말을 반복해서 늘리지 마세요.
+[숫자·읽기 쉬움 규칙] 독자는 숫자에 약한 40~60대 자녀입니다. ①한 문단에 들어가는 숫자(금액·비율·일수)는 2개 이하로 쓰고, 나머지는 표에 넣습니다. ②문단의 첫 문장에 '그래서 얼마예요/어떻게 해야 해요'에 대한 답(결론)을 먼저 쓰고, 계산 과정과 근거는 그 뒤에 씁니다. ③여러 경우를 계산해 늘어놓지 말고 대표 예시 1~2개만 보인 뒤 '내 경우는 본인부담금 계산기로 확인해 보세요'로 이어 줍니다. ④문장 속 금액은 {{f:...}}로 정확한 값을 쓰되, 한 문단에 정확한 금액을 여러 개 늘어놓지 말고 표를 가리킵니다('아래 표에 정리했어요').
 [표 필수] <body> 안에 표(<table>)를 반드시 2개 이상 넣습니다. 표가 없으면 글이 불합격입니다. 표 모양 예시(내용만 바꿔 복사해서 쓰세요):
 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff"><tr><th style="padding:10px;border:1px solid #ddd">구분</th><th style="padding:10px;border:1px solid #ddd">내용</th></tr></thead><tbody><tr style="background:#fff"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr><tr style="background:#f8f9fa"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr></tbody></table></div>
 표는 사실표의 값을 그대로 옮기거나(금액·한도액·비율), 숫자가 필요 없는 비교·절차·체크 표로 만듭니다."""
@@ -322,7 +323,7 @@ A. 답변
 <cta>JSON {"head":"핵심 행동 촉구 한 문장(굵게 표시될 문구)","summary":"이 글 요약 + 행동 독려 1~2문장","related":"비슷한 주제로 정리해 둔 관련 키워드 한 개"}</cta>
 <meta>{"lacking":[]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"
-이 뒷부분은 공백 포함 순수 글자 1,200~1,600자로 간결하게 씁니다(오해 박스는 ❌ 2~3개, FAQ 답변은 한 질문당 1~2문장, 질문은 4~5개)."""
+FAQ 답변도 결론을 첫 문장에 쓰고 숫자는 한 답변에 2개 이하로 씁니다. 이 뒷부분은 공백 포함 순수 글자 1,200~1,600자로 간결하게 씁니다(오해 박스는 ❌ 2~3개, FAQ 답변은 한 질문당 1~2문장, 질문은 4~5개)."""
     usr = f"""오늘: {today}  글 제목: {title}
 메인 키워드: {topic['main']} / 세부 키워드: {topic['detail']} / 연관검색어: {', '.join(topic['related'])}
 이 글이 답하는 질문: {topic['question']} / 작성 주의: {topic.get('fact_status','')}
