@@ -10,8 +10,11 @@ on:
         description: "이번에 만들 글 수"
         default: "1"
       region:
-        description: "지역 지정(비우면 아직 안 쓴 지역 순서대로). 예: 서울특별시|종로구"
+        description: "지역 지정(비우면 아직 안 쓴 지역 순서대로). 여러 곳은 ;로 구분. 예: 서울특별시|종로구;경상남도|거제시"
         default: ""
+      replace:
+        description: "true=같은 지역의 임시글이 이미 있으면 새 내용으로 교체(공개 글은 건드리지 않음)"
+        default: "false"
   # 시험이 끝나고 사용자가 승인하면 아래 줄의 주석을 풀어 매일 실행한다.
   # schedule:
   #   - cron: "30 22 * * *"
@@ -39,6 +42,7 @@ jobs:
       - name: 실행
         working-directory: uridong
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
@@ -49,7 +53,9 @@ jobs:
           MODE="${{ github.event.inputs.mode || 'draft' }}"
           N="${{ github.event.inputs.n || '1' }}"
           REGION="${{ github.event.inputs.region }}"
-          if [ -n "$REGION" ]; then python care_regional_publish.py --mode "$MODE" --n "$N" --region "$REGION"; else python care_regional_publish.py --mode "$MODE" --n "$N"; fi
+          REPLACE=""
+          if [ "${{ github.event.inputs.replace }}" = "true" ]; then REPLACE="--replace"; fi
+          if [ -n "$REGION" ]; then python care_regional_publish.py --mode "$MODE" --n "$N" --region "$REGION" $REPLACE; else python care_regional_publish.py --mode "$MODE" --n "$N" $REPLACE; fi
       - name: 기록 파일 저장(커밋)
         if: ${{ github.event.inputs.mode != 'dry' }}
         run: |

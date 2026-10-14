@@ -77,3 +77,11 @@ def get_post(post_id):
 
 def site_timezone_offset_hours():
     return 9  # 사이트 시간대 Asia/Seoul (예약 날짜는 로컬 시각 문자열로 보낸다)
+
+
+def update_post(post_id, data):
+    r = _req("POST", f"/wp/v2/posts/{post_id}", json=data)
+    if r.status_code != 200:
+        raise RuntimeError(f"post update {r.status_code}: {r.text[:200]}")
+    p = r.json()
+    return {"id": p["id"], "link": p["link"], "status": p["status"], "slug": p["slug"]}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """지역별 요양원 글 발행 — AI를 쓰지 않는다(비용 0원). 실행할 때마다 아직 안 쓴 지역을 골라 그날 만들어 올린다.
-사용: python care_regional_publish.py --mode dry|draft|publish [--n 1] [--region "서울특별시|종로구"]
+사용: python care_regional_publish.py --mode dry|draft|publish [--n 1] [--region "서울특별시|종로구;경상남도|거제시"] [--replace]
   dry     워드프레스에 쓰지 않고 out/ 폴더에 html만 저장
   draft   워드프레스에 임시글(공개 안 됨)로 저장
   publish 즉시 공개
@@ -48,7 +48,7 @@ def check(title, before, after):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", default="dry"); ap.add_argument("--n", type=int, default=1); ap.add_argument("--region", default="")
+    ap.add_argument("--mode", default="dry"); ap.add_argument("--n", type=int, default=1); ap.add_argument("--region", default=""); ap.add_argument("--replace", action="store_true", help="같은 슬러그의 임시글이 있으면 새 내용으로 바꾼다(공개 글은 건드리지 않음)")
     a = ap.parse_args()
     if a.mode == "dry": C.DRY_RUN = True
     rows = R.load(os.path.join(C.DATA, "facilities.csv"), os.path.join(C.DATA, "phones.csv"))
@@ -62,16 +62,20 @@ def main():
     else:
         slugs = set()
     if a.region:
-        s, g = a.region.split("|"); code = next(r["code"][:5] for r in rows if r["sido"] == s and r["sigungu"] == g)
-        queue = [((s, g), code)]
+        queue = []
+        for part in a.region.split(";"):
+            s, g = part.strip().split("|"); code = next(r["code"][:5] for r in rows if r["type"] == "A03" and r["sido"] == s and r["sigungu"] == g)
+            queue.append(((s, g), code))
+        a.n = max(a.n, len(queue))
     else:
         queue = candidates(rows, done)
     results = []; made = 0
     for (s, g), code in queue:
         if made >= a.n: break
         slug = f"nursing-homes-{code}"
-        if slug in slugs or any(slug == x for x in slugs) or any(p["slug"].startswith(slug) for p in posts):
-            C.log("이미 있는 슬러그, 건너뜀:", slug); continue
+        old = next((p for p in posts if p["slug"] == slug), None)
+        if old and not (a.replace and old["status"] == "draft"):
+            C.log("이미 있는 슬러그, 건너뜀:", slug, old["status"]); continue
         links = pick_links(posts) if posts else [("요양원 비용 글 모아보기", f"{C.WP_URL}/category/nursing-home-cost/"), ("장기요양등급 글 모아보기", f"{C.WP_URL}/category/care-grade/"), ("지원금 글 모아보기", f"{C.WP_URL}/category/subsidy/")]
         pkg = R.build(s, g, rows, today, code, links)
         n_chars, bad = check(pkg["title"], pkg["before"], pkg["after"])
@@ -79,7 +83,15 @@ def main():
         if bad:
             results.append({"region": f"{s} {g}", "title": pkg["title"], "state": "건너뜀", "bad": bad, "link": ""}); continue
         content = G.wrap_blocks(pkg["before"], pkg["after"])
-        png = T.compose(None, pkg["title"], "시설 수 · 정원 · 평가등급", today, fallback=True)
+        recent = [d.get("combo") for d in hist["done"] if d.get("combo")]
+        here_n = pkg["n"]
+        a_high = "A등급 비율이 전국 평균보다 높" in pkg["before"]
+        sc = T.region_scene(f"{s}|{g}", here_n, a_high, recent)
+        art, tries, note = T.art_from_scene(sc) if a.mode != "dry" or os.environ.get("URI_DRY_ART") == "1" else (None, 0, "dry")
+        sub = {0: "시설 수 · 정원 · 평가등급", 1: "시설별 전화번호까지", 2: "정원 큰 곳부터 한눈에"}[int(__import__("hashlib").md5(g.encode()).hexdigest(), 16) % 3]
+        png = T.compose(art, pkg["title"], sub, today, fallback=art is None)
+        thumb = "3D 그림" if art is not None else f"기본 이미지({note})"
+        C.log("썸네일:", thumb, "| 장면:", sc["people"], "/", sc["background"], "/", sc["props"])
         if a.mode == "dry":
             os.makedirs(os.path.join(C.BASE, "out"), exist_ok=True)
             open(os.path.join(C.BASE, "out", f"{pkg['slug']}.html"), "w", encoding="utf-8").write(content)
@@ -87,10 +99,14 @@ def main():
             results.append({"region": f"{s} {g}", "title": pkg["title"], "state": "시험", "bad": [], "link": ""}); made += 1; continue
         mid = W.upload_media(png, f"{pkg['slug']}.webp", pkg["title"], pkg["title"])
         status = "publish" if a.mode == "publish" else "draft"
-        post = W.create_post(pkg["title"], pkg["slug"], content, C.CATEGORIES["nursing-home-guide"], status, None, mid, pkg["meta_description"])
+        if old:
+            post = W.update_post(old["id"], {"title": pkg["title"], "content": content, "featured_media": mid, "excerpt": pkg["meta_description"], "status": status})
+            hist["done"] = [d for d in hist["done"] if d["key"] != f"{s}|{g}"]
+        else:
+            post = W.create_post(pkg["title"], pkg["slug"], content, C.CATEGORIES["nursing-home-guide"], status, None, mid, pkg["meta_description"])
         rm = W.rankmath(post["id"], pkg["focus"], pkg["meta_description"], pkg["title"])
-        hist["done"].append({"key": f"{s}|{g}", "id": post["id"], "slug": post["slug"], "status": status, "date": C.now_kst().isoformat()})
-        results.append({"region": f"{s} {g}", "title": pkg["title"], "state": "발행" if status == "publish" else "임시글", "bad": [] if rm else ["Rank Math 저장 실패"], "link": post["link"]}); made += 1
+        hist["done"].append({"key": f"{s}|{g}", "id": post["id"], "slug": post["slug"], "status": post["status"] if old else status, "date": C.now_kst().isoformat(), "combo": [sc["people"], sc["background"]], "thumb": thumb})
+        results.append({"region": f"{s} {g}", "title": pkg["title"], "state": ("발행" if status == "publish" else "임시글") + (" (교체)" if old else ""), "bad": ([] if rm else ["Rank Math 저장 실패"]) + ([f"썸네일 {thumb}"] if art is None else []), "link": post["link"]}); made += 1
         slugs.add(pkg["slug"])
     if a.mode != "dry": C.save_json("regional_history.json", hist)
     body = "".join(f'<p><b>{r["state"]}</b> {M.e(r["title"])} {("— " + M.e("; ".join(r["bad"]))) if r["bad"] else ""} {("<a href=" + chr(34) + r["link"] + chr(34) + ">링크</a>") if r["link"] else ""}</p>' for r in results) or "<p>만들 지역이 없어요(모두 완료 또는 조건 미달).</p>"

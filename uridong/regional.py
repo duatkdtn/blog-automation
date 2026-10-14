@@ -96,7 +96,24 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
     dom_year = max(("old", "midy", "new"), key=lambda k: st[k]) if n else "midy"
     skw = f"{sigungu} 요양원"
 
-    title = f"{place} 요양원 {n}곳, 정원·평가등급 정리"
+    A_n = st["g"]["A"]
+    pats = [f"{place} 요양원 {n}곳, 정원·평가등급 정리",
+            f"{place} 요양원 찾기, {n}곳 전화번호까지",
+            f"{place} 요양원 {n}곳 중 A등급은 몇 곳?",
+            f"{place} 요양원 정원 합계 {cap:,}명, 큰 곳부터",
+            f"{place} 요양원 어디가 좋을까, {n}곳 비교",
+            f"{place} 요양원 {n}곳, 가장 큰 곳은 몇 명?",
+            f"{place} 요양원 {n}곳 한눈에, 등급·전화번호",
+            f"{place} 요양원 고르기 전, {n}곳 먼저 확인",
+            f"{place} 요양원 {n}곳 정원 순위와 평가등급",
+            f"{place} 요양원 시설 {n}곳, 규모와 평가등급"]
+    k0 = int(hashlib.md5((place + "title").encode()).hexdigest(), 16) % len(pats)
+    title = None
+    for j in range(len(pats)):
+        cand = pats[(k0 + j) % len(pats)]
+        if (k0 + j) % len(pats) == 2 and st["graded"] < 3: continue     # 등급 받은 곳이 적으면 'A등급은 몇 곳' 틀은 쓰지 않는다
+        if len(cand) <= 30: title = cand; break
+    if title is None: title = pats[0]
     slug = f"nursing-homes-{code5}"
 
     # ── 요약 박스
@@ -282,5 +299,9 @@ def build(sido_full, sigungu, rows_all, today, code5, internal_links, note=None)
     disc = (f'<div style="{S["disc"]}">{today} 기준 작성. 시설 정보와 평가 결과는 수시로 변경될 수 있으므로, 실제 이용 전 국민건강보험공단 및 해당 요양원에서 최신 정보를 반드시 확인하세요. '
             f'이 글은 정보 제공 목적으로 작성되었으며, 법적 효력이 없습니다.</div>')
     after = (f'<p style="font-size:14px;color:#888;margin:0 0 18px">{today} 기준</p>' + intro + mini + sec1 + sec_size + sec_year + sec2 + sec3 + spot + sec6 + sec5 + sec4 + mybox + faq + whobox + calc + cta + linkbox + button + src + disc)
-    desc = f"{place} 요양원은 {n}곳이에요. 시설별 정원과 평가등급, 전화번호를 공공 자료로 한 번에 볼 수 있게 정리했어요. 비용은 전화로 확인하세요."
+    desc = pick([f"{place} 요양원은 {n}곳이에요. 시설별 정원과 평가등급, 전화번호를 공공 자료로 한 번에 볼 수 있게 정리했어요. 비용은 전화로 확인하세요.",
+                 f"{place}에서 요양원을 찾는 분을 위해 시설 {n}곳의 정원, 평가등급, 전화번호를 모았어요. 한 달 비용은 시설에 직접 물어보세요.",
+                 f"{place} 노인요양시설 {n}곳을 공공 자료로 정리했어요. 큰 곳과 작은 곳, 평가등급, 연락처를 한 번에 확인하세요.",
+                 f"{place} 요양원 목록이에요. {n}곳의 규모와 평가등급, 전화번호를 보고 후보를 고르세요. 비용과 빈자리는 전화로 확인해야 해요.",
+                 f"{place} 요양원 {n}곳을 정원이 큰 순서로 보여드려요. 평가등급과 전화번호까지 공공 자료 기준으로 정리했어요."], K + "desc")
     return {"title": title, "slug": slug, "before": before, "after": after, "meta_description": desc, "focus": f"{sigungu} 요양원", "n": n, "cap": cap}

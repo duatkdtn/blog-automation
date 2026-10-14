@@ -148,3 +148,38 @@ def compose(art, title, subtitle, today, fallback=False):
     d.text((60, H - 62), f"{today} 기준 · 출처 국민건강보험공단 등", font=font(26), fill=(255, 255, 255, 230))
     out = io.BytesIO(); img.convert("RGB").save(out, "WEBP", quality=88)
     return out.getvalue()
+
+
+# ── 지역 글용: AI에게 장면을 묻지 않고 코드가 조합(인물×배경×소품)으로 정한다
+PEOPLE = ["딸과 어머니", "아들과 아버지", "중년 부부", "요양보호사와 어르신", "상담 직원과 보호자", "손주와 할머니",
+          "남매와 어머니", "며느리와 시어머니", "사회복지사와 어르신 부부", "아들 내외와 아버지"]
+BGS = ["밝은 집 거실", "요양원 복도", "햇살 드는 정원", "아늑한 상담실", "공단 창구", "동네 산책길", "작은 카페", "병원 대기실", "베란다가 있는 집", "도서관 열람실"]
+PROPS = ["서류와 돋보기", "작은 지도와 핀", "전화기", "집 모형", "달력과 연필", "찻잔과 메모지", "체크리스트 클립보드", "꽃 화분"]
+
+def region_scene(key, n, a_share_high, recent):
+    import hashlib
+    hv = int(hashlib.md5(key.encode()).hexdigest(), 16)
+    for t in range(60):
+        p, b = PEOPLE[(hv + t) % 10], BGS[(hv // 10 + t * 3) % 10]
+        if [p, b] not in recent[-8:]: break
+    prop = PROPS[(hv // 100) % 8]
+    extra = "여러 채의 작은 요양원 건물 모형" if n >= 30 else ("작은 요양원 건물 모형 한 채" if n <= 8 else "")
+    if a_share_high: extra = (extra + ", " if extra else "") + "별 모양 스티커"
+    scene = f"{p}가 {b}에서 요양원을 알아보는 따뜻한 장면"
+    return {"people": p, "background": b, "props": prop + (", " + extra if extra else ""), "scene": scene}
+
+def art_from_scene(sc):
+    """최대 3번 호출. 반환 (Image|None, tries, note)"""
+    if not C.GEMINI_API_KEY: return None, 0, "GEMINI 키 없음"
+    note = ""
+    for i in range(3):
+        try:
+            prompt = f"{sc['scene']}. 인물: {sc['people']}. 배경: {sc['background']}. 소품: {sc['props']}. {STYLE_FIX}"
+            return gemini_image(prompt), i, ""
+        except TransientError as e:
+            note = str(e); time.sleep(8 * (i + 1))
+        except NoImage as e:
+            note = str(e); sc = dict(sc); sc["props"] = "서류"
+        except Exception as e:
+            note = type(e).__name__; time.sleep(5)
+    return None, 3, note
