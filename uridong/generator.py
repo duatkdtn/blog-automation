@@ -264,7 +264,7 @@ def stage2(topic, facts, today, meta, title, feedback=""):
 <body>본문 HTML. 구성: h2 소제목(스타일 지정) 안에 내용. 소주제는 h3. 표 2개 이상(반드시 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff">…</thead><tbody> 행은 번갈아 background:#fff / #f8f9fa), 리스트 박스(background:#f0f8ff;border-left:4px solid #2980b9;padding:14px 18px), 공식 출처 인라인 링크 1~2개(<a href="https://www.longtermcare.or.kr" target="_blank" rel="noopener">구체적 키워드 앵커</a>, 앵커에 '여기 클릭' '바로가기' 금지), 단계가 필요한 글은 <ol>. 예시와 계산 예시 포함.</body>
 <meta>{"lacking":["사실표에 없어 쓰지 못한 정보"]}</meta>
 h2 스타일: style="color:#2c3e50;font-size:24px;margin:36px 0 14px;"  h3 스타일: style="color:#2c3e50;font-size:19px;margin:24px 0 8px;"
-본문(<body>)은 공백 포함 순수 글자 3,500자 이상 4,500자 이하로 씁니다(소제목마다 3문단 안팎 + 예시, 4,500자를 넘기지 않음). 같은 말을 반복해서 늘리지 마세요.
+본문(<body>)은 공백 포함 순수 글자 1,500자 이상 2,300자 이하로 씁니다(소제목 4~5개, 소제목마다 1~2문단 + 필요한 표·예시, 2,300자를 넘기지 않음. FAQ·오해·결론은 코드가 따로 붙여 글 전체는 3,500~4,500자가 됩니다). 같은 말을 반복해서 늘리지 마세요.
 [표 필수] <body> 안에 표(<table>)를 반드시 2개 이상 넣습니다. 표가 없으면 글이 불합격입니다. 표 모양 예시(내용만 바꿔 복사해서 쓰세요):
 <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead style="background:#2980b9;color:#fff"><tr><th style="padding:10px;border:1px solid #ddd">구분</th><th style="padding:10px;border:1px solid #ddd">내용</th></tr></thead><tbody><tr style="background:#fff"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr><tr style="background:#f8f9fa"><td style="padding:10px;border:1px solid #ddd">…</td><td style="padding:10px;border:1px solid #ddd">…</td></tr></tbody></table></div>
 표는 사실표의 값을 그대로 옮기거나(금액·한도액·비율), 숫자가 필요 없는 비교·절차·체크 표로 만듭니다."""
@@ -549,7 +549,7 @@ def strip_dup_sections(body):
     return "".join(keep)
 
 
-def cap_body(body, limit=4500):
+def cap_body(body, limit=2700):
     """본문이 너무 길면(순수 글자 기준) 뒤쪽 소제목부터 덜어낸다. 표가 든 소제목과 앞 3개 소제목은 남긴다. AI를 다시 부르지 않는다."""
     from bs4 import BeautifulSoup
     def n(h): return len(re.sub(r"\s+", "", BeautifulSoup(h, "html.parser").get_text()))

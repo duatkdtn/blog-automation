@@ -168,8 +168,8 @@ def check_html(html, ctx):
         if ctx["calc_url"] not in html: res.append(("S13", "FAIL", "계산기 링크 누락"))
     # K1
     n = count_chars(html) + ctx.get("extra_chars", 0)
-    if n < 4000: res.append(("K1", "FAIL", f"글자 수 {n} (<4,000)"))
-    elif n < 5000: res.append(("K1", "WARN", f"글자 수 {n} (<5,000)"))
+    if n < 3500: res.append(("K1", "FAIL", f"글자 수 {n} (<3,500)"))
+    elif n > 5000: res.append(("K1", "WARN", f"글자 수 {n} (>5,000, 너무 김)"))
     # K1b 반복
     sents = [s.strip() for s in re.split(r"[.!?\n]", text) if len(s.strip()) > 15]
     if sents:
