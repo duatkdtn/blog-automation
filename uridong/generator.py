@@ -482,6 +482,8 @@ def boost_keyword(before, after, kw, target=7):
         while i < len(s) and n < target:
             j = s.find(tail, i)
             if j < 0: break
+            if j > 0 and "가" <= s[j - 1] <= "힣":   # 다른 낱말의 일부(예: 재심사청구의 '심사청구')는 바꾸지 않는다
+                out += s[i:j + len(tail)]; i = j + len(tail); continue
             if s[max(0, j - len(kw) + len(tail)):j + len(tail)] == kw:   # 이미 키워드의 일부
                 out += s[i:j + len(tail)]; i = j + len(tail); continue
             out += s[i:j] + kw; i = j + len(tail); n += 1
