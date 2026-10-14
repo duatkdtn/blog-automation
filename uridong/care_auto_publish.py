@@ -209,7 +209,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
             if nt != title:
                 C.log("[제목 수정]", title, "→", nt); title = nt
         if attempt < 2:
-            revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,000자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."
+            revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,500자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."
     if fails or len(warns) >= 6:
         reason = fails or ["경고 6개 이상(품질 흔들림): " + "; ".join(warns[:6])]
         C.log("보류:", title, reason, warns)
