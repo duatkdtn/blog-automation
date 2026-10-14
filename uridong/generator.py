@@ -545,3 +545,38 @@ def strip_dup_sections(body):
         if m and re.search(r"자주\s*묻는|FAQ|오해|헷갈리|이런\s*분들|마무리|결론", title): continue
         keep.append(p)
     return "".join(keep)
+
+
+def cap_body(body, limit=4500):
+    """본문이 너무 길면(순수 글자 기준) 뒤쪽 소제목부터 덜어낸다. 표가 든 소제목과 앞 3개 소제목은 남긴다. AI를 다시 부르지 않는다."""
+    from bs4 import BeautifulSoup
+    def n(h): return len(re.sub(r"\s+", "", BeautifulSoup(h, "html.parser").get_text()))
+    parts = re.split(r"(?=<h2)", body)
+    removed = 0
+    while n("".join(parts)) > limit and len(parts) > 4:
+        idx = [i for i in range(len(parts) - 1, 3, -1) if "<table" not in parts[i]]
+        if not idx: break
+        parts.pop(idx[0]); removed += 1
+    return "".join(parts), removed
+
+def drop_ban_sentences(before, after, bans):
+    """주제별 금지 표현이 든 문장만 지운다(글 전체를 다시 쓰지 않는다). 제목·표·링크 안은 건드리지 않는다. 반환: (before, after, 지운 문장 수)"""
+    if not bans: return before, after, 0
+    from bs4 import BeautifulSoup, NavigableString
+    total = 0
+    out = []
+    for html in (before, after):
+        soup = BeautifulSoup(html, "html.parser")
+        for node in list(soup.find_all(string=True)):
+            par = node.parent
+            if par is None or par.name in ("script", "style", "a", "h1", "h2", "h3", "th", "td", "strong", "b"): continue
+            txt = str(node)
+            if not any(re.search(b, txt) for b in bans): continue
+            sents = re.split(r"(?<=[.!?요다])\s+", txt)
+            keep = [x for x in sents if not any(re.search(b, x) for b in bans)]
+            total += len(sents) - len(keep)
+            node.replace_with(NavigableString(" ".join(keep)))
+        for tg in soup.find_all(["p", "li"]):
+            if not tg.get_text(strip=True) and not tg.find(["a", "img", "table"]): tg.decompose()
+        out.append(str(soup))
+    return out[0], out[1], total

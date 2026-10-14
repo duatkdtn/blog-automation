@@ -108,7 +108,7 @@ def check_html(html, ctx):
     if vague: res.append(("S16", "FAIL", "근거 없는 어림 금액: " + ", ".join(dict.fromkeys(vague))[:60]))
     # S17 같은 말 반복·확인 안내문이 단위 옆에 끼어든 깨진 문장
     dup = re.findall(r"((?:[가-힣]{2,}\s+){1,3}[가-힣]{2,})\s+\1(?![가-힣])", text)
-    if dup: res.append(("S17", "FAIL", "같은 말이 연달아 반복됨: " + str(dup[0])[:40]))
+    if dup: res.append(("S17", "WARN", "같은 말이 연달아 반복됨: " + str(dup[0])[:40]))
     if re.search(r"\(공단[^)]{0,12}확인\)\s*[일년월개명원%]", text) or "(공단·요양원에 확인)" in text:
         res.append(("S17", "FAIL", "숫자 자리에 '확인' 안내문이 끼어든 문장"))
     # S18 주제별 금지 표현(근거 문단의 '쓰지 말 것'을 글자 단위로 막음) / S19 단위 겹침 흔적

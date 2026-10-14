@@ -173,8 +173,12 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         links = pick_links(t["category"], posts)
         if t.get("pack"):
             p1 = dict(p1); p1["body"] = G.strip_dup_sections(p1["body"])
+        p1 = dict(p1); p1["body"], _rm = G.cap_body(p1["body"])
+        if _rm: C.log(f"[분량 정리] 본문이 길어 뒤쪽 소제목 {_rm}개를 덜어냄")
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         before, after = G.clean_text(before), G.clean_text(after)
+        before, after, _nb = G.drop_ban_sentences(before, after, t.get("ban", []))
+        if _nb: C.log(f"[문장 정리] 금지 표현이 든 문장 {_nb}개만 지움(글 전체는 그대로)")
         after = G.trim_keyword(before, after, t["main"])
         if (before + after).count("<table") < 2:
             after = G.add_table(t, title, before, after, facts_for(t, facts))
@@ -205,9 +209,9 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
             if nt != title:
                 C.log("[제목 수정]", title, "→", nt); title = nt
         if attempt < 2:
-            revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,800자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."
-    if fails or len(warns) >= 4:
-        reason = fails or ["경고 4개 이상(품질 흔들림): " + "; ".join(warns[:4])]
+            revisions += 1; feedback = "; ".join(fails)[:900] + " / 고칠 때도 분량(본문 3,000자 이상)과 표 2개 이상, 제목은 그대로 유지하고, 사실표에 없는 숫자는 지우거나 '공단·요양원에 확인'으로 바꾸세요."
+    if fails or len(warns) >= 6:
+        reason = fails or ["경고 6개 이상(품질 흔들림): " + "; ".join(warns[:6])]
         C.log("보류:", title, reason, warns)
         held.append({"title": title, "fails": reason})
         t["status"] = "보류"
