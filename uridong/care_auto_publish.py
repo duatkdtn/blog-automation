@@ -171,6 +171,8 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         if redo1: p1 = G.stage2(t, facts_for(t, facts), today, meta, title, feedback)
         if redo3: p3 = G.stage3(t, facts_for(t, facts), today, meta, title, p1, feedback)
         links = pick_links(t["category"], posts)
+        if t.get("pack"):
+            p1 = dict(p1); p1["body"] = G.strip_dup_sections(p1["body"])
         before, after = G.assemble(t, meta, title, p1, p3, today, links, calc_for(meta, t))
         before, after = G.clean_text(before), G.clean_text(after)
         after = G.trim_keyword(before, after, t["main"])
