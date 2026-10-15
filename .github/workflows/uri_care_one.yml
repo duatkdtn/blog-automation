@@ -1,0 +1,60 @@
+name: 우리동네 요양원 설명글 1개 쓰기(임시글)
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "주제 번호 (예: 14)"
+        default: "14"
+      draft:
+        description: "true=임시글로 저장(공개 안 됨, Claude가 읽은 뒤 공개) / false=점검 통과 시 바로 공개"
+        default: "true"
+      model:
+        description: "글 쓰는 AI"
+        type: choice
+        default: "sonnet"
+        options:
+          - sonnet
+          - haiku
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uri-care-publish
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 한글 폰트
+        run: sudo apt-get install -y fonts-nanum
+      - name: 패키지
+        run: pip install anthropic requests pillow beautifulsoup4
+      - name: 실행
+        working-directory: uridong
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          URI_WP_USER: ${{ secrets.URI_WP_USER }}
+          URI_WP_APP_PASSWORD: ${{ secrets.URI_WP_APP_PASSWORD }}
+          URI_MODEL: ${{ github.event.inputs.model == 'haiku' && 'claude-haiku-4-5-20251001' || 'claude-sonnet-5-5' }}
+          URI_DRY_RUN: "0"
+          URI_DRAFT: ${{ github.event.inputs.draft == 'false' && '0' || '1' }}
+        run: |
+          python care_auto_publish.py --topic "${{ github.event.inputs.topic }}"
+      - name: 기록 파일 저장(커밋)
+        run: |
+          git config user.name "uri-care-bot"
+          git config user.email "uri-care-bot@users.noreply.github.com"
+          git add uridong/data/topics.json uridong/data/history.json
+          git diff --cached --quiet || (git commit -m "uridong: 설명글 1개 기록 갱신" && git pull --rebase && git push)

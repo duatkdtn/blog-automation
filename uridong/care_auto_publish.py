@@ -71,6 +71,7 @@ def run_check(topic, facts, today, meta, title, before, after, p1, p3, posts, ex
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check-existing", action="store_true"); ap.add_argument("--n", type=int, default=C.POSTS_PER_RUN)
+    ap.add_argument("--topic", type=int, default=0)   # 주제 번호를 지정하면 그 주제 1개만 쓴다
     a = ap.parse_args()
     import wp_client as W
     facts = C.load_json("facts.json"); topics = C.load_json("topics.json"); hist = C.load_json("history.json", {"posts": []})
@@ -92,6 +93,9 @@ def main():
     # 근거 문단(basis)이 있는 주제만 자동 발행한다. 없는 주제는 사람이 근거를 확인해 채운 뒤에만 나간다.
     pending = [t for t in topics if t["status"] == "대기" and t.get("basis")]
     nob = len([t for t in topics if t["status"] == "대기" and not t.get("basis")])
+    if a.topic:
+        pending = [t for t in pending if t["no"] == a.topic]
+        a.n = 1
     plan_topics = pending[:a.n]
     if len(pending) <= 3 and not (C.DRY_RUN or os.environ.get("URI_MOCK")):
         M.send("[우리동네 요양원] 근거 문단이 필요해요", f"<p>자동 발행할 수 있는 주제(근거 문단 있음)가 {len(pending)}개 남았어요. 근거 문단 없는 대기 주제 {nob}개는 Claude에게 근거 문단 작성을 요청해 주세요.</p>")
@@ -127,7 +131,7 @@ def main():
     for i, t in enumerate(staged):
         try:
             row = process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, hist, held)
-            if row: rows.append(row); posts = posts + ([{"id": row["id"], "slug": row["slug"], "link": row.get("link", ""), "status": "future" if row["state"] == "예약" else "publish",
+            if row: rows.append(row); posts = posts + ([{"id": row["id"], "slug": row["slug"], "link": row.get("link", ""), "status": "draft" if row["state"] == "임시" else ("future" if row["state"] == "예약" else "publish"),
                                                         "title": row["title"], "categories": [C.CATEGORIES.get(t["category"])]}] if row.get("id") else [])
             existing_slugs.add(row["slug"] if row else "")
         except Exception as e:
@@ -231,9 +235,10 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
     if combo: recent_combos.append(combo)
     content = G.wrap_blocks(before, after)
     when = whens[i]
-    status = "publish" if i == 0 else "future"
-    date_iso = None if i == 0 else when.strftime("%Y-%m-%dT%H:%M:%S")
-    row = {"title": title, "state": "발행" if i == 0 else "예약", "when": "즉시" if i == 0 else when.strftime("%m/%d %H:%M"),
+    draft = os.environ.get("URI_DRAFT") == "1"      # 임시글 모드: 사람이 읽어 본 뒤 공개
+    status = "draft" if draft else ("publish" if i == 0 else "future")
+    date_iso = None if (draft or i == 0) else when.strftime("%Y-%m-%dT%H:%M:%S")
+    row = {"title": title, "state": "임시" if draft else ("발행" if i == 0 else "예약"), "when": "임시글" if draft else ("즉시" if i == 0 else when.strftime("%m/%d %H:%M")),
            "chars": K.count_chars(before + after), "warns": warns, "lack": lack, "thumb": thumb, "revisions": revisions, "slug": meta["slug"], "link": ""}
     if C.DRY_RUN or os.environ.get("URI_MOCK"):
         os.makedirs(os.path.join(C.BASE, "out"), exist_ok=True)
@@ -249,7 +254,7 @@ def process(t, i, whens, facts, today, posts, existing_slugs, recent_combos, his
         ok = W.verify_description(post["link"], meta["meta_description"])
         if ok is False: row["warns"].append("D4 meta description이 화면에 안 나옴")
     row.update({"id": post["id"], "link": post["link"], "slug": post["slug"]})
-    t["status"] = "발행" if i == 0 else "예약"
+    t["status"] = "임시글" if draft else ("발행" if i == 0 else "예약")
     hist["posts"].append({"title": title, "slug": post["slug"], "pattern": t.get("_pattern"), "combo": combo, "date": C.now_kst().isoformat(), "topic": t["no"], "id": post["id"]})
     return row
 
