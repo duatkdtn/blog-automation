@@ -1,8 +1,9 @@
 name: 일일 키워드 이메일 발송
 
 on:
-  schedule:
-    - cron: '0 13 * * *'  # 매일 UTC 13:00 = 한국시간 22:00
+  # ⏸️ 일시중지 (2026-10-19 API 요금 문제로 중지)
+  # schedule:
+  #   - cron: '0 13 * * *'  # 매일 UTC 13:00 = 한국시간 22:00
   workflow_dispatch:  # 수동 실행 버튼
 
 permissions:
