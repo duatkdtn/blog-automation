@@ -1,6 +1,6 @@
 # ================================================
 # wp_auto_publish.py
-# 한발뉴스24 상등급 기사 → Claude Sonnet 4.6 → WordPress 자동 발행
+# SEO 키워드 자동수집 → Claude Sonnet 4.6 → WordPress 자동 발행
 # 실행: python wp_auto_publish.py
 # ================================================
 
@@ -26,14 +26,61 @@ except ImportError:
     EMAIL_RECIPIENT    = os.environ.get("EMAIL_RECIPIENT", "")
     WP_URL  = os.environ.get("WP_URL",  "https://hijaneeinfo.com")
     WP_USER = os.environ.get("WP_USER", "duatkdtn@gmail.com")
-    WP_PASS = os.environ.get("WP_PASS", "TO18 KpNd 3xkN x1cf 7REu ZIWi")
+    WP_PASS = os.environ.get("WP_PASS", "")
 
 KST  = ZoneInfo("Asia/Seoul")
 AUTH = HTTPBasicAuth(WP_USER, WP_PASS)
 BASE = os.path.dirname(os.path.abspath(__file__))
 
-MAX_POSTS      = 8   # 최대 발행 개수
+MAX_POSTS      = 4   # 최대 발행 개수
 INTERVAL_HOURS = 3   # 발행 간격 (시간)
+
+USED_WP_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "used_wp_keywords.txt")
+DEDUP_DAYS     = 7   # 중복 금지 기간 (일)
+
+
+def load_used_wp_keywords():
+    """7일 이내 발행된 키워드 목록 로드"""
+    if not os.path.exists(USED_WP_FILE):
+        return set()
+    cutoff = datetime.now(KST) - timedelta(days=DEDUP_DAYS)
+    used = set()
+    with open(USED_WP_FILE, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) == 2:
+                try:
+                    dt = datetime.fromisoformat(parts[0]).replace(tzinfo=KST)
+                    if dt >= cutoff:
+                        used.add(parts[1].lower())
+                except Exception:
+                    pass
+    return used
+
+
+def save_wp_keywords(keywords):
+    """발행 성공한 키워드를 날짜와 함께 저장"""
+    now_str = datetime.now(KST).isoformat()
+    with open(USED_WP_FILE, "a", encoding="utf-8") as f:
+        for kw in keywords:
+            f.write(f"{now_str}\t{kw.lower()}\n")
+
+
+def is_duplicate_article(article, used_keywords):
+    """기사의 키워드후보 중 하나라도 7일 이내 발행됐으면 True"""
+    candidates = article.get("키워드후보", [])
+    title = article.get("제목", "").lower()
+    for kw in candidates:
+        if kw.lower() in used_keywords:
+            return True, kw
+    # 제목 자체도 체크 (키워드후보 없을 때 대비)
+    for kw in used_keywords:
+        if kw and kw in title:
+            return True, kw
+    return False, None
 
 # 카테고리명 → WordPress 카테고리 ID
 CAT_MAP = {
@@ -73,34 +120,160 @@ CALC_LINKS = {
 }
 
 # ================================================
-# 1. 한발뉴스 결과 로드 + 상 등급 추출
+# 1. SEO 키워드 자동 수집 (한발뉴스 대체)
 # ================================================
 
-def load_top_articles():
-    """오늘 한발뉴스 결과에서 상 등급 기사 추출 (점수 높은 순, 최대 MAX_POSTS개)"""
-    today_file = datetime.now(KST).strftime("%Y%m%d")
-    json_path  = os.path.join(BASE, f"hanbal_result_{today_file}.json")
+# 시드 키워드 풀 (30~70대 타겟, 네이버 검색 최적화)
+SEED_KEYWORDS = [
+    # 정책·지원금
+    "실업급여", "청년 지원금", "소상공인 지원금", "기초연금", "아동수당",
+    "청년내일채움공제", "육아휴직 급여", "출산지원금", "장애인 연금", "한부모 지원금",
+    "에너지 바우처", "주거급여", "생계급여", "복지로 신청", "긴급복지 지원",
+    # 세금·금융
+    "종합소득세 신고", "연말정산 방법", "퇴직금 계산", "건강보험료", "국민연금 수령",
+    "ISA 계좌 혜택", "주택청약 조건", "전세대출 조건", "신용대출 금리", "대출 한도",
+    "근로장려금 신청", "자녀장려금",
+    # 건강·의료
+    "건강검진 항목", "국가암검진 대상", "독감 예방접종 무료", "치매 검사 방법",
+    "실비보험 청구 방법", "요양원 비용", "노인복지관 이용", "치매안심센터",
+    "당뇨 초기 증상", "고혈압 관리법", "콜레스테롤 낮추는 방법", "영양제 추천",
+    # 부동산·임대
+    "전세 계약 주의사항", "월세 세액공제", "임대차보호법", "취득세 계산",
+    "재산세 납부", "양도소득세 계산", "공인중개사 수수료", "전입신고 방법",
+    # 생활·소비
+    "자동차 리콜 확인", "통신비 지원", "전기세 절약 방법", "수도요금 감면",
+    "소비자 보호 신청", "자동차보험 비교",
+    # 취업·노무
+    "퇴직금 지급 기준", "연차 계산법", "최저임금 2026", "4대보험 계산",
+    "실업급여 신청 조건", "육아휴직 신청 방법", "근로계약서 작성법", "해고 예고수당",
+    # 육아·교육
+    "아이돌봄 서비스 신청", "영유아 건강검진 시기", "어린이집 비용 지원",
+    "초등학교 입학 준비", "학원비 세액공제", "교육비 환급",
+    # 노후·연금
+    "국민연금 수령 나이", "기초연금 신청 조건", "노인 일자리 신청", "요양보호사 자격증",
+    "연금저축 세액공제", "IRP 계좌 혜택", "노후 준비 방법",
+    # 여행·나들이
+    "국내여행 추천 2026", "가족여행 코스", "당일치기 여행지", "주말여행 명소",
+    "제주 여행 코스", "겨울 여행지 추천",
+    # 음식·건강식
+    "다이어트 음식 추천", "혈당 낮추는 음식", "면역력 높이는 음식",
+    "단백질 많은 음식", "칼로리 낮은 음식",
+]
 
-    if not os.path.exists(json_path):
-        print(f"❌ 결과 파일 없음: {json_path}")
-        sys.exit(1)
 
-    with open(json_path, encoding="utf-8") as f:
-        result = json.load(f)
+def collect_seo_keywords(used_keywords, max_count=4):
+    """SEO 키워드 수집 → article 형식 리스트 반환 (한발뉴스 대체)"""
+    import random
 
-    items = result.get("항목", [])
-    selected = [i for i in items if i.get("상태") == "선정"]
+    print("  🔍 SEO 키워드 수집 중...")
 
-    # 상 등급 우선, 부족하면 중 등급으로 채움
-    top_s = [i for i in selected if i.get("블로그적합도", {}).get("등급") == "상"]
-    top_m = [i for i in selected if i.get("블로그적합도", {}).get("등급") == "중"]
+    # 최근 발행 키워드와 겹치지 않는 시드 필터링
+    available = [s for s in SEED_KEYWORDS
+                 if not any(u in s or s in u for u in used_keywords if len(u) > 1)]
+    if len(available) < 8:
+        available = SEED_KEYWORDS[:]
 
-    top_s.sort(key=lambda x: x.get("블로그적합도", {}).get("점수", 0), reverse=True)
-    top_m.sort(key=lambda x: x.get("블로그적합도", {}).get("점수", 0), reverse=True)
+    seed_sample = random.sample(available, min(14, len(available)))
+    print(f"  시드 샘플: {seed_sample[:4]}...")
 
-    combined = top_s + top_m  # 상 먼저, 그 다음 중
-    print(f"  상 등급: {len(top_s)}개 / 중 등급: {len(top_m)}개 → 최대 {MAX_POSTS}개 발행")
-    return combined[:MAX_POSTS]
+    # 자동완성으로 연관 후보 수집
+    all_candidates = set()
+    for seed in seed_sample[:10]:
+        terms = get_naver_autocomplete(seed, max_results=5)
+        for t in terms:
+            all_candidates.add(t)
+        if not terms:
+            all_candidates.add(seed)
+
+    candidates_list = list(all_candidates)[:30]
+    if not candidates_list:
+        candidates_list = seed_sample[:20]
+
+    # Claude로 오늘 최적 키워드 4개 선정 + 핵심사실 생성
+    used_str = "\n".join(list(used_keywords)[-20:]) if used_keywords else "없음"
+    candidates_str = "\n".join(f"- {k}" for k in candidates_list)
+
+    cat_list = "/".join(CAT_MAP.keys())
+    prompt = f"""다음 키워드 후보 중에서 오늘 워드프레스 블로그에 발행할 최적 키워드 {max_count}개를 선정하고,
+각 키워드로 5,000자 이상 정보성 블로그 글을 쓸 때 필요한 핵심 정보 포인트를 5개씩 정리해주세요.
+
+[키워드 후보]
+{candidates_str}
+
+[최근 발행 키워드 (유사 주제 제외)]
+{used_str}
+
+[선정 기준]
+- 30~70대 한국인이 네이버에서 실제로 많이 검색하는 실용적 정보성 키워드
+- 롱테일 형태 (2~4단어 조합) 우선
+- 최근 발행 주제와 겹치지 않을 것
+- 4개 분야가 최대한 다양하게 (같은 대분류 2개 이상 금지)
+- 신청방법, 조건, 혜택, 비교, 계산법 등 실용 정보성 글로 쓸 수 있는 것
+
+[카테고리 목록] (반드시 이 중에서 선택)
+{cat_list}
+
+[출력 형식] (정확히 이 형식, 코드블록·설명 없이)
+키워드1: 선정키워드|카테고리|한줄요약|핵심정보1,핵심정보2,핵심정보3,핵심정보4,핵심정보5
+키워드2: 선정키워드|카테고리|한줄요약|핵심정보1,핵심정보2,핵심정보3,핵심정보4,핵심정보5
+키워드3: 선정키워드|카테고리|한줄요약|핵심정보1,핵심정보2,핵심정보3,핵심정보4,핵심정보5
+키워드4: 선정키워드|카테고리|한줄요약|핵심정보1,핵심정보2,핵심정보3,핵심정보4,핵심정보5"""
+
+    try:
+        client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+        msg = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=700,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = msg.content[0].text.strip()
+        print(f"  Claude 키워드 선정 완료")
+
+        articles = []
+        for line in raw.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            # "키워드1: 실업급여 신청방법|생활·정책|설명|사실1,사실2,..."
+            if ":" not in line:
+                continue
+            colon_idx = line.index(":")
+            content = line[colon_idx + 1:].strip()
+            parts = content.split("|")
+            if len(parts) < 4:
+                continue
+
+            keyword = parts[0].strip()
+            cat     = parts[1].strip()
+            summary = parts[2].strip()
+            facts   = [f.strip() for f in parts[3].split(",") if f.strip()]
+
+            # 카테고리 유효성 검사
+            if cat not in CAT_MAP:
+                cat = "생활·정책"
+
+            # 연관 검색어 (자동완성)
+            related = get_naver_autocomplete(keyword, max_results=5)
+            keywords_list = [keyword] + related[:4]
+
+            articles.append({
+                "제목":      keyword,
+                "카테고리":  cat,
+                "한줄요약":  summary,
+                "핵심사실":  facts,
+                "키워드후보": keywords_list,
+                "링크":      "",
+                "출처":      "",
+                "확정여부":  "Y",
+                "_is_seo":   True,
+            })
+            print(f"  ✅ [{cat}] {keyword}")
+
+        return articles[:max_count]
+
+    except Exception as e:
+        print(f"  ❌ SEO 키워드 수집 실패: {e}")
+        return []
 
 
 # ================================================
@@ -120,6 +293,57 @@ def _get_article_base(article, today_str):
     facts_text   = "\n".join([f"- {f}" for f in facts])
     keywords_str = ", ".join(keywords)
     return cat, title_h, summary, facts_text, keywords_str, link, source, confirmed
+
+
+def get_naver_autocomplete(keyword, max_results=8):
+    """
+    네이버 자동완성 API로 연관 검색어 수집 (무료, 인증 불필요)
+    반환: list of str (예: ["실업급여 신청방법", "실업급여 계산기", ...])
+    """
+    try:
+        url = "https://ac.search.naver.com/nx/ac"
+        params = {
+            "q": keyword,
+            "st": "100",
+            "frm": "nv",
+            "r_format": "json",
+            "r_enc": "UTF-8",
+            "r_unicode": "0",
+            "t_koreng": "1",
+            "ans": "2",
+            "run": "2",
+            "rev": "4",
+            "con": "1",
+        }
+        res = requests.get(url, params=params, timeout=5,
+                           headers={"User-Agent": "Mozilla/5.0"})
+        if res.status_code == 200:
+            data = res.json()
+            # 응답 형식: {"items": [["키워드1", 0], ["키워드2", 0], ...]}
+            items = data.get("items", [[]])
+            if items and isinstance(items[0], list):
+                suggestions = [item[0] for item in items[0] if isinstance(item, list) and item]
+            else:
+                suggestions = [item[0] if isinstance(item, list) else item for item in items]
+            result = [s for s in suggestions if isinstance(s, str) and s.strip()][:max_results]
+            if result:
+                print(f"     🔍 자동완성: {result[:4]}")
+            return result
+    except Exception as e:
+        print(f"     ℹ️ 자동완성 실패: {e}")
+    return []
+
+
+def _call_sonnet(system, user, max_tokens=512):
+    """Sonnet 호출 — 제목 생성 전용"""
+    client = anthropic.Anthropic(api_key=CLAUDE_API_KEY)
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=max_tokens,
+        system=system,
+        messages=[{"role": "user", "content": user}]
+    )
+    return msg.content[0].text
 
 
 def _call_haiku(system, user, max_tokens=1024):
@@ -144,9 +368,17 @@ def generate_wp_post(article, today_str):
         c_name, c_url = CALC_LINKS[cat]
         calc_hint = f'계산기 버튼 포함: {c_name} → {c_url}'
 
+    # ── 1단계: 네이버 자동완성으로 연관 검색어 수집 ──
+    main_keyword = keywords_str.split(",")[0].strip() if keywords_str else title_h[:10]
+    autocomplete_list = get_naver_autocomplete(main_keyword)
+    autocomplete_hint = ""
+    if autocomplete_list:
+        autocomplete_hint = f"\n[네이버 실제 자동완성 검색어 (이 단어들을 제목에 자연스럽게 조합할 것)]\n" + \
+                            "\n".join(f"- {s}" for s in autocomplete_list)
+
     # ── 1단계: 제목·슬러그·태그·메타·구조 생성 (짧은 JSON, 토큰 부담 없음) ──
     sys1 = "한국어 블로그 전문 작가. JSON만 출력. 절대 코드블록 사용 금지."
-    usr1 = f"""아래 뉴스 소재로 워드프레스 블로그 글의 메타 정보를 작성하세요.
+    usr1 = f"""아래 SEO 키워드 기반 소재로 워드프레스 블로그 글의 메타 정보를 작성하세요.
 
 [소재]
 카테고리: {cat}
@@ -156,14 +388,21 @@ def generate_wp_post(article, today_str):
 {facts_text}
 키워드: {keywords_str}
 출처: {source}
+{autocomplete_hint}
 
 [규칙]
-- wp_title: 메인키워드 맨 앞 + 연관검색어 + 클릭유도형 문구, 30자 이내
-  → 숫자는 반드시 포함하되, 연도(2026 등)는 정책·제도·신청·혜택·연간행사 글에만 사용
-  → 뉴스·속보·경제지표 글은 연도 대신 구체적 수치(금액·비율·기간·순위 등)로 대체
-  → 단순 사실 나열 금지, 반드시 클릭을 유도하는 문구로 마무리
-  → 좋은 예: "서울 아파트 86주 상승 – 전세·월세까지 동시 강세, 지금 사야 하나"
-  → 나쁜 예: "서울 아파트 86주 연속 상승 2026 매매 강세" (연도 억지 삽입, 유도 없음)
+- wp_title: 메인키워드(맨 앞) + 위 [네이버 실제 자동완성 검색어] 중 1~2개 단어 반드시 포함 + 정보성 마무리 문구, 30자 이내
+  → 자동완성 검색어가 제공된 경우 반드시 그 단어들을 활용해 제목 구성 (사람들이 실제로 검색하는 말)
+  → 자동완성이 없으면 키워드에서 파생된 세부 검색어(신청방법·조건·대상·혜택 등)를 삽입
+  → 숫자 반드시 포함 (연도·금액·비율·기간 중 하나)
+  → 정책·제도·신청·혜택 글: 연도(2026) + "신청방법", "조건 정리", "혜택 총정리" 등 정보성 문구로 마무리
+  → 리콜·회수·안전 글: 구체적 수치 + "대상 확인", "신청방법", "제품 목록" 등으로 마무리
+  → 부동산·금융·경제 글: 수치 + "분석", "동향", "가이드" 등으로 마무리
+  → 여행·축제·이벤트 글: 날짜·장소 + "추천", "코스", "일정" 등으로 마무리
+  → 뉴스 헤드라인 스타일 절대 금지: "~왜?", "~하나?", "~가능?", "~확인하세요", "지금이 기회인가" 금지
+  → 좋은 예: "통합돌봄 신청방법 2026 – 대상 조건·서비스 종류 완전 정리"
+  → 좋은 예: "서울 아파트 매매 동향 2026 – 54% 신고가 지역별 가격 분석"
+  → 나쁜 예: "서울 아파트 54% 최고가 경신 – 지금이 최적기?" (뉴스 헤드라인 스타일)
 - focus_keyword: wp_title 맨 앞에 오는 핵심 키워드와 정확히 동일한 문구
 - meta_description: focus_keyword로 시작, 120자 이내
 - tags: 2~3개만, 카테고리명({cat})과 절대 겹치지 않게, 포커스키워드 파생 개념으로
@@ -171,14 +410,14 @@ def generate_wp_post(article, today_str):
 
 [출력] JSON만, 코드블록 없이:
 {{
-  "wp_title": "메인키워드 앞에 + 30자 이내 + 숫자 포함",
+  "wp_title": "메인키워드 맨앞 + 신청방법/조건/분석/추천 등 정보성 마무리 + 30자이내",
   "wp_slug": "english-slug-max-6-words",
   "focus_keyword": "wp_title 맨 앞 키워드와 정확히 동일",
   "meta_description": "포커스키워드로 시작하는 120자 이내 설명",
   "tags": ["태그1","태그2"]
 }}"""
 
-    raw1 = _call_haiku(sys1, usr1, max_tokens=512)
+    raw1 = _call_sonnet(sys1, usr1, max_tokens=512)  # 제목은 Sonnet 전용
     raw1 = re.sub(r"```json\s*", "", raw1)
     raw1 = re.sub(r"```\s*", "", raw1).strip()
     meta = json.loads(raw1)
@@ -658,7 +897,7 @@ def send_result_email(results, today_str, indexed_urls=None):
   {cards_html}
   {index_html}
   <div style="text-align:center;padding:16px;color:#bbb;font-size:12px;border-top:1px solid #e0e0e0;margin-top:10px;">
-    한발뉴스24 × WordPress 자동 발행 시스템
+    SEO 키워드 자동수집 × WordPress 자동 발행 시스템
   </div>
 </div>
 </body></html>"""
@@ -688,13 +927,17 @@ def main():
     print(f"[WordPress 자동발행] {today_str}")
     print(f"{'='*55}")
 
-    # 상 등급 기사 로드
-    top_articles = load_top_articles()
+    # 7일 이내 발행 키워드 로드 (키워드 수집 전에 먼저)
+    used_keywords = load_used_wp_keywords()
+    print(f"  📋 7일 이내 발행 키워드: {len(used_keywords)}개")
+
+    # SEO 키워드 자동 수집 (한발뉴스 대체)
+    top_articles = collect_seo_keywords(used_keywords, max_count=MAX_POSTS)
     n = len(top_articles)
-    print(f"\n상 등급 기사: {n}개 (최대 {MAX_POSTS}개 발행)")
+    print(f"\nSEO 키워드 수집: {n}개 (최대 {MAX_POSTS}개 발행)")
 
     if n == 0:
-        print("발행할 상 등급 기사 없음. 종료합니다.")
+        print("발행할 키워드 없음. 종료합니다.")
         sys.exit(0)
 
     # 발행 시간 계획
@@ -709,7 +952,13 @@ def main():
         sched_dt   = schedule_times[idx]
         sched_label = "즉시" if sched_dt is None else sched_dt.strftime("%Y-%m-%d %H:%M")
 
-        print(f"\n[{idx+1}/{n}] {article.get('제목','')}")
+        print(f"\n[{idx+1}/{n}] 키워드: {article.get('제목','')}")
+
+        # 중복 체크
+        dup, dup_kw = is_duplicate_article(article, used_keywords)
+        if dup:
+            print(f"  ⏭️ 스킵 (7일 이내 중복 키워드: '{dup_kw}')")
+            continue
         print(f"  카테고리: {cat} (ID={cat_id}) | 발행: {sched_label}")
 
         r = {
@@ -754,7 +1003,14 @@ def main():
                 print(f"  ✅ 완료! WP ID={wp_id}")
                 print(f"     링크: {wp_link}")
 
-                # ⑥ 즉시 발행 글만 색인 요청
+                # ⑥ 발행 키워드 저장 (7일 중복 방지)
+                kw_to_save = article.get("키워드후보", [])
+                if not kw_to_save:
+                    kw_to_save = [article.get("제목", "")]
+                save_wp_keywords(kw_to_save)
+                used_keywords.update(k.lower() for k in kw_to_save)
+
+                # ⑦ 즉시 발행 글만 색인 요청
                 if sched_dt is None and wp_link:
                     request_google_indexing(wp_link)
 
