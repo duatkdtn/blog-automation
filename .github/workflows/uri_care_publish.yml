@@ -50,7 +50,7 @@ jobs:
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
           URI_WP_USER: ${{ secrets.URI_WP_USER }}
           URI_WP_APP_PASSWORD: ${{ secrets.URI_WP_APP_PASSWORD }}
-          URI_MODEL: ${{ github.event.inputs.model == 'sonnet' && 'claude-sonnet-5-5' || 'claude-haiku-4-5-20251001' }}
+          URI_MODEL: ${{ github.event.inputs.model == 'sonnet' && 'claude-sonnet-4-6' || 'claude-haiku-4-5-20251001' }}
           URI_DRY_RUN: ${{ github.event.inputs.mode == 'dry' && '1' || '0' }}
         run: |
           MODE="${{ github.event.inputs.mode || 'publish' }}"

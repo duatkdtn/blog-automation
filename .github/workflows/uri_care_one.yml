@@ -47,7 +47,7 @@ jobs:
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
           URI_WP_USER: ${{ secrets.URI_WP_USER }}
           URI_WP_APP_PASSWORD: ${{ secrets.URI_WP_APP_PASSWORD }}
-          URI_MODEL: ${{ github.event.inputs.model == 'haiku' && 'claude-haiku-4-5-20251001' || 'claude-sonnet-5-5' }}
+          URI_MODEL: ${{ github.event.inputs.model == 'haiku' && 'claude-haiku-4-5-20251001' || 'claude-sonnet-4-6' }}
           URI_DRY_RUN: "0"
           URI_DRAFT: ${{ github.event.inputs.draft == 'false' && '0' || '1' }}
         run: |
