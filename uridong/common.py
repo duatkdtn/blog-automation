@@ -17,6 +17,14 @@ GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT", "duatkdtn01@gmail.com")
 # 기존 쟈늬 워크플로의 CLAUDE_MODEL(공유 Secret)은 쓰지 않는다.
 MODEL = os.environ.get("URI_MODEL", "claude-haiku-4-5-20251001")
+
+# ⛔ 모델 가드: Sonnet 4.6 이하만 허용 (Opus·Fable·Sonnet 5.x 등 고비용 모델 실행 중단)
+_ALLOWED_MODELS = {"claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-3-haiku-20240307"}
+def _check_model():
+    if MODEL not in _ALLOWED_MODELS:
+        raise SystemExit(f"⛔ 모델 가드 위반! '{MODEL}'은(는) 허용되지 않는 모델입니다. "
+                         f"허용 모델: {', '.join(sorted(_ALLOWED_MODELS))}. 실행을 중단합니다.")
+_check_model()
 POSTS_PER_RUN = int(os.environ.get("URI_POSTS_PER_RUN", "4"))
 INTERVAL_HOURS = int(os.environ.get("URI_INTERVAL_HOURS", "3"))
 DRY_RUN = os.environ.get("URI_DRY_RUN", "0") == "1"   # 1이면 워드프레스에 쓰지 않고 파일로만 저장
