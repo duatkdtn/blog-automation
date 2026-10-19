@@ -4,7 +4,7 @@
 #       → 이메일 1통 (네이버 블로그 복붙용)
 # ================================================
 
-import os, re, sys, json, random, requests, smtplib
+import os, re, sys, json, random, requests, smtplib, io
 # Windows 콘솔 UTF-8 강제 설정
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -28,6 +28,10 @@ NAVER_CLIENT_ID     = _get("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = _get("NAVER_CLIENT_SECRET")
 CLAUDE_API_KEY      = _get("CLAUDE_API_KEY")
 CLAUDE_MODEL        = _get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+# ⛔ 모델 가드: Sonnet 4.6 이하만 허용 (Opus·Fable·Sonnet 5.x 즉시 중단)
+_ALLOWED_MODELS = {"claude-haiku-4-5-20251001", "claude-3-haiku-20240307", "claude-sonnet-4-6"}
+if CLAUDE_MODEL not in _ALLOWED_MODELS:
+    sys.exit(f"⛔ 모델 가드 위반! CLAUDE_MODEL='{CLAUDE_MODEL}'은 허용 안 됨. 허용: {sorted(_ALLOWED_MODELS)}")
 GMAIL_ADDRESS       = _get("GMAIL_ADDRESS")
 GMAIL_APP_PASSWORD  = _get("GMAIL_APP_PASSWORD")
 EMAIL_RECIPIENT     = _get("EMAIL_RECIPIENT", "duatkdtn@gmail.com")
@@ -92,6 +96,82 @@ PUBLISHED_FILE     = os.path.join(os.path.dirname(os.path.abspath(__file__)), "p
 LAST_RUN_FILE      = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shopping_last_run.txt")
 USED_KEYWORDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "used_keywords.txt")
 NAVER_BLOG_URL = "https://blog.naver.com/janee_item"
+
+# ── 썸네일 후킹 문구 저장 폴더 ──────────────────────
+THUMBNAIL_FOLDER = r"C:\Users\HOME\Downloads\쇼핑ai썸네일"
+
+
+def save_thumbnail_with_hooking(image_url, hooking_text, product_name, blog_num=1, item_num=1):
+    """1번 이미지에 후킹 문구 텍스트 삽입 후 로컬 폴더에 저장 (이메일 용량 무관)"""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        # 이미지 다운로드
+        r = requests.get(image_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        img = Image.open(io.BytesIO(r.content)).convert("RGB")
+
+        # 800×800으로 리사이즈
+        img = img.resize((800, 800), Image.LANCZOS)
+        W, H = img.size
+
+        # 하단 1/3 반투명 오버레이
+        overlay_h = H // 3
+        overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(overlay).rectangle([0, H - overlay_h, W, H], fill=(0, 0, 0, 170))
+        img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+        draw = ImageDraw.Draw(img)
+
+        # 폰트 크기 자동 조절 (텍스트가 이미지 너비 안에 들어오도록)
+        font_path = None
+        for fp in [r"C:\Windows\Fonts\malgunbd.ttf",
+                   r"C:\Windows\Fonts\malgun.ttf",
+                   r"C:\Windows\Fonts\gulim.ttc",
+                   r"C:\Windows\Fonts\batang.ttc"]:
+            if os.path.exists(fp):
+                font_path = fp
+                break
+
+        font_size = 46
+        font = None
+        _tmp_draw = ImageDraw.Draw(img)
+        if font_path:
+            while font_size >= 24:
+                try:
+                    f = ImageFont.truetype(font_path, font_size)
+                    bbox = _tmp_draw.textbbox((0, 0), hooking_text, font=f)
+                    tw = bbox[2] - bbox[0]
+                    if tw <= W - 40:  # 좌우 여백 20px씩
+                        font = f
+                        break
+                except Exception:
+                    pass
+                font_size -= 2
+        if font is None:
+            font = ImageFont.load_default()
+
+        # 하단 1/3 영역 중앙에 텍스트 1줄 배치
+        bbox = draw.textbbox((0, 0), hooking_text, font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
+        x = (W - tw) // 2
+        y = (H - overlay_h) + (overlay_h - th) // 2
+        draw.text((x + 2, y + 2), hooking_text, fill=(0, 0, 0), font=font)   # 그림자
+        draw.text((x, y), hooking_text, fill=(255, 255, 255), font=font)      # 흰 글씨
+
+        # 폴더 생성 + 저장 (파일명: 상품명.jpg)
+        os.makedirs(THUMBNAIL_FOLDER, exist_ok=True)
+        safe_name = re.sub(r'[\\/:*?"<>|]', '_', product_name[:25])
+        save_path = os.path.join(THUMBNAIL_FOLDER, f"{safe_name}.jpg")
+        img.save(save_path, "JPEG", quality=90)
+        print(f"   🖼️ 썸네일 저장: {os.path.basename(save_path)}")
+        return save_path
+
+    except ImportError:
+        print("   ⚠️ Pillow 미설치 - 'pip install pillow' 후 재실행")
+        return None
+    except Exception as e:
+        print(f"   ⚠️ 썸네일 저장 실패: {e}")
+        return None
 
 
 
@@ -461,17 +541,35 @@ def get_trending_keywords_from_datalab(category):
             },
             timeout=10,
         )
+        print(f"   🔍 DataLab 응답 코드: {res.status_code} / 카테고리: {category.get('name','?')} / 응답 앞 300자: {res.text[:300]}")
         if res.status_code == 200:
             try:
                 data = res.json()
                 if isinstance(data, list):
                     data = data[0] if data else {}
-                result = data.get("ranks", [])
-                keywords = [item.get("keyword", "") for item in result if item.get("keyword")]
+                # 응답 키 확인 (구조 디버깅)
+                if isinstance(data, dict):
+                    print(f"   🔍 DataLab 응답 키: {list(data.keys())}")
+                # "ranks" 외에 다른 키도 시도
+                result = data.get("ranks") or data.get("keywordList") or data.get("result") or []
+                if not result and isinstance(data, dict):
+                    # 중첩 구조 탐색
+                    for v in data.values():
+                        if isinstance(v, list) and v and isinstance(v[0], dict):
+                            result = v
+                            break
+                keywords = [
+                    item.get("keyword") or item.get("keyword_name") or item.get("name") or ""
+                    for item in result
+                    if isinstance(item, dict) and (item.get("keyword") or item.get("keyword_name") or item.get("name"))
+                ]
+                print(f"   🔍 DataLab 키워드 파싱 결과: {keywords[:5]}")
                 if keywords:
                     return keywords
             except Exception as je:
-                print(f"   ℹ️ DataLab JSON 파싱 실패: {je} / 응답: {res.text[:200]}")
+                print(f"   ℹ️ DataLab JSON 파싱 실패: {je} / 응답: {res.text[:300]}")
+        else:
+            print(f"   ⚠️ DataLab HTTP {res.status_code} 오류 / 응답: {res.text[:200]}")
     except Exception as e:
         print(f"   ℹ️ DataLab 크롤링 실패: {e}")
 
@@ -487,7 +585,14 @@ def get_top_product(category, specific_keyword=None):
     if specific_keyword:
         keywords_to_try = [specific_keyword]
     else:
-        all_keywords = category.get("keywords", [category["name"]])[:]
+        # DataLab 실시간 TOP10 키워드 시도 → 실패 시 고정 리스트 폴백
+        trending = get_trending_keywords_from_datalab(category)
+        if trending:
+            print(f"   📊 DataLab 실시간 TOP10 키워드 {len(trending)}개 사용: {trending[:3]}...")
+            all_keywords = trending
+        else:
+            print(f"   ⚠️ DataLab 실패 → 고정 키워드 리스트로 폴백")
+            all_keywords = category.get("keywords", [category["name"]])[:]
         # 7일 이내 사용된 키워드 제외
         recent_keywords = load_used_keywords(days=7)
         filtered = [k for k in all_keywords if k not in recent_keywords]
@@ -534,7 +639,9 @@ def get_top_product(category, specific_keyword=None):
                     review = p.get("reviewInfo", {})
                     price_val = int(p.get("discountedSalePrice", 0) or p.get("salePrice", 0) or 0)
                     _min_rate = 5 if __import__('datetime').date.today() <= __import__('datetime').date(2026, 9, 20) else 10
-                    if name and price_val >= 30000 and float(rate) >= _min_rate:
+                    _exclude_words = ["대여", "렌탈", "rental", "rent", "임대"]
+                    _is_rental = any(w in name.lower() for w in _exclude_words)
+                    if name and price_val >= 30000 and float(rate) >= _min_rate and not _is_rental:
                         items.append({
                             "title":          name,
                             "lprice":         price,
@@ -981,7 +1088,11 @@ def generate_shopping_post(category, product):
 
 ---TAGS_START---
 #태그1 #태그2 #태그3 #태그4 #태그5 #태그6 #태그7 #태그8
----TAGS_END---"""
+---TAGS_END---
+
+---HOOK_START---
+(이 상품에 맞는 썸네일 후킹 문구 1개. 반드시 15자 이내의 완성된 문장으로 작성. 절대로 문장 중간에서 끊으면 안 됨. "~의", "~다 구", "~아침의" 처럼 미완성으로 끝나는 문구 금지. 예: 이 가격 실화야?, 믿기지 않아, 진짜 참기름 맛은 이렇다, 운동할 때만 쓰고 싶어요)
+---HOOK_END---"""
 
     try:
         import anthropic
@@ -1017,11 +1128,55 @@ def generate_shopping_post(category, product):
         tags_match = re.search(r"---TAGS_START---(.+?)---TAGS_END---", raw, re.DOTALL)
         hashtags = tags_match.group(1).strip() if tags_match else ""
 
-        return seo_titles, post_body, hashtags
+        # 후킹 문구 파싱
+        hook_match = re.search(r"---HOOK_START---(.+?)---HOOK_END---", raw, re.DOTALL)
+        hook_phrase = hook_match.group(1).strip() if hook_match else ""
+        # 괄호 설명문 제거
+        hook_phrase = re.sub(r"\(.*?\)", "", hook_phrase).strip()
+        hook_phrase = hook_phrase[:20]  # 20자 하드 컷
+
+        # ── 후킹 문구 완성 여부 검증 + 재시도 ──
+        def _is_complete_hook(text):
+            """문장 끝이 완성형인지 확인"""
+            if not text:
+                return False
+            _endings = ("!", "?", "요", "다", "네", "야", "어", "지", "까", "죠",
+                        "어요", "다.", "요.", "야.", "네.", "죠.")
+            return any(text.endswith(e) for e in _endings)
+
+        if not _is_complete_hook(hook_phrase):
+            print(f"   ⚠️ 후킹 문구 미완성: '{hook_phrase}' → 재시도")
+            for _retry in range(2):
+                try:
+                    _retry_prompt = (
+                        f"다음 상품에 맞는 썸네일 후킹 문구를 1개만 작성해줘.\n"
+                        f"상품명: {product.get('title','')[:30]}\n\n"
+                        f"규칙:\n"
+                        f"- 완성된 문장으로 끝낼 것 (!, ?, 요, 다 등으로 반드시 끝나야 함)\n"
+                        f"- 20자 이내\n"
+                        f"- 문구만 출력, 다른 설명 없이"
+                    )
+                    _rc = client.messages.create(
+                        model="claude-haiku-4-5-20251001",
+                        max_tokens=60,
+                        messages=[{"role": "user", "content": _retry_prompt}]
+                    )
+                    _candidate = re.sub(r"\(.*?\)", "", _rc.content[0].text.strip()).strip()[:20]
+                    print(f"   🔄 재시도 {_retry+1}: '{_candidate}'")
+                    if _is_complete_hook(_candidate):
+                        hook_phrase = _candidate
+                        break
+                except Exception:
+                    break
+            else:
+                if not _is_complete_hook(hook_phrase):
+                    hook_phrase = "이 가격 실화야?"  # 최후 기본값
+
+        return seo_titles, post_body, hashtags, hook_phrase
 
     except Exception as e:
         print(f"⚠️ Claude 오류: {e}")
-        return None, None, None
+        return None, None, None, None
 
 
 # ── 6단계: 이메일 발송 ───────────────────────────
@@ -1303,10 +1458,19 @@ def run_shopping_task(category_ids=None, count=5, send_email_flag=True,
         images = get_product_images(product)
 
         log_fn("  ✍️ Claude 글 작성 중...")
-        seo_titles, post_body, hashtags = generate_shopping_post(category, product)
+        seo_titles, post_body, hashtags, hook_phrase = generate_shopping_post(category, product)
         if not post_body:
             log_fn(f"  ⚠️ 글 작성 실패, 스킵")
             continue
+
+        # 후킹 문구 → 1번 이미지에 삽입 후 로컬 폴더 저장 (번호: 블로그번호-상품번호)
+        if images:
+            hooking_text = hook_phrase or product_name[:12]
+            blog_num = re.sub(r"[^0-9]", "", label) or "1"
+            item_num = i + 1
+            log_fn(f"  🏷️ 후킹 문구: {hooking_text}")
+            save_thumbnail_with_hooking(images[0], hooking_text, product_name,
+                                        blog_num=blog_num, item_num=item_num)
 
         pub_time_str = pub_times[i] if i < len(pub_times) else f"{6+i*2:02d}:00"
         email_items.append({

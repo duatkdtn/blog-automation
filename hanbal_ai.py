@@ -7,6 +7,12 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# ⛔ 모델 가드: Sonnet 4.6 이하만 허용 (Opus·Fable·Sonnet 5.x 즉시 중단)
+_ALLOWED_MODELS = {"claude-haiku-4-5-20251001", "claude-3-haiku-20240307", "claude-sonnet-4-6"}
+_env_model = os.environ.get("CLAUDE_MODEL", "")
+if _env_model and _env_model not in _ALLOWED_MODELS:
+    sys.exit(f"⛔ 모델 가드 위반! CLAUDE_MODEL='{_env_model}'은 허용 안 됨. 허용: {sorted(_ALLOWED_MODELS)}")
+
 # GitHub Actions 환경변수 우선, 없으면 config.py에서 로드
 try:
     from config import CLAUDE_API_KEY, CLAUDE_MODEL

@@ -28,6 +28,12 @@ def now_kst():
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# ⛔ 모델 가드: Sonnet 4.6 이하만 허용 (Opus·Fable·Sonnet 5.x 즉시 중단)
+_ALLOWED_MODELS = {"claude-haiku-4-5-20251001", "claude-3-haiku-20240307", "claude-sonnet-4-6"}
+_env_model = os.environ.get("CLAUDE_MODEL", "")
+if _env_model and _env_model not in _ALLOWED_MODELS:
+    sys.exit(f"⛔ 모델 가드 위반! CLAUDE_MODEL='{_env_model}'은 허용 안 됨. 허용: {sorted(_ALLOWED_MODELS)}")
+
 def setup_env():
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
     if not os.path.exists(config_path):
@@ -297,15 +303,17 @@ def generate_blogspot_title(keyword, kw_type, related_keywords, google_autocompl
 구글 자동완성 연관 검색어 (참고용):
 {autocomplete_text}
 
+이 글을 읽을 사람은 방금 이 키워드를 접하고 '나한테 해당되나?', '어떻게 해야 하나?', '이게 진짜야?' 라는 궁금증으로 검색창에 타이핑한 사람이에요. 그 사람이 "이 글이 내 답이다"라고 느껴서 클릭하게 만드는 제목을 써주세요.
+
 블로그스팟(구글 검색 노출)용 제목을 1개 만들어주세요.
 
 제목 작성 규칙:
-1. 형식: 메인키워드 + 저경쟁 연관검색어 + 클릭유도형 표현 조합
-2. 30자 이내
-3. 숫자 선택적 포함 (자연스러울 때만)
-4. 클릭유도 표현: 총정리, 완벽정리, 핵심만, 한눈에, 꼭 알아야 할
-5. 구글에서 검색하는 사람의 의도를 정확히 반영
-6. 정보형/명확한 설명체 문체
+1. 메인키워드 맨 앞에 배치
+2. 연관검색어를 자연스럽게 포함
+3. 30자 이내
+4. 숫자 포함 (자연스러울 때만)
+5. 독자가 얻는 것 또는 행동을 유도하는 표현으로 마무리 (키워드 맥락에 맞게 창의적으로)
+6. 뉴스 보도 형식 금지 ("~초과", "~밝혀져", "~했다" 같은 팩트 전달로 끝나는 것)
 
 제목만 출력하세요. 설명 없이 제목 텍스트만."""
 
