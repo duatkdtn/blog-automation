@@ -1528,15 +1528,15 @@ def main():
         _orig_categories = None
 
     try:
-        # 블로그1: 8개 수집 → 메일 발송
+        # 블로그1: 4개 수집 → 메일 발송
         print("\n" + "="*50)
         print("📧 [블로그1] 상품 수집 및 메일 발송...")
-        result1 = run_shopping_task(count=8, send_email_flag=True, force=True, label="블로그1")
+        result1 = run_shopping_task(count=4, send_email_flag=True, force=True, label="블로그1")
 
-        # 블로그2: 8개 수집 → 메일 발송 (블로그1 발행 상품 자동 제외)
+        # 블로그2: 4개 수집 → 메일 발송 (블로그1 발행 상품 자동 제외)
         print("\n" + "="*50)
         print("📧 [블로그2] 상품 수집 및 메일 발송...")
-        result2 = run_shopping_task(count=8, send_email_flag=True, force=True, label="블로그2")
+        result2 = run_shopping_task(count=4, send_email_flag=True, force=True, label="블로그2")
     finally:
         if _orig_categories is not None:
             CATEGORIES = _orig_categories
